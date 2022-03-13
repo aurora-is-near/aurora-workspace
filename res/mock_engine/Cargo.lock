@@ -49,6 +49,18 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "aurora-engine-types"
 version = "1.0.0"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=811608b316e1b8f081e78ae03a143b5b3eb35540#811608b316e1b8f081e78ae03a143b5b3eb35540"
+dependencies = [
+ "borsh",
+ "hex",
+ "primitive-types 0.12.1",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "aurora-engine-types"
+version = "1.0.0"
 source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
 dependencies = [
  "borsh",
@@ -62,7 +74,7 @@ dependencies = [
 name = "aurora-workspace-types"
 version = "0.1.0"
 dependencies = [
- "aurora-engine-types",
+ "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
  "ethereum-types",
  "near-account-id 0.15.0",
  "near-sdk",
@@ -733,6 +745,7 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 name = "mock_engine"
 version = "0.1.0"
 dependencies = [
+ "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=811608b316e1b8f081e78ae03a143b5b3eb35540)",
  "aurora-workspace-types",
  "getrandom 0.2.8",
  "hex",
