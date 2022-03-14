@@ -4,5 +4,6 @@ members = [
     "workspace-types",
 ]
 exclude = [
-    "res/mock_evm",
+    "res/mock_engine",
+    "res/mock_eth_connector"
 ]
