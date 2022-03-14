@@ -1,8 +1,8 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallFtTransfer,
-    CallFtTransferCall, CallRefundOnError, CallRegisterRelayer, CallSetEthConnectorContractData,
-    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, SelfCall, View,
-    ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFactoryUpdateAddressVersion,
+    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallRefundOnError, CallRegisterRelayer,
+    CallSetEthConnectorContractData, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallSubmit, SelfCall, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
@@ -12,6 +12,7 @@ use aurora_engine::parameters::{
     GetStorageAtArgs, SetContractDataCallArgs, StorageBalance, StorageDepositCallArgs,
     StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, ViewCallArgs,
 };
+use aurora_engine::xcc::AddressVersionUpdateArgs;
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -209,22 +210,22 @@ impl<U: UserFunctions> EvmAccount<U> {
                 .args_borsh(args),
         )
     }
-    /*
-        pub fn factory_update_address_version(
-            &self,
-            address: impl Into<Address>,
-            version: u32,
-        ) -> CallFactoryUpdateAddressVersion<'_> {
-            let args = AddressVersionUpdateArgs {
-                address: aurora_engine_types::types::Address::new(address.into()),
-                version: aurora_engine::xcc::CodeVersion(version),
-            };
-            CallFactoryUpdateAddressVersion(
-                self.near_call(&SelfCall::FactoryUpdateAddressVersion)
-                    .args_borsh(args),
-            )
-        }
-    */
+
+    pub fn factory_update_address_version(
+        &self,
+        address: impl Into<Address>,
+        version: u32,
+    ) -> CallFactoryUpdateAddressVersion<'_> {
+        let args = AddressVersionUpdateArgs {
+            address: aurora_engine_types::types::Address::new(address.into()),
+            version: aurora_engine::xcc::CodeVersion(version),
+        };
+        CallFactoryUpdateAddressVersion(
+            self.near_call(&SelfCall::FactoryUpdateAddressVersion)
+                .args_borsh(args),
+        )
+    }
+
     pub fn refund_on_error<A: Into<Address>>(
         &self,
         recipient_address: A,

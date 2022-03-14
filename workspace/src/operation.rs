@@ -73,6 +73,11 @@ impl_call_return![
         ExecutionSuccess<()>,
         try_from_borsh
     ),
+    (
+        CallFactoryUpdateAddressVersion,
+        ExecutionSuccess<u8>,
+        try_from_borsh
+    ),
     (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
 ];
 

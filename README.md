@@ -8,7 +8,7 @@ This library is only compatible with Rust version 1.64.0 and above.
 
 ## Tests
 
-Before running tests, build/generate the WASM file as described [here](res/mock_evm/README.md). Then run:
+Before running tests, build/generate the WASM file as described [here](res/mock_engien/README.md). Then run:
 ```
 cargo test
 ```
