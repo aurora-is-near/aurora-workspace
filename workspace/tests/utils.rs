@@ -22,7 +22,8 @@ pub async fn init_and_deploy_contract() -> anyhow::Result<EvmContract> {
         owner_id: AccountId::from_str(OWNER_ACCOUNT_ID)?,
         prover_id: AccountId::from_str(PROVER_ACCOUNT_ID)?,
     };
-    let wasm = std::fs::read(WASM_BIN_FILE_PATH).expect("failed read wasm file");
+    let wasm = std::fs::read(WASM_BIN_FILE_PATH)
+        .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
     // create contract
     let contract = EvmContract::deploy_and_init(evm_account, init_config, wasm).await?;
 
