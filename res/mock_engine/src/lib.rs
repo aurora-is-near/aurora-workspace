@@ -75,9 +75,7 @@ impl MockEngineContract {
     //
 
     #[result_serializer(borsh)]
-    pub fn factory_update_address_version(&mut self, #[serializer(borsh)] _input: Raw) -> u8 {
-        0
-    }
+    pub fn factory_update_address_version(&mut self, #[serializer(borsh)] _input: Raw) {}
 
     #[result_serializer(borsh)]
     pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) {}
