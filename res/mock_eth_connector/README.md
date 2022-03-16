@@ -1,21 +1,26 @@
-# Generate the WASM file
+# Eth Connector Contract mock
 
-- Install nightly toolchain 
+It covers Eth Connector contract public methods. Through NEAR
+blockchain it's possible to get access only to public methods and
+view functions.
+
+
+### How to generate the WASM file
+
+- Install Rust and add the wasm32-unknown-unknown target
 ```bash
-rustup toolchain install nightly 
-```
+rustup target add wasm32-unknown-unknown 
+``` 
+
 - Only for Apple M1/M2 MacOS
 ```bash
 rustup default stable-aarch64-apple-darwin
 ```
-- Add the wasm32-unknown-unknown target for the nightly toolchain 
-```bash
-rustup target add --toolchain nightly wasm32-unknown-unknown 
-```
+
 
 - Build the wasm file
 ```bash
-./build.sh 
+make build-eth-connector-mock
 ```
 
-You should find the `main.wasm` file in `../bin/main.wasm`.
+You should find the `mock_eth_connector.wasm` file in `../bin/mock_eth_connector.wasm`.
