@@ -12,11 +12,6 @@ view functions.
 rustup target add wasm32-unknown-unknown 
 ``` 
 
-- Only for Apple M1/M2 MacOS
-```bash
-rustup default stable-aarch64-apple-darwin
-```
-
 
 - Build the wasm file
 ```bash

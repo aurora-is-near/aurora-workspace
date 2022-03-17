@@ -125,7 +125,7 @@ async fn test_set_eth_connector_contract_data() {
         .await
         .unwrap();
 }
-/*
+
 #[tokio::test]
 async fn test_factory_update_address_version() {
     let contract = common::init_and_deploy_contract().await.unwrap();
@@ -141,7 +141,7 @@ async fn test_factory_update_address_version() {
     let expected = 0;
     assert_eq!(expected, res);
 }
-*/
+
 #[tokio::test]
 async fn test_refund_on_error() {
     let contract = utils::init_and_deploy_contract().await.unwrap();
