@@ -40,6 +40,39 @@ lazy_static! {
         AccountId::from_str("prover.test.near").unwrap();
 }
 
+#[derive(Debug, Clone)]
+enum AccountKind {
+    Account {
+        contract_id: AccountId,
+        inner: Account,
+    },
+    Contract(Contract),
+}
+
+impl AccountKind {
+    fn call<'a>(&'a self, function: &'a Function) -> EvmCallTransaction {
+        let transaction = match self {
+            AccountKind::Account { contract_id, inner } => inner.call(contract_id, function.as_ref()),
+            AccountKind::Contract(con) => con.call(function.as_ref()),
+        };
+        EvmCallTransaction::call(function, transaction)
+    }
+
+    async fn view(&self, function: &Function, args: Vec<u8>) -> Result<ViewResultDetails> {
+       Ok(match self {
+           AccountKind::Account { contract_id, inner } => inner.view(contract_id, function.as_ref(), args).await?,
+           AccountKind::Contract(con) => con.view(function.as_ref(), args).await?,
+       })
+    }
+
+    fn id(&self) -> &AccountId {
+        match self {
+            AccountKind::Account { inner, .. } => inner.id(),
+            AccountKind::Contract(con) => con.id(),
+        }
+    }
+}
+
 // TODO: use me
 pub struct CallResult<T> {
     result: T,
@@ -57,18 +90,26 @@ pub trait EvmUser: private::Sealed {}
 
 pub trait EvmTester {}
 
-pub(crate) struct EvmAccount<U: EvmUser> {
-    account: Account,
-    contract_id: AccountId,
+#[derive(Debug, Clone)]
+pub struct EvmAccount<U: EvmUser> {
+    account: AccountKind,
     phantom: PhantomData<U>
+}
+
+impl<U: EvmSelf> EvmAccount<U> {
+    pub fn with_self(contract: Contract) -> EvmAccount<U> {
+        Self {
+            account: AccountKind::Contract(contract),
+            phantom: PhantomData::default(),
+        }
+    }
 }
 
 impl<U: EvmOwner> EvmAccount<U> {
     pub fn with_owner(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account,
-            contract_id,
-            phantom: Default::default()
+            account: AccountKind::Account { contract_id, inner: account },
+            phantom: PhantomData::default(),
         }
     }
 }
@@ -76,9 +117,8 @@ impl<U: EvmOwner> EvmAccount<U> {
 impl<U: EvmProver> EvmAccount<U> {
     pub fn with_prover(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account,
-            contract_id,
-            phantom: Default::default()
+            account: AccountKind::Account { contract_id, inner: account },
+            phantom: PhantomData::default(),
         }
     }
 }
@@ -86,50 +126,17 @@ impl<U: EvmProver> EvmAccount<U> {
 impl<U: EvmUser> EvmAccount<U> {
     pub async fn new(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account,
-            contract_id,
-            phantom: Default::default()
+            account: AccountKind::Account { contract_id, inner: account },
+            phantom: PhantomData::default(),
         }
     }
 
-    async fn call<'a, F: AsRef<str>>(&'a self, function: &'a Function) -> EvmCallTransaction {
-        let transaction = self.account.call(&self.contract_id, function.as_ref());
-        EvmCallTransaction::call(function, transaction)
+    fn call<'a, F: AsRef<str>>(&'a self, function: &'a Function) -> EvmCallTransaction {
+        self.account.call(function)
     }
 
-    async fn view(&self, function: &str, args: Vec<u8>) -> Result<ViewResultDetails> {
-        Ok(self.account.view(&self.contract_id, function.as_ref(), args).await?)
-    }
-
-    pub fn id(&self) -> &AccountId {
-        self.account.id()
-    }
-}
-
-pub(crate) struct EvmProverAccount {
-    account: Account,
-    contract_id: AccountId,
-}
-
-impl EvmProverAccount {
-    pub fn new(account: Account, contract_id: AccountId) -> EvmProverAccount {
-        Self {
-            account,
-            contract_id,
-        }
-    }
-
-    pub fn call<'a, 'b>(&'a self, function: &'b str) -> CallTransaction<'a, 'b> {
-        self.account.call(self.account.id(), function)
-    }
-
-    pub async fn deposit(&self, proof: Proof) -> Result<ExecutionFinalResult> {
-        Ok(self
-            .call("deposit")
-            .args_borsh(proof)
-            .max_gas()
-            .transact()
-            .await?)
+    async fn view(&self, function: &Function, args: Vec<u8>) -> Result<ViewResultDetails> {
+        self.account.view(function, args).await
     }
 
     pub fn id(&self) -> &AccountId {
@@ -196,52 +203,52 @@ pub struct DeployConfig {
 /// This type *can not* implement `Default` as the deployment may not already exist. Likewise, the
 /// library does not provide a ready built EVM binary to be deployed. This must be specified.
 #[derive(Debug, Clone)]
-pub struct EvmContract<N: Network + 'static> {
-    contract: Contract,
+pub struct EvmContract<N: Network + 'static, U: EvmSelf> {
+    contract: EvmAccount<U>,
     phantom: PhantomData<N>
 }
 
-impl<N: Network + 'static> AsRef<Contract> for EvmContract<N> {
-    fn as_ref(&self) -> &Contract {
+impl<N: Network + 'static, U: EvmSelf> AsRef<EvmAccount<U>> for EvmContract<N, U> {
+    fn as_ref(&self) -> &EvmAccount<U> {
         &self.contract
     }
 }
 
-impl<N: Network + 'static> AsMut<Contract> for EvmContract<N> {
-    fn as_mut(&mut self) -> &mut Contract {
+impl<N: Network + 'static, U: EvmSelf> AsMut<EvmAccount<U>> for EvmContract<N, U> {
+    fn as_mut(&mut self) -> &mut EvmAccount<U> {
         &mut self.contract
     }
 }
 
-impl<N: Network + 'static> Borrow<Contract> for EvmContract<N> {
-    fn borrow(&self) -> &Contract {
+impl<N: Network + 'static, U: EvmSelf> Borrow<EvmAccount<U>> for EvmContract<N, U> {
+    fn borrow(&self) -> &EvmAccount<U> {
         &self.contract
     }
 }
 
-impl<N: Network + 'static> BorrowMut<Contract> for EvmContract<N> {
-    fn borrow_mut(&mut self) -> &mut Contract {
+impl<N: Network + 'static, U: EvmSelf> BorrowMut<EvmAccount<U>> for EvmContract<N, U> {
+    fn borrow_mut(&mut self) -> &mut EvmAccount<U> {
         &mut self.contract
     }
 }
 
 // TODO have another PhantomData (maybe) which will note if its the public, owner, etc.
-impl<N: Network + 'static> From<Contract> for EvmContract<N> {
+impl<N: Network + 'static, U: EvmSelf> From<Contract> for EvmContract<N, U> {
     fn from(contract: Contract) -> Self {
         EvmContract {
-            contract,
+            contract: EvmAccount::with_self(contract),
             phantom: Default::default(),
         }
     }
 }
 
-impl EvmContract<Sandbox> {
+impl<U: EvmSelf> EvmContract<Sandbox, U> {
     pub async fn deploy_and_init<P: AsRef<Path>>(
         account: Account,
         deploy_config: DeployConfig,
         source: EvmContractSource<P>,
         worker: &Worker<Sandbox>,
-    ) -> Result<EvmContract<Sandbox>> {
+    ) -> Result<EvmContract<Sandbox, U>> {
         let contract = match source {
             EvmContractSource::Dir(path) => {
                 let wasm = std::fs::read(path)?;
@@ -263,48 +270,48 @@ impl EvmContract<Sandbox> {
     }
 }
 
-impl EvmContract<Betanet> {
+impl<U: EvmSelf> EvmContract<Betanet, U> {
     pub async fn deploy_and_init<P: AsRef<Path>>(
         account: Account,
         deploy_config: DeployConfig,
         path: P,
-    ) -> Result<EvmContract<Betanet>> {
+    ) -> Result<EvmContract<Betanet, U>> {
         let contract = deploy_contract(path, account).await?;
         Self::deploy_and_init_inner(contract, deploy_config).await
     }
 }
 
-impl EvmContract<Testnet> {
+impl<U: EvmSelf> EvmContract<Testnet, U> {
     pub async fn deploy_and_init<P: AsRef<Path>>(
         account: Account,
         deploy_config: DeployConfig,
         path: P,
-    ) -> Result<EvmContract<Testnet>> {
+    ) -> Result<EvmContract<Testnet, U>> {
         let contract = deploy_contract(path, account).await?;
         Self::deploy_and_init_inner(contract, deploy_config).await
     }
 }
 
-impl EvmContract<Mainnet> {
+impl<U: EvmSelf> EvmContract<Mainnet, U> {
     pub async fn deploy_and_init<P: AsRef<Path>>(
         account: Account,
         deploy_config: DeployConfig,
         path: P,
-    ) -> Result<EvmContract<Mainnet>> {
+    ) -> Result<EvmContract<Mainnet, U>> {
         let contract = deploy_contract(path, account).await?;
         Self::deploy_and_init_inner(contract, deploy_config).await
     }
 }
 
-impl<N: Network + 'static> EvmContract<N> {
-    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract<N> {
+impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
+    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract<N, U> {
         EvmContract {
-            contract: contract.into(),
+            contract: EvmAccount::with_self(contract.into()),
             phantom: Default::default(),
         }
     }
 
-    async fn deploy_and_init_inner(contract: Contract, deploy_config: DeployConfig) -> Result<EvmContract<N>> {
+    async fn deploy_and_init_inner(contract: Contract, deploy_config: DeployConfig) -> Result<EvmContract<N, U>> {
         let new_args = NewCallArgs {
             chain_id: aurora_engine_types::types::u256_to_arr(&deploy_config.chain_id),
             // TODO: https://github.com/aurora-is-near/aurora-engine/issues/604, unwrap is safe here
@@ -343,17 +350,22 @@ impl<N: Network + 'static> EvmContract<N> {
         }
 
         Ok(EvmContract{
-            contract,
+            contract: EvmAccount::with_self(contract),
             phantom: Default::default(),
         })
     }
     
-    pub async fn from_secret_key<D: AsRef<str>>(id: D, sk: SecretKey, worker: &Worker<N>) -> Result<EvmContract<N>> {
+    pub fn from_secret_key<D: AsRef<str>>(id: D, sk: SecretKey, worker: &Worker<N>) -> Result<EvmContract<N, U>> {
         let account_id = AccountId::from_str(id.as_ref())?;
+        let contract = Contract::from_secret_key(account_id, sk, worker);
         Ok(EvmContract{
-            contract: Contract::from_secret_key(account_id, sk, worker),
+            contract: EvmAccount::with_self(contract),
             phantom: Default::default(),
         })
+    }
+
+    pub fn as_account(&self) -> &EvmAccount<U> {
+        &self.contract
     }
 
     // async fn near_call<'a, 'b>(&self, function: &'b CallFunction, args: Vec<u8>) -> EvmCallTransaction<'_, 'b> {
