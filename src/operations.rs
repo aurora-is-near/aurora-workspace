@@ -1,61 +1,51 @@
+use crate::impls::AuroraReturns;
+use crate::Result;
+use aurora_engine::parameters::{SubmitResult, WithdrawResult};
+use aurora_engine_sdk::promise::PromiseId;
+use ethereum_types::Address;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
-use crate::Result;
+
+macro_rules! impl_call_return  {
+    ($(($name:ident, $return:ty, $fun:ident)),*) => {
+        $(pub struct $name<'a, 'b>(pub(crate) EvmCallTransaction<'a, 'b>);
+
+        impl<'a, 'b> $name<'a, 'b> {
+            pub fn gas(mut self, gas: u64) -> $name<'a, 'b> {
+                self.0 = self.0.gas(gas);
+                self
+            }
+
+            pub fn max_gas(mut self) -> $name<'a, 'b> {
+                self.0 = self.0.max_gas();
+                self
+            }
+
+            pub async fn transact(self) -> Result<$return> {
+                self.0.transact().await?.$fun()
+            }
+        })*
+    }
+}
+
+impl_call_return![
+    (CallDeployCode, SubmitResult, try_to_evm_result),
+    (CallDeployErc20Token, Address, try_to_address),
+    (CallEvm, SubmitResult, try_to_evm_result),
+    (CallSubmit, SubmitResult, try_to_evm_result),
+    (CallRegisterRelayer, (), try_to_empty),
+    (CallFtOnTransfer, (), try_to_empty),
+    (CallWithdraw, WithdrawResult, try_to_withdraw_result),
+    (CallDeposit, PromiseId, try_to_promise_id),
+    (CallFtTransfer, (), try_to_empty),
+    (CallFtTransferCall, PromiseId, try_to_promise_id),
+    (CallStorageDeposit, (), try_to_empty),
+    (CallStorageUnregister, (), try_to_empty),
+    (CallStorageWithdraw, (), try_to_empty)
+];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Function {
-    Call(Call),
-    View(View),
-    SelfCall(SelfCall),
-    AuthorizedCall(AuthorizedCall),
-    OwnerCall(OwnerCall),
-}
-
-impl AsRef<str> for Function {
-    fn as_ref(&self) -> &str {
-        use Function::*;
-        match self {
-            Call(c) => c.as_ref(),
-            View(v) => v.as_ref(),
-            SelfCall(c) => c.as_ref(),
-            AuthorizedCall(c) => c.as_ref(),
-            OwnerCall(c) => c.as_ref(),
-        }
-    }
-}
-
-impl From<Call> for Function {
-    fn from(call: Call) -> Self {
-        Function::Call(call)
-    }
-}
-
-impl From<View> for Function {
-    fn from(view: View) -> Self {
-        Function::View(view)
-    }
-}
-
-impl From<SelfCall> for Function {
-    fn from(self_call: SelfCall) -> Self {
-        Function::SelfCall(self_call)
-    }
-}
-
-impl From<AuthorizedCall> for Function {
-    fn from(authorized_call: AuthorizedCall) -> Self {
-        Function::AuthorizedCall(authorized_call)
-    }
-}
-
-impl From<OwnerCall> for Function {
-    fn from(owner_call: OwnerCall) -> Self {
-        Function::OwnerCall(owner_call)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Call {
+pub(crate) enum Call {
     DeployCode,
     DeployErc20Token,
     EvmCall,
@@ -88,7 +78,6 @@ impl AsRef<str> for Call {
             StorageDeposit => "storage_deposit",
             StorageUnregister => "storage_unregister",
             StorageWithdraw => "storage_withdraw",
-
         }
     }
 }
@@ -187,7 +176,6 @@ impl AsRef<str> for OwnerCall {
             ResumePrecompiles => "resume_precompiles",
             FactoryUpdate => "factory_update",
             FactorySetWNEARAddress => "factory_set_wnear_address",
-
         }
     }
 }
@@ -236,15 +224,11 @@ impl AsRef<str> for TestCallFunction {
 
 pub struct EvmCallTransaction<'a, 'b> {
     inner: CallTransaction<'a, 'b>,
-    function: &'b Function,
 }
 
 impl<'a, 'b> EvmCallTransaction<'a, 'b> {
-    pub(crate) fn call(function: &'b Function, transaction: CallTransaction<'a, 'b>) -> Self {
-        EvmCallTransaction{
-            inner: transaction,
-            function,
-        }
+    pub(crate) fn call(transaction: CallTransaction<'a, 'b>) -> Self {
+        EvmCallTransaction { inner: transaction }
     }
 
     pub(crate) fn args(mut self, args: Vec<u8>) -> EvmCallTransaction<'a, 'b> {
@@ -257,7 +241,10 @@ impl<'a, 'b> EvmCallTransaction<'a, 'b> {
         self
     }
 
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> EvmCallTransaction<'a, 'b> {
+    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(
+        mut self,
+        args: B,
+    ) -> EvmCallTransaction<'a, 'b> {
         self.inner = self.inner.args_borsh(args);
         self
     }
@@ -272,7 +259,7 @@ impl<'a, 'b> EvmCallTransaction<'a, 'b> {
         self
     }
 
-    async fn transact(self) -> Result<ExecutionFinalResult> {
+    pub async fn transact(self) -> Result<ExecutionFinalResult> {
         // TODO: return EVM execution result.
         Ok(self.inner.transact().await?)
     }
