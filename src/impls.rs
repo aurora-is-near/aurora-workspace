@@ -30,6 +30,8 @@ pub(crate) trait AuroraReturns {
     fn try_to_withdraw_result(self) -> Result<WithdrawResult>;
 
     fn try_to_vec(self) -> Result<Vec<u8>>;
+
+    fn try_to_empty(self) -> Result<()>;
 }
 
 impl AuroraReturns for ExecutionFinalResult {
@@ -88,5 +90,9 @@ impl AuroraReturns for ExecutionFinalResult {
 
     fn try_to_vec(self) -> Result<Vec<u8>> {
         Ok(self.raw_bytes()?)
+    }
+
+    fn try_to_empty(self) -> Result<()> {
+        Ok(())
     }
 }

@@ -1,35 +1,32 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::marker::PhantomData;
-use crate::impls::AuroraReturns;
+use crate::operations::{
+    Call, CallDeployCode, CallDeployErc20Token, CallDeposit, CallEvm, CallFtOnTransfer,
+    CallFtTransfer, CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit,
+    CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw,
+};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
-    BalanceOfCallArgs, BalanceOfEthCallArgs, DeployErc20TokenArgs, FunctionCallArgsV2,
-    GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs, NEP141FtOnTransferArgs, NewCallArgs,
-    SubmitResult, TransactionStatus, ViewCallArgs, 
+    DeployErc20TokenArgs, FunctionCallArgsV2, InitCallArgs, NEP141FtOnTransferArgs, NewCallArgs,
+    StorageDepositCallArgs, StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
 };
 use aurora_engine::proof::Proof;
-use aurora_engine::xcc::AddressVersionUpdateArgs;
 use aurora_engine_types::parameters::WithdrawCallArgs;
-use aurora_engine_types::types::{NEP141Wei, Wei};
-use borsh::BorshSerialize;
 use ethereum_types::{Address, U256};
 use lazy_static::lazy_static;
-use std::path::{Path};
+use std::borrow::{Borrow, BorrowMut};
+use std::marker::PhantomData;
+use std::path::Path;
 use std::str::FromStr;
 use workspaces::network::{Betanet, Mainnet, Sandbox, Testnet};
-use workspaces::operations::{CallTransaction};
-use workspaces::result::{ExecutionFinalResult, ViewResultDetails};
-use workspaces::types::{KeyType, SecretKey};
+use workspaces::result::ViewResultDetails;
+use workspaces::types::SecretKey;
 use workspaces::{Account, AccountId, Contract, Network, Worker};
-use crate::operations::{Call, Function};
 
-pub const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
-pub const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
-pub const OWNER_ACCOUNT_ID: &str = "owner.test.near";
-pub const PROVER_ACCOUNT_ID: &str = "prover.test.near";
-pub const INITIAL_BALANCE: u128 = 100_000_000_000_000_000_000_000_000; // 100 NEAR
-pub const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
+// pub const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
+// pub const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
+// pub const OWNER_ACCOUNT_ID: &str = "owner.test.near";
+// pub const PROVER_ACCOUNT_ID: &str = "prover.test.near";
+// pub const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 
 lazy_static! {
     static ref DEFAULT_AURORA_ACCOUNT_ID: AccountId =
@@ -50,19 +47,23 @@ enum AccountKind {
 }
 
 impl AccountKind {
-    fn call<'a>(&'a self, function: &'a Function) -> EvmCallTransaction {
+    fn call<'a, F: AsRef<str>>(&'a self, function: &'a F) -> EvmCallTransaction {
         let transaction = match self {
-            AccountKind::Account { contract_id, inner } => inner.call(contract_id, function.as_ref()),
+            AccountKind::Account { contract_id, inner } => {
+                inner.call(contract_id, function.as_ref())
+            }
             AccountKind::Contract(con) => con.call(function.as_ref()),
         };
-        EvmCallTransaction::call(function, transaction)
+        EvmCallTransaction::call(transaction)
     }
 
-    async fn view(&self, function: &Function, args: Vec<u8>) -> Result<ViewResultDetails> {
-       Ok(match self {
-           AccountKind::Account { contract_id, inner } => inner.view(contract_id, function.as_ref(), args).await?,
-           AccountKind::Contract(con) => con.view(function.as_ref(), args).await?,
-       })
+    async fn view<F: AsRef<str>>(&self, function: &F, args: Vec<u8>) -> Result<ViewResultDetails> {
+        Ok(match self {
+            AccountKind::Account { contract_id, inner } => {
+                inner.view(contract_id, function.as_ref(), args).await?
+            }
+            AccountKind::Contract(con) => con.view(function.as_ref(), args).await?,
+        })
     }
 
     fn id(&self) -> &AccountId {
@@ -71,12 +72,6 @@ impl AccountKind {
             AccountKind::Contract(con) => con.id(),
         }
     }
-}
-
-// TODO: use me
-pub struct CallResult<T> {
-    result: T,
-    logs: Vec<String>,
 }
 
 // TODO(engine): Self should be able to call owner functions.
@@ -93,7 +88,7 @@ pub trait EvmTester {}
 #[derive(Debug, Clone)]
 pub struct EvmAccount<U: EvmUser> {
     account: AccountKind,
-    phantom: PhantomData<U>
+    phantom: PhantomData<U>,
 }
 
 impl<U: EvmSelf> EvmAccount<U> {
@@ -108,7 +103,10 @@ impl<U: EvmSelf> EvmAccount<U> {
 impl<U: EvmOwner> EvmAccount<U> {
     pub fn with_owner(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account: AccountKind::Account { contract_id, inner: account },
+            account: AccountKind::Account {
+                contract_id,
+                inner: account,
+            },
             phantom: PhantomData::default(),
         }
     }
@@ -117,7 +115,10 @@ impl<U: EvmOwner> EvmAccount<U> {
 impl<U: EvmProver> EvmAccount<U> {
     pub fn with_prover(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account: AccountKind::Account { contract_id, inner: account },
+            account: AccountKind::Account {
+                contract_id,
+                inner: account,
+            },
             phantom: PhantomData::default(),
         }
     }
@@ -126,21 +127,143 @@ impl<U: EvmProver> EvmAccount<U> {
 impl<U: EvmUser> EvmAccount<U> {
     pub async fn new(account: Account, contract_id: AccountId) -> EvmAccount<U> {
         Self {
-            account: AccountKind::Account { contract_id, inner: account },
+            account: AccountKind::Account {
+                contract_id,
+                inner: account,
+            },
             phantom: PhantomData::default(),
         }
     }
 
-    fn call<'a, F: AsRef<str>>(&'a self, function: &'a Function) -> EvmCallTransaction {
+    fn near_call<'a, F: AsRef<str>>(&'a self, function: &'a F) -> EvmCallTransaction {
         self.account.call(function)
     }
 
-    async fn view(&self, function: &Function, args: Vec<u8>) -> Result<ViewResultDetails> {
+    async fn view<F: AsRef<str>>(&self, function: &F, args: Vec<u8>) -> Result<ViewResultDetails> {
         self.account.view(function, args).await
     }
 
     pub fn id(&self) -> &AccountId {
         self.account.id()
+    }
+
+    pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode {
+        CallDeployCode(self.near_call(&Call::DeployCode).args(code))
+    }
+
+    pub fn deploy_erc20_token(&self, account_id: AccountId) -> CallDeployErc20Token {
+        // TODO: impl Error for parse account error
+        let args = DeployErc20TokenArgs {
+            nep141: aurora_engine_types::account_id::AccountId::new(account_id.as_str()).unwrap(),
+        };
+        CallDeployErc20Token(self.near_call(&Call::DeployErc20Token).args_borsh(args))
+    }
+
+    pub fn call(&self, contract: Address, amount: U256, input: Vec<u8>) -> CallEvm {
+        let mut buf = [0u8; 32];
+        amount.to_big_endian(&mut buf);
+        let args = FunctionCallArgsV2 {
+            contract: aurora_engine_types::types::Address::new(contract),
+            value: buf,
+            input,
+        };
+        CallEvm(self.near_call(&Call::EvmCall).args_borsh(args))
+    }
+
+    pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
+        CallSubmit(self.near_call(&Call::Submit).args(input))
+    }
+
+    pub fn register_relayer(&self, address: Address) -> CallRegisterRelayer {
+        CallRegisterRelayer(
+            self.near_call(&Call::RegisterRelayer)
+                .args(address.0.to_vec()),
+        )
+    }
+
+    pub fn ft_on_transfer(
+        &self,
+        sender_id: AccountId,
+        amount: u128,
+        message: String,
+    ) -> CallFtOnTransfer {
+        let args = NEP141FtOnTransferArgs {
+            // TODO: impl error
+            sender_id: aurora_engine_types::account_id::AccountId::new(sender_id.as_str()).unwrap(),
+            amount: aurora_engine_types::types::Balance::new(amount),
+            msg: message,
+        };
+        CallFtOnTransfer(self.near_call(&Call::FtOnTransfer).args_json(args))
+    }
+
+    pub fn withdraw(&self, receiver_address: Address, amount: u128) -> CallWithdraw {
+        let args = WithdrawCallArgs {
+            recipient_address: aurora_engine_types::types::Address::new(receiver_address),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+        };
+        CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
+    }
+
+    pub fn deposit(&self, proof: Proof) -> CallDeposit {
+        CallDeposit(self.near_call(&Call::Deposit).args_borsh(proof))
+    }
+
+    pub fn ft_transfer(
+        &self,
+        receiver_id: AccountId,
+        amount: u128,
+        memo: Option<String>,
+    ) -> CallFtTransfer {
+        let args = TransferCallArgs {
+            // TODO: impl error
+            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_str())
+                .unwrap(),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+            memo,
+        };
+        CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(args))
+    }
+
+    pub fn ft_transfer_call(
+        &self,
+        receiver_id: AccountId,
+        amount: u128,
+        memo: Option<String>,
+        message: String,
+    ) -> CallFtTransferCall {
+        let args = TransferCallCallArgs {
+            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_str())
+                .unwrap(),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+            memo,
+            msg: message,
+        };
+        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(args))
+    }
+
+    pub fn storage_deposit(
+        &self,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> CallStorageDeposit {
+        let args = StorageDepositCallArgs {
+            account_id: account_id
+                .map(|a| aurora_engine_types::account_id::AccountId::new(a.as_str()).unwrap()),
+            registration_only,
+        };
+        CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
+    }
+
+    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister {
+        let val = serde_json::json!({ "force": force });
+        CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
+    }
+
+    pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw {
+        let args = StorageWithdrawCallArgs {
+            amount: amount.map(aurora_engine_types::types::Yocto::new),
+        };
+        CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
     }
 }
 
@@ -205,7 +328,7 @@ pub struct DeployConfig {
 #[derive(Debug, Clone)]
 pub struct EvmContract<N: Network + 'static, U: EvmSelf> {
     contract: EvmAccount<U>,
-    phantom: PhantomData<N>
+    phantom: PhantomData<N>,
 }
 
 impl<N: Network + 'static, U: EvmSelf> AsRef<EvmAccount<U>> for EvmContract<N, U> {
@@ -257,12 +380,18 @@ impl<U: EvmSelf> EvmContract<Sandbox, U> {
             EvmContractSource::Testnet => {
                 let testnet_worker = workspaces::testnet().await?;
                 let account_id = account.id();
-                worker.import_contract(account_id, &testnet_worker).transact().await?
+                worker
+                    .import_contract(account_id, &testnet_worker)
+                    .transact()
+                    .await?
             }
             EvmContractSource::Mainnet => {
                 let mainnet_worker = workspaces::mainnet().await?;
                 let account_id = account.id();
-                worker.import_contract(account_id, &mainnet_worker).transact().await?
+                worker
+                    .import_contract(account_id, &mainnet_worker)
+                    .transact()
+                    .await?
             }
         };
 
@@ -311,18 +440,21 @@ impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
         }
     }
 
-    async fn deploy_and_init_inner(contract: Contract, deploy_config: DeployConfig) -> Result<EvmContract<N, U>> {
+    async fn deploy_and_init_inner(
+        contract: Contract,
+        deploy_config: DeployConfig,
+    ) -> Result<EvmContract<N, U>> {
         let new_args = NewCallArgs {
             chain_id: aurora_engine_types::types::u256_to_arr(&deploy_config.chain_id),
             // TODO: https://github.com/aurora-is-near/aurora-engine/issues/604, unwrap is safe here
             owner_id: aurora_engine_types::account_id::AccountId::from_str(
                 deploy_config.owner_id.as_str(),
             )
-                .unwrap(),
+            .unwrap(),
             bridge_prover_id: aurora_engine_types::account_id::AccountId::from_str(
                 deploy_config.prover_id.as_str(),
             )
-                .unwrap(),
+            .unwrap(),
             upgrade_delay_blocks: 1,
         };
         contract
@@ -337,7 +469,7 @@ impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
                 prover_account: aurora_engine_types::account_id::AccountId::from_str(
                     eth_prover_config.account_id.as_str(),
                 )
-                    .unwrap(),
+                .unwrap(),
                 eth_custodian_address: eth_prover_config.evm_custodian_address,
                 metadata: FungibleTokenMetadata::default(),
             };
@@ -349,16 +481,20 @@ impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
                 .into_result()?;
         }
 
-        Ok(EvmContract{
+        Ok(EvmContract {
             contract: EvmAccount::with_self(contract),
             phantom: Default::default(),
         })
     }
-    
-    pub fn from_secret_key<D: AsRef<str>>(id: D, sk: SecretKey, worker: &Worker<N>) -> Result<EvmContract<N, U>> {
+
+    pub fn from_secret_key<D: AsRef<str>>(
+        id: D,
+        sk: SecretKey,
+        worker: &Worker<N>,
+    ) -> Result<EvmContract<N, U>> {
         let account_id = AccountId::from_str(id.as_ref())?;
         let contract = Contract::from_secret_key(account_id, sk, worker);
-        Ok(EvmContract{
+        Ok(EvmContract {
             contract: EvmAccount::with_self(contract),
             phantom: Default::default(),
         })
@@ -367,271 +503,6 @@ impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
     pub fn as_account(&self) -> &EvmAccount<U> {
         &self.contract
     }
-
-    // async fn near_call<'a, 'b>(&self, function: &'b CallFunction, args: Vec<u8>) -> EvmCallTransaction<'_, 'b> {
-    //     let transaction = self.contract.call(function.as_ref()).args(args);
-    //     EvmCallTransaction::new(function, transaction)
-    // }
-    //
-    // // TODO: improve view to be like call.
-    // async fn near_view<F: AsRef<str>>(&self, function: F, args: Vec<u8>) -> ViewResultDetails {
-    //     self.contract.view(function.as_ref(), args).await.unwrap() // TODO: fix error handling here
-    // }
-    //
-    // // TODO: improve with making the args vec on method above
-    // async fn near_call_borsh<U: borsh::BorshSerialize>(
-    //     &self,
-    //     function: &str,
-    //     args: U,
-    // ) -> Result<ExecutionFinalResult> {
-    //     let execution_result = self
-    //         .contract
-    //         .call(function)
-    //         .max_gas()
-    //         .args_borsh(args)
-    //         .transact()
-    //         .await?;
-    //
-    //     Ok(execution_result)
-    // }
-    //
-    // async fn near_call_json<U: serde::Serialize>(
-    //     &self,
-    //     function: &str,
-    //     args: U,
-    // ) -> Result<ExecutionFinalResult> {
-    //     let execution_result = self
-    //         .contract
-    //         .call(function)
-    //         .max_gas()
-    //         .args_json(args)
-    //         .transact()
-    //         .await?;
-    //
-    //     Ok(execution_result)
-    // }
-
-    // TODO: Test which ensures that the version was properly bumped.
-    // TODO: replace with view
-    // pub async fn get_version(&self) -> String {
-    //     self.call_near("get_version", vec![])
-    //         .await
-    //         .unwrap()
-    //         .to_string()
-    // }
-
-    // // TODO: replace with view
-    // pub async fn get_owner(&self) -> Result<AccountId> {
-    //     self.near_call("get_owner", vec![])
-    //         .await?
-    //         .try_to_account_id()
-    // }
-    //
-    // // TODO: replace with view
-    // pub async fn get_bridge_prover(&self) -> Result<AccountId> {
-    //     self.near_call("get_bridge_prover", vec![])
-    //         .await?
-    //         .try_to_account_id()
-    // }
-    //
-    // // TODO: replace with view
-    // pub async fn get_chain_id(&self) -> Result<U256> {
-    //     self.near_call("get_chain_id", vec![]).await?.try_to_u256()
-    // }
-    //
-    // // TODO: replace with view
-    // pub async fn get_upgrade_index(&self) -> Result<u64> {
-    //     self.near_call("get_upgrade_index", vec![])
-    //         .await?
-    //         .try_to_u64()
-    // }
-    //
-    // pub async fn stage_upgrade(&self) {
-    //     todo!()
-    // }
-    //
-    // pub async fn deploy_upgrade(&self) {
-    //     todo!()
-    // }
-    //
-    // pub async fn stage_migration(&self) {
-    //     todo!()
-    // }
-    //
-    // pub async fn deploy_code(&self, code: Vec<u8>) -> Result<SubmitResult> {
-    //     self.near_call("deploy_code", code)
-    //         .await?
-    //         .try_to_evm_result()
-    // }
-    //
-    // pub async fn call(&self, args: FunctionCallArgsV2) -> Result<SubmitResult> {
-    //     self.near_call_borsh("call", args)
-    //         .await?
-    //         .try_to_evm_result()
-    // }
-    //
-    // pub async fn submit(&self, args: Vec<u8>) -> Result<SubmitResult> {
-    //     self.near_call("submit", args).await?.try_to_evm_result()
-    // }
-    //
-    // pub async fn register_relayer(&self, relayer_id: AccountId) -> Result<()> {
-    //     // We don't need the result here as there is none.
-    //     let _ = self
-    //         .near_call("register_relayer", relayer_id.as_bytes().to_vec())
-    //         .await?;
-    //     Ok(())
-    // }
-    //
-    // pub fn factory_update(&self, _router_bytes: Vec<u8>) -> Result<()> {
-    //     todo!()
-    // }
-    //
-    // pub async fn factory_update_address_version(
-    //     &self,
-    //     _update_args: AddressVersionUpdateArgs,
-    // ) -> Result<()> {
-    //     todo!()
-    // }
-    //
-    // pub async fn factory_set_wnear_address(&self, wnear_address: Address) -> Result<()> {
-    //     let _ = self
-    //         .near_call("set_wnear_address", wnear_address.as_bytes().to_vec())
-    //         .await?;
-    //     Ok(())
-    // }
-    //
-    // pub async fn ft_on_transfer(&self, ft_on_transfer_args: NEP141FtOnTransferArgs) -> Result<()> {
-    //     let _ = self
-    //         .near_call_borsh("ft_on_transfer", ft_on_transfer_args)
-    //         .await?;
-    //     Ok(())
-    // }
-    //
-    // pub async fn deploy_erc20_token(&self, deploy_args: DeployErc20TokenArgs) -> Result<Address> {
-    //     self
-    //         .near_call_borsh("deploy_erc20_token", deploy_args)
-    //         .await?
-    //         .try_to_address()
-    // }
-    //
-    // // TODO: check if this is necessary, considering that it is a private
-    // // function. Else, could improve it with adding a removal of
-    // // io.assert_private_call in refund_on_error engine function for tests only.
-    // // pub async fn refund_on_error(&self)
-    //
-    // // TODO: all view returns should be the correct types.
-    // pub async fn view(&self, view_args: ViewCallArgs) -> Result<TransactionStatus> {
-    //     self.near_call_borsh("view", view_args)
-    //         .await?
-    //         .try_to_transaction_status()
-    // }
-    //
-    // pub async fn get_block_hash(&self, block_height: u64) -> ViewResultDetails {
-    //     self.view_near("get_block_hash", block_height.try_to_vec().unwrap()) // TODO: fix unwrap
-    //         .await
-    // }
-    //
-    // pub async fn get_code(&self, address: Address) -> Vec<u8> {
-    //     self.view_near("get_code", address.as_bytes().to_vec())
-    //         .await
-    //         .result
-    // }
-    //
-    // pub async fn get_balance(&self, address: Address) -> Wei {
-    //     Wei::new(U256::from_big_endian(
-    //         &self
-    //             .view_near("get_balance", address.as_bytes().to_vec())
-    //             .await
-    //             .result,
-    //     ))
-    // }
-    //
-    // pub async fn get_nonce(&self, address: Address) -> U256 {
-    //     U256::from_big_endian(
-    //         &self
-    //             .view_near("get_nonce", address.as_bytes().to_vec())
-    //             .await
-    //             .result,
-    //     )
-    // }
-    //
-    // // TODO return
-    // pub async fn get_storage_at(&self, args: GetStorageAtArgs) -> ViewResultDetails {
-    //     self.view_near("get_storage_at", args.try_to_vec().unwrap())
-    //         .await // TODO: fix unwrap
-    // }
-    //
-    // // pub async fn new_eth_connector
-    //
-    // // pub async fn set_eth_connector_contract_data()
-    //
-    // pub async fn withdraw(&self, args: WithdrawCallArgs) -> Result<ExecutionFinalResult> {
-    //     self.near_call_borsh("withdraw", args).await
-    // }
-    //
-    // pub async fn deposit(&self, proof: Proof) -> Result<ExecutionFinalResult> {
-    //     self.near_call("deposit", proof.try_to_vec()?).await
-    // }
-    //
-    // // pub async fn finish_deposit
-    //
-    // pub async fn is_used_proof(&self, args: IsUsedProofCallArgs) -> Result<bool> {
-    //     self.near_call_borsh("is_used_proof", args)
-    //         .await?
-    //         .try_to_bool()
-    // }
-    //
-    // // TODO ... rest
-    //
-    // pub async fn mint_account(&self, address: Address, nonce: u64, balance: u64) -> Result<()> {
-    //     let args = (
-    //         aurora_engine_types::types::Address::new(address),
-    //         nonce,
-    //         balance,
-    //     );
-    //     let _ = self.near_call_borsh("mint_account", args).await;
-    //     Ok(())
-    // }
-    //
-    // pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<NEP141Wei> {
-    //     // TODO: https://github.com/aurora-is-near/aurora-engine/issues/604, unwrap is safe here
-    //     let args = BalanceOfCallArgs {
-    //         account_id: aurora_engine_types::account_id::AccountId::new(account_id.as_str())
-    //             .unwrap(),
-    //     };
-    //     let call = self
-    //         .near_call_json("ft_balance_of", args)
-    //         .await?
-    //         .into_result()?;
-    //     println!("ft_balance_of: {call:#?}");
-    //     let res_string: String = call.json()?;
-    //     let value = NEP141Wei::new(u128::from_str(&res_string)?);
-    //     Ok(value)
-    // }
-    //
-    // pub async fn ft_balance_of_eth(&self, address: Address) -> Result<Wei> {
-    //     let args = BalanceOfEthCallArgs {
-    //         address: aurora_engine_types::types::Address::new(address),
-    //     };
-    //     let res: Wei = self
-    //         .near_call_json("ft_balance_of_eth", args)
-    //         .await?
-    //         .json()?;
-    //     Ok(res)
-    // }
-    //
-    // pub async fn ft_total_supply(&self) -> Result<NEP141Wei> {
-    //     let res: NEP141Wei = self.near_call("ft_total_supply", vec![]).await?.json()?;
-    //     Ok(res)
-    // }
-    //
-    // pub async fn ft_total_eth_supply_on_aurora(&self) -> Result<Wei> {
-    //     let res: Wei = self
-    //         .near_call("ft_total_eth_supply_on_aurora", vec![])
-    //         .await?
-    //         .json()?;
-    //     Ok(res)
-    // }
 }
 
 async fn deploy_contract<P: AsRef<Path>>(path: P, account: Account) -> Result<Contract> {
