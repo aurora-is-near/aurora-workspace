@@ -15,4 +15,4 @@ lazy_static = "1.4.0"
 near-account-id = "0.14.0"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0.35"
-workspaces = { git = "https://github.com/aurora-is-near/workspaces-rs.git", version = "0.5" }
+workspaces = { git = "https://github.com/aurora-is-near/workspaces-rs.git", rev = "2b7d90b702057af85d6919ce6083bf87ff39afaf" }
