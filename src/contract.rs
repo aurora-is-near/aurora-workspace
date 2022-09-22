@@ -1,3 +1,5 @@
+use std::borrow::{Borrow, BorrowMut};
+use std::marker::PhantomData;
 use crate::impls::AuroraReturns;
 use crate::Result;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
@@ -15,11 +17,11 @@ use ethereum_types::{Address, U256};
 use lazy_static::lazy_static;
 use std::path::{Path};
 use std::str::FromStr;
-use workspaces::network::{Sandbox};
+use workspaces::network::{Betanet, Mainnet, Sandbox, Testnet};
 use workspaces::operations::CallTransaction;
 use workspaces::result::{ExecutionFinalResult, ViewResultDetails};
 use workspaces::types::SecretKey;
-use workspaces::{Account, AccountId, Contract, Worker};
+use workspaces::{Account, AccountId, Contract, Network, Worker};
 
 pub const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 pub const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
@@ -96,10 +98,14 @@ impl EvmProver {
     }
 }
 
+/// A collection of sources where you can get the contract.
 pub enum EvmContractSource<P: AsRef<Path>> {
+    /// A path to the file containing the contract binary.
     Dir(P),
-    Testnet(AccountId),
-    Mainnet(AccountId),
+    /// Source the contract binary from NEAR testnet.
+    Testnet,
+    /// Source the contract binary from NEAR mainnet.
+    Mainnet,
 }
 
 pub struct EthProverConfig {
@@ -107,21 +113,15 @@ pub struct EthProverConfig {
     pub evm_custodian_address: String,
 }
 
-pub struct DeployConfig<P: AsRef<Path>> {
+pub struct DeployConfig {
+    /// The owner ID of the contract.
     pub owner_id: AccountId,
+    /// The prover ID of the contract.
     pub prover_id: AccountId,
-    pub source: EvmContractSource<P>,
+    /// The optional configuration for the Ethereum prover (bridge).
     pub eth_prover_config: Option<EthProverConfig>,
+    /// The Ethereum chain ID.
     pub chain_id: U256,
-}
-
-pub struct ContractConfig {
-    pub contract_id: AccountId,
-    pub contract_secret_key: SecretKey,
-}
-
-pub struct ImportConfig {
-    pub account_id: AccountId,
 }
 
 // TODO: Put all parameters per input, not as the struct args!
@@ -129,56 +129,132 @@ pub struct ImportConfig {
 // TODO: builder
 // information required about the transaction to be made. Then give the option
 // to sign with another key, or with some default. Preferably, run `transact`.
-pub struct EvmContract(Contract);
 
-impl EvmContract {
-    pub async fn new(worker: &Worker<Sandbox>, contract_config: ContractConfig) -> EvmContract {
-        let contract = Contract::from_secret_key(
-            contract_config.contract_id,
-            contract_config.contract_secret_key,
-            worker,
-        );
-        EvmContract(contract)
+/// A wrapper over workspaces' `Contract` type which provides ease of use when interacting with
+/// the Aurora EVM contract.
+///
+/// This type *can not* implement `Default` as the deployment may not already exist. Likewise, the
+/// library does not provide a ready built EVM binary to be deployed. This must be specified.
+#[derive(Debug, Clone)]
+pub struct EvmContract<N: Network + 'static> {
+    contract: Contract,
+    phantom: PhantomData<N>
+}
+
+impl<N: Network + 'static> AsRef<Contract> for EvmContract<N> {
+    fn as_ref(&self) -> &Contract {
+        &self.contract
     }
+}
 
-    pub async fn create_tla_and_deploy<P: AsRef<Path>>(
+impl<N: Network + 'static> AsMut<Contract> for EvmContract<N> {
+    fn as_mut(&mut self) -> &mut Contract {
+        &mut self.contract
+    }
+}
+
+impl<N: Network + 'static> Borrow<Contract> for EvmContract<N> {
+    fn borrow(&self) -> &Contract {
+        &self.contract
+    }
+}
+
+impl<N: Network + 'static> BorrowMut<Contract> for EvmContract<N> {
+    fn borrow_mut(&mut self) -> &mut Contract {
+        &mut self.contract
+    }
+}
+
+impl<N: Network + 'static> From<Contract> for EvmContract<N> {
+    fn from(contract: Contract) -> Self {
+        EvmContract {
+            contract,
+            phantom: Default::default(),
+        }
+    }
+}
+
+impl EvmContract<Sandbox> {
+    pub async fn deploy_and_init<P: AsRef<Path>>(
+        account: Account,
+        deploy_config: DeployConfig,
+        source: EvmContractSource<P>,
         worker: &Worker<Sandbox>,
-        contract_config: ContractConfig,
-        deploy_config: DeployConfig<P>,
-    ) -> Result<Self> {
-        let contract = match deploy_config.source {
+    ) -> Result<EvmContract<Sandbox>> {
+        let contract = match source {
             EvmContractSource::Dir(path) => {
                 let wasm = std::fs::read(path)?;
-                worker
-                    .create_tla_and_deploy(
-                        contract_config.contract_id,
-                        contract_config.contract_secret_key,
-                        &wasm,
-                    )
-                    .await?
-                    .into_result()?
+                account.deploy(&wasm).await?.into_result()?
             }
-            EvmContractSource::Testnet(account_id) => {
+            EvmContractSource::Testnet => {
                 let testnet_worker = workspaces::testnet().await?;
-                worker.import_contract(&account_id, &testnet_worker).transact().await?
+                let account_id = account.id();
+                worker.import_contract(account_id, &testnet_worker).transact().await?
             }
-            EvmContractSource::Mainnet(account_id) => {
+            EvmContractSource::Mainnet => {
                 let mainnet_worker = workspaces::mainnet().await?;
-                worker.import_contract(&account_id, &mainnet_worker).transact().await?
+                let account_id = account.id();
+                worker.import_contract(account_id, &mainnet_worker).transact().await?
             }
         };
 
+        Self::deploy_and_init_inner(contract, deploy_config).await
+    }
+}
+
+impl EvmContract<Betanet> {
+    pub async fn deploy_and_init<P: AsRef<Path>>(
+        account: Account,
+        deploy_config: DeployConfig,
+        path: P,
+    ) -> Result<EvmContract<Betanet>> {
+        let contract = deploy_contract(path, account).await?;
+        Self::deploy_and_init_inner(contract, deploy_config).await
+    }
+}
+
+impl EvmContract<Testnet> {
+    pub async fn deploy_and_init<P: AsRef<Path>>(
+        account: Account,
+        deploy_config: DeployConfig,
+        path: P,
+    ) -> Result<EvmContract<Testnet>> {
+        let contract = deploy_contract(path, account).await?;
+        Self::deploy_and_init_inner(contract, deploy_config).await
+    }
+}
+
+impl EvmContract<Mainnet> {
+    pub async fn deploy_and_init<P: AsRef<Path>>(
+        account: Account,
+        deploy_config: DeployConfig,
+        path: P,
+    ) -> Result<EvmContract<Mainnet>> {
+        let contract = deploy_contract(path, account).await?;
+        Self::deploy_and_init_inner(contract, deploy_config).await
+    }
+}
+
+impl<N: Network + 'static> EvmContract<N> {
+    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract<N> {
+        EvmContract {
+            contract: contract.into(),
+            phantom: Default::default(),
+        }
+    }
+
+    async fn deploy_and_init_inner(contract: Contract, deploy_config: DeployConfig) -> Result<EvmContract<N>> {
         let new_args = NewCallArgs {
             chain_id: aurora_engine_types::types::u256_to_arr(&deploy_config.chain_id),
             // TODO: https://github.com/aurora-is-near/aurora-engine/issues/604, unwrap is safe here
             owner_id: aurora_engine_types::account_id::AccountId::from_str(
                 deploy_config.owner_id.as_str(),
             )
-            .unwrap(),
+                .unwrap(),
             bridge_prover_id: aurora_engine_types::account_id::AccountId::from_str(
                 deploy_config.prover_id.as_str(),
             )
-            .unwrap(),
+                .unwrap(),
             upgrade_delay_blocks: 1,
         };
         contract
@@ -193,7 +269,7 @@ impl EvmContract {
                 prover_account: aurora_engine_types::account_id::AccountId::from_str(
                     eth_prover_config.account_id.as_str(),
                 )
-                .unwrap(),
+                    .unwrap(),
                 eth_custodian_address: eth_prover_config.evm_custodian_address,
                 metadata: FungibleTokenMetadata::default(),
             };
@@ -205,13 +281,24 @@ impl EvmContract {
                 .into_result()?;
         }
 
-        Ok(EvmContract(contract))
+        Ok(EvmContract{
+            contract,
+            phantom: Default::default(),
+        })
+    }
+    
+    pub async fn from_secret_key<D: AsRef<str>>(id: D, sk: SecretKey, worker: &Worker<N>) -> Result<EvmContract<N>> {
+        let account_id = AccountId::from_str(id.as_ref())?;
+        Ok(EvmContract{
+            contract: Contract::from_secret_key(account_id, sk, worker),
+            phantom: Default::default(),
+        })
     }
 
-    pub async fn call_near(&self, function: &str, args: Vec<u8>) -> Result<ExecutionFinalResult> {
+    pub async fn call_near<F: AsRef<str>>(&self, function: F, args: Vec<u8>) -> Result<ExecutionFinalResult> {
         let execution_result = self
-            .0
-            .call(function)
+            .contract
+            .call(function.as_ref())
             .args(args)
             .max_gas()
             .transact()
@@ -221,8 +308,8 @@ impl EvmContract {
     }
 
     // TODO: improve view to be like call.
-    pub async fn view_near(&self, function: &str, args: Vec<u8>) -> ViewResultDetails {
-        self.0.view(function, args).await.unwrap() // TODO: fix error handling here
+    pub async fn view_near<F: AsRef<str>>(&self, function: F, args: Vec<u8>) -> ViewResultDetails {
+        self.contract.view(function.as_ref(), args).await.unwrap() // TODO: fix error handling here
     }
 
     // TODO: improve with making the args vec on method above
@@ -232,7 +319,7 @@ impl EvmContract {
         args: U,
     ) -> Result<ExecutionFinalResult> {
         let execution_result = self
-            .0
+            .contract
             .call(function)
             .max_gas()
             .args_borsh(args)
@@ -248,7 +335,7 @@ impl EvmContract {
         args: U,
     ) -> Result<ExecutionFinalResult> {
         let execution_result = self
-            .0
+            .contract
             .call(function)
             .max_gas()
             .args_json(args)
@@ -479,4 +566,9 @@ impl EvmContract {
             .json()?;
         Ok(res)
     }
+}
+
+async fn deploy_contract<P: AsRef<Path>>(path: P, account: Account) -> Result<Contract> {
+    let wasm = std::fs::read(path)?;
+    Ok(account.deploy(&wasm).await?.into_result()?)
 }
