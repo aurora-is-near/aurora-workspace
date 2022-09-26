@@ -1,4 +1,6 @@
-use std::io;
+use crate::result::ExecutionFailure;
+use std::fmt::{Display, Formatter};
+use std::{fmt, io};
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, thiserror::Error)]
@@ -15,6 +17,10 @@ pub enum ErrorKind {
     WorkspaceExecutionFailure(#[from] workspaces::result::ExecutionFailure),
     #[error(transparent)]
     Io(#[from] io::Error),
+    #[error(transparent)]
+    TxExecutionError(#[from] workspaces::error::TxExecutionError),
+    #[error(transparent)]
+    ExecutionFailure(#[from] ExecutionFailure),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -27,5 +33,13 @@ where
 {
     fn from(err: E) -> Self {
         Error(Box::new(ErrorKind::from(err)))
+    }
+}
+
+impl std::error::Error for ExecutionFailure {}
+
+impl Display for ExecutionFailure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }

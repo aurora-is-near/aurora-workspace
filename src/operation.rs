@@ -1,10 +1,10 @@
-use crate::impls::AuroraReturns;
 use crate::Result;
 use aurora_engine::parameters::{SubmitResult, WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
 use ethereum_types::Address;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
+use crate::result::ExecutionSuccess;
 
 macro_rules! impl_call_return  {
     ($(($name:ident, $return:ty, $fun:ident)),*) => {
@@ -22,26 +22,26 @@ macro_rules! impl_call_return  {
             }
 
             pub async fn transact(self) -> Result<$return> {
-                self.0.transact().await?.$fun()
+                ExecutionSuccess::$fun(self.0.transact().await?)
             }
         })*
     }
 }
 
 impl_call_return![
-    (CallDeployCode, SubmitResult, try_to_evm_result),
-    (CallDeployErc20Token, Address, try_to_address),
-    (CallEvm, SubmitResult, try_to_evm_result),
-    (CallSubmit, SubmitResult, try_to_evm_result),
-    (CallRegisterRelayer, (), try_to_empty),
-    (CallFtOnTransfer, (), try_to_empty),
-    (CallWithdraw, WithdrawResult, try_to_withdraw_result),
-    (CallDeposit, PromiseId, try_to_promise_id),
-    (CallFtTransfer, (), try_to_empty),
-    (CallFtTransferCall, PromiseId, try_to_promise_id),
-    (CallStorageDeposit, (), try_to_empty),
-    (CallStorageUnregister, (), try_to_empty),
-    (CallStorageWithdraw, (), try_to_empty)
+    (CallDeployCode, ExecutionSuccess<SubmitResult>, try_from_borsh),
+    (CallDeployErc20Token, ExecutionSuccess<Address>, try_from),
+    (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
+    (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
+    (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
+    (CallFtOnTransfer, ExecutionSuccess<()>, try_from),
+    (CallWithdraw, ExecutionSuccess<WithdrawResult>, try_from_borsh),
+    (CallDeposit, ExecutionSuccess<PromiseId>, try_from),
+    (CallFtTransfer, ExecutionSuccess<()>, try_from),
+    (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
+    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
+    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
+    (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

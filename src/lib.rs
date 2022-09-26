@@ -1,10 +1,10 @@
 mod contract;
 pub mod error;
-pub(crate) mod impls;
-pub(crate) mod operations;
+pub(crate) mod operation;
+pub(crate) mod result;
 
 pub use contract::{DeployConfig, EvmAccount, EvmContract};
-pub use operations::EvmCallTransaction;
+pub use operation::EvmCallTransaction;
 
 pub use aurora_engine::proof::Proof;
 

@@ -1,4 +1,4 @@
-use crate::operations::{
+use crate::operation::{
     Call, CallDeployCode, CallDeployErc20Token, CallDeposit, CallEvm, CallFtOnTransfer,
     CallFtTransfer, CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit,
     CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw,
@@ -12,7 +12,6 @@ use aurora_engine::parameters::{
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
 use ethereum_types::{Address, U256};
-use lazy_static::lazy_static;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -28,14 +27,14 @@ use workspaces::{Account, AccountId, Contract, Network, Worker};
 // pub const PROVER_ACCOUNT_ID: &str = "prover.test.near";
 // pub const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 
-lazy_static! {
-    static ref DEFAULT_AURORA_ACCOUNT_ID: AccountId =
-        AccountId::from_str("aurora.test.near").unwrap();
-    static ref DEFAULT_OWNER_ACCOUNT_ID: AccountId =
-        AccountId::from_str("owner.test.near").unwrap();
-    static ref DEFAULT_PROVER_ACCOUNT_ID: AccountId =
-        AccountId::from_str("prover.test.near").unwrap();
-}
+// lazy_static! {
+//     static ref DEFAULT_AURORA_ACCOUNT_ID: AccountId =
+//         AccountId::from_str("aurora.test.near").unwrap();
+//     static ref DEFAULT_OWNER_ACCOUNT_ID: AccountId =
+//         AccountId::from_str("owner.test.near").unwrap();
+//     static ref DEFAULT_PROVER_ACCOUNT_ID: AccountId =
+//         AccountId::from_str("prover.test.near").unwrap();
+// }
 
 #[derive(Debug, Clone)]
 enum AccountKind {
@@ -241,6 +240,7 @@ impl<U: EvmUser> EvmAccount<U> {
         CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(args))
     }
 
+    // TODO we are not NEP-145 compliant
     pub fn storage_deposit(
         &self,
         account_id: Option<AccountId>,
@@ -254,11 +254,13 @@ impl<U: EvmUser> EvmAccount<U> {
         CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
     }
 
+    // TODO we are not NEP-145 compliant
     pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister {
         let val = serde_json::json!({ "force": force });
         CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
     }
 
+    // TODO we are not NEP-145 compliant
     pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw {
         let args = StorageWithdrawCallArgs {
             amount: amount.map(aurora_engine_types::types::Yocto::new),

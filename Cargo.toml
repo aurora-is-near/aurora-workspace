@@ -9,11 +9,12 @@ edition = "2021"
 aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c",  features = ["impl-serde"] }
 aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c" }
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c",  features = ["impl-serde"] }
-borsh = { version = "0.9.3", default-features = false }
+borsh = { version = "0.9", default-features = false }
 ethereum-types = "0.13.1"
-lazy_static = "1.4.0"
-near-account-id = "0.14.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.85"
-thiserror = "1.0.35"
-workspaces = { git = "https://github.com/aurora-is-near/workspaces-rs.git", rev = "2b7d90b702057af85d6919ce6083bf87ff39afaf" }
+lazy_static = "1.4"
+near-account-id = { version = "0.14", features = ["borsh", "serde"] }
+near-primitives = "0.14"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+workspaces = { git = "https://github.com/aurora-is-near/workspaces-rs.git", rev = "23b66e8a5c08226efad97ea63b7a41cbe47814ad" }
