@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c",  features = ["impl-serde"] }
-aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c" }
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "eed827e81a5b88ad36c055faa16561190fe43c1c",  features = ["impl-serde"] }
+aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
+aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb" }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
 borsh = { version = "0.9", default-features = false }
+ethabi = {version = "17.2.0", optional = true }
 ethereum-types = "0.13.1"
 lazy_static = "1.4"
 near-account-id = { version = "0.14", features = ["borsh", "serde"] }
