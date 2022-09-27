@@ -1,21 +1,17 @@
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::Result;
-use aurora_engine::parameters::{SubmitResult, TransactionStatus, WithdrawResult, StorageBalance};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::parameters::{StorageBalance, SubmitResult, TransactionStatus, WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
-use ethabi::ParamType;
-#[cfg(feature = "ethabi")]
-use ethabi::Token;
-use ethereum_types::Address;
-use ethereum_types::{H256, U256};
+use ethabi::{ParamType, Token};
+use ethereum_types::{Address, H256, U256};
 use near_account_id::AccountId;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
-use workspaces::result::ViewResultDetails;
 
 macro_rules! impl_call_return  {
     ($(($name:ident, $return:ty, $fun:ident)),*) => {
@@ -63,15 +59,6 @@ impl_call_return![
     (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
 ];
 
-macro_rules! impl_view_return {
-    ($(($name:ident, $return:ty, $field:ident)),*) => {
-        $(pub struct $name {
-            pub $field: $return,
-            pub logs: Vec<String>,
-        })*
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Call {
     DeployCode,
@@ -110,250 +97,179 @@ impl AsRef<str> for Call {
     }
 }
 
-impl_view_return![
-    (ViewVersion, String, version),
-    (ViewOwner, AccountId, account_id),
-    (ViewBridgeProver, AccountId, account_id),
-    (ViewChainId, U256, chain_id),
-    (ViewUpgradeIndex, u64, upgrade_index),
-    (ViewPausedPrecompiles, u32, paused_flags),
-    (ViewBlockHash, H256, block_hash),
-    (ViewBalance, U256, balance),
-    (ViewNonce, U256, nonce),
-    (ViewStorage, H256, storage),
-    (ViewEvm, TransactionStatus, status),
-    (ViewIsProofUsed, bool, is_proof_used),
-    (ViewFtTotalSupply, u128, total_supply),
-    (ViewFtBalanceOf, u128, balance),
-    (ViewAddressBalance, U256, balance),
-    (ViewEthTotalSupply, U256, total_supply),
-    (ViewFtMetadata, FungibleTokenMetadata, metadata),
-    (ViewStorageBalanceOf, StorageBalance, balance)
-];
+pub struct ViewResultDetails<T> {
+    pub result: T,
+    pub logs: Vec<String>,
+}
 
-#[cfg(not(feature = "ethabi"))]
-impl_view_return![(ViewCode, Vec<u8>, code)];
-#[cfg(feature = "ethabi")]
-// TODO: Feature to support ethabi lib
-impl_view_return![(ViewCode, Vec<Token>, code)];
+// #[cfg(not(feature = "ethabi"))]
+// impl_view_return![(ViewCode, Vec<u8>, code)];
+// #[cfg(feature = "ethabi")]
+// impl_view_return![(ViewCode, Vec<Token>, code)];
 
-impl TryFrom<ViewResultDetails> for ViewVersion {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
-        Ok(ViewVersion {
-            version: String::from_utf8(view.result)?,
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        Ok(Self {
+            result: String::from_utf8(view.result)?,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewOwner {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<AccountId> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
-        Ok(ViewOwner {
-            account_id: AccountId::try_from_slice(view.result.as_slice())?,
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        Ok(Self {
+            result: AccountId::try_from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewBridgeProver {
-    type Error = Error;
-
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
-        Ok(ViewBridgeProver {
-            account_id: AccountId::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl From<ViewResultDetails> for ViewChainId {
-    fn from(view: ViewResultDetails) -> Self {
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<U256> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
-        ViewChainId {
-            chain_id: U256::from(buf),
+        Self {
+            result: U256::from(buf),
             logs: view.logs,
         }
     }
 }
 
-impl From<ViewResultDetails> for ViewUpgradeIndex {
-    fn from(view: ViewResultDetails) -> Self {
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u64> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
         let mut buf = [0u8; 8];
         buf.copy_from_slice(view.result.as_slice());
-        ViewUpgradeIndex {
-            upgrade_index: u64::from_le_bytes(buf),
+        Self {
+            result: u64::from_le_bytes(buf),
             logs: view.logs,
         }
     }
 }
 
 // TODO return this as bitflags.
-impl From<ViewResultDetails> for ViewPausedPrecompiles {
-    fn from(view: ViewResultDetails) -> Self {
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u32> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
         let mut buf = [0u8; 4];
         buf.copy_from_slice(view.result.as_slice());
-        ViewPausedPrecompiles {
-            paused_flags: u32::from_le_bytes(buf),
+        Self {
+            result: u32::from_le_bytes(buf),
             logs: view.logs,
         }
     }
 }
 
-impl From<ViewResultDetails> for ViewBlockHash {
-    fn from(view: ViewResultDetails) -> Self {
-        ViewBlockHash {
-            block_hash: H256::from_slice(view.result.as_slice()),
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<H256> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+        Self {
+            result: H256::from_slice(view.result.as_slice()),
             logs: view.logs,
         }
     }
 }
 
 #[cfg(not(feature = "ethabi"))]
-impl From<ViewResultDetails> for ViewCode {
-    fn from(view: ViewResultDetails) -> Self {
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<Vec<u8>> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
         Self {
-            code: view.result,
+            result: view.result,
             logs: view.logs,
         }
     }
 }
 
 #[cfg(feature = "ethabi")]
-impl ViewCode {
-    pub fn decode(types: &[ParamType], view: ViewResultDetails) -> Result<Self> {
+impl ViewResultDetails<Vec<Token>> {
+    pub fn decode(
+        types: &[ParamType],
+        view: workspaces::result::ViewResultDetails,
+    ) -> Result<Self> {
         Ok(Self {
-            code: ethabi::decode(types, &view.result)?,
+            result: ethabi::decode(types, &view.result)?,
             logs: view.logs,
         })
     }
 }
 
-impl From<ViewResultDetails> for ViewBalance {
-    fn from(view: ViewResultDetails) -> Self {
+impl ViewResultDetails<u128> {
+    pub(crate) fn from_u256(view: workspaces::result::ViewResultDetails) -> Self {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
+        let value = U256::from(buf);
         Self {
-            balance: U256::from(buf),
-            logs: view.logs,
+            result: value.as_u128(),
+            logs: vec![],
         }
     }
 }
 
-impl From<ViewResultDetails> for ViewNonce {
-    fn from(view: ViewResultDetails) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            nonce: U256::from(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<ViewResultDetails> for ViewStorage {
-    fn from(view: ViewResultDetails) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            storage: H256::from(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl TryFrom<ViewResultDetails> for ViewEvm {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<TransactionStatus> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
-        let status: TransactionStatus = TransactionStatus::try_from_slice(view.result.as_slice())?;
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: TransactionStatus = TransactionStatus::try_from_slice(view.result.as_slice())?;
         Ok(Self {
-            status,
+            result,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewIsProofUsed {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         let is_proof_used: bool = borsh::try_from_slice_with_schema(view.result.as_slice())?;
         Ok(Self {
-            is_proof_used,
+            result: is_proof_used,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewFtTotalSupply {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         let total_supply: u128 = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
-            total_supply,
+            result: total_supply,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewFtBalanceOf {
-    type Error = Error;
-
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
-        let balance = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            balance,
-            logs: view.logs,
-        })
-    }
-}
-
-impl From<ViewResultDetails> for ViewAddressBalance {
-    fn from(view: ViewResultDetails) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            balance: U256::from(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl TryFrom<ViewResultDetails> for ViewEthTotalSupply {
-    type Error = Error;
-
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
+impl ViewResultDetails<U256> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         let total_supply: Wei = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
-            total_supply: total_supply.raw(),
+            result: total_supply.raw(),
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewFtMetadata {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         Ok(Self {
-            metadata: serde_json::from_slice(view.result.as_slice())?,
+            result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }
 }
 
-impl TryFrom<ViewResultDetails> for ViewStorageBalanceOf {
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<StorageBalance> {
     type Error = Error;
 
-    fn try_from(view: ViewResultDetails) -> Result<ViewStorageBalanceOf> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         Ok(Self {
-            balance: serde_json::from_slice(view.result.as_slice())?,
+            result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }
@@ -380,7 +296,7 @@ pub enum View {
     EthTotalSupply,
     FtMetadata,
     StorageBalanceOf,
-    PausedFlags, // TODO
+    PausedFlags,     // TODO
     AccountsCounter, // TODO
     Erc20FromNep141, // TODO
 }
