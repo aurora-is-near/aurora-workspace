@@ -1,17 +1,17 @@
-use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20Token, CallDeposit, CallEvm, CallFtOnTransfer,
-    CallFtTransfer, CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit,
-    CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw,
-};
+use crate::operation::{Call, CallDeployCode, CallDeployErc20Token, CallDeposit, CallEvm, CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw, View, ViewAddressBalance, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode, ViewEthTotalSupply, ViewEvm, ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewIsProofUsed, ViewNonce, ViewOwner, ViewPausedPrecompiles, ViewStorage, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
-    DeployErc20TokenArgs, FunctionCallArgsV2, InitCallArgs, NEP141FtOnTransferArgs, NewCallArgs,
-    StorageDepositCallArgs, StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
+    DeployErc20TokenArgs, FunctionCallArgsV2, GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs,
+    NEP141FtOnTransferArgs, NewCallArgs, StorageDepositCallArgs, StorageWithdrawCallArgs,
+    TransferCallArgs, TransferCallCallArgs, ViewCallArgs,
 };
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
-use ethereum_types::{Address, U256};
+use borsh::BorshSerialize;
+#[cfg(feature = "ethabi")]
+use ethabi::ParamType;
+use ethereum_types::{Address, H256, U256};
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -138,7 +138,11 @@ impl<U: EvmUser> EvmAccount<U> {
         self.account.call(function)
     }
 
-    async fn view<F: AsRef<str>>(&self, function: &F, args: Vec<u8>) -> Result<ViewResultDetails> {
+    async fn near_view<F: AsRef<str>>(
+        &self,
+        function: &F,
+        args: Vec<u8>,
+    ) -> Result<ViewResultDetails> {
         self.account.view(function, args).await
     }
 
@@ -166,7 +170,7 @@ impl<U: EvmUser> EvmAccount<U> {
             value: buf,
             input,
         };
-        CallEvm(self.near_call(&Call::EvmCall).args_borsh(args))
+        CallEvm(self.near_call(&Call::Evm).args_borsh(args))
     }
 
     pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
@@ -266,6 +270,141 @@ impl<U: EvmUser> EvmAccount<U> {
             amount: amount.map(aurora_engine_types::types::Yocto::new),
         };
         CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
+    }
+
+    pub async fn version(&self) -> Result<ViewVersion> {
+        ViewVersion::try_from(self.near_view(&View::Version, vec![]).await?)
+    }
+
+    pub async fn owner(&self) -> Result<ViewOwner> {
+        ViewOwner::try_from(self.near_view(&View::Owner, vec![]).await?)
+    }
+
+    pub async fn bridge_prover(&self) -> Result<ViewBridgeProver> {
+        ViewBridgeProver::try_from(self.near_view(&View::BridgeProver, vec![]).await?)
+    }
+
+    pub async fn chain_id(&self) -> Result<ViewChainId> {
+        Ok(ViewChainId::from(
+            self.near_view(&View::ChainId, vec![]).await?,
+        ))
+    }
+
+    pub async fn upgrade_index(&self) -> Result<ViewUpgradeIndex> {
+        Ok(ViewUpgradeIndex::from(
+            self.near_view(&View::UpgradeIndex, vec![]).await?,
+        ))
+    }
+
+    pub async fn paused_precompiles(&self) -> Result<ViewPausedPrecompiles> {
+        Ok(ViewPausedPrecompiles::from(
+            self.near_view(&View::PausedPrecompiles, vec![]).await?,
+        ))
+    }
+
+    pub async fn block_hash(&self, block_height: u64) -> Result<ViewBlockHash> {
+        // TODO: check if this actually needs to be borsh. Should be equivalent.
+        let args = block_height.try_to_vec()?;
+        Ok(ViewBlockHash::from(
+            self.near_view(&View::BlockHash, args).await?,
+        ))
+    }
+
+    #[cfg(not(feature = "ethabi"))]
+    pub async fn code(&self, address: Address) -> Result<ViewCode> {
+        let address = aurora_engine_types::types::Address::new(address);
+        Ok(ViewCode::from(
+            self.near_view(&View::Code, address.try_to_vec()?).await?,
+        ))
+    }
+
+    #[cfg(feature = "ethabi")]
+    pub async fn code(&self, types: &[ParamType], address: Address) -> Result<ViewCode> {
+        let address = aurora_engine_types::types::Address::new(address);
+        ViewCode::decode(
+            types,
+            self.near_view(&View::Code, address.try_to_vec()?).await?,
+        )
+    }
+
+    pub async fn balance(&self, address: Address) -> Result<ViewBalance> {
+        Ok(ViewBalance::from(
+            self.near_view(&View::Balance, address.0.to_vec()).await?,
+        ))
+    }
+
+    pub async fn nonce(&self, address: Address) -> Result<ViewNonce> {
+        Ok(ViewNonce::from(
+            self.near_view(&View::Nonce, address.0.to_vec()).await?,
+        ))
+    }
+
+    pub async fn storage(&self, address: Address, key: H256) -> Result<ViewStorage> {
+        let args = GetStorageAtArgs {
+            address: aurora_engine_types::types::Address::new(address),
+            key: key.0,
+        };
+        Ok(ViewStorage::from(
+            self.near_view(&View::Storage, args.try_to_vec()?).await?,
+        ))
+    }
+
+    pub async fn view(
+        &self,
+        sender: Address,
+        address: Address,
+        amount: U256,
+        input: Vec<u8>,
+    ) -> Result<ViewEvm> {
+        let mut buf = [0u8; 32];
+        amount.to_big_endian(&mut buf);
+        let args = ViewCallArgs {
+            sender: aurora_engine_types::types::Address::new(sender),
+            address: aurora_engine_types::types::Address::new(address),
+            amount: buf,
+            input,
+        };
+        ViewEvm::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
+    }
+
+    pub async fn is_proof_used(&self, proof: Proof) -> Result<ViewIsProofUsed> {
+        let args = IsUsedProofCallArgs { proof };
+        ViewIsProofUsed::try_from(
+            self.near_view(&View::IsProofUsed, args.try_to_vec()?)
+                .await?,
+        )
+    }
+
+    pub async fn ft_total_supply(&self) -> Result<ViewFtTotalSupply> {
+        ViewFtTotalSupply::try_from(self.near_view(&View::FtTotalSupply, vec![]).await?)
+    }
+
+    pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<ViewFtBalanceOf> {
+        let args = serde_json::to_string(&account_id)?;
+        ViewFtBalanceOf::try_from(
+            self.near_view(&View::FtBalanceOf, args.as_bytes().to_vec())
+                .await?,
+        )
+    }
+
+    pub async fn ft_metadata(&self) -> Result<ViewFtMetadata> {
+        ViewFtMetadata::try_from(self.near_view(&View::FtMetadata,  vec![]).await?)
+    }
+
+    pub async fn eth_balance_of(&self, address: Address) -> Result<ViewAddressBalance> {
+        Ok(ViewAddressBalance::from(
+            self.near_view(&View::BalanceOfEth, address.0.to_vec())
+                .await?,
+        ))
+    }
+
+    pub async fn eth_total_supply(&self) -> Result<ViewEthTotalSupply> {
+        ViewEthTotalSupply::try_from(self.near_view(&View::EthTotalSupply, vec![]).await?)
+    }
+
+    pub async fn storage_balance_of(&self, account_id: AccountId) -> Result<ViewStorageBalanceOf> {
+        let args = serde_json::to_string(&account_id)?;
+        ViewStorageBalanceOf::try_from(self.near_view(&View::StorageBalanceOf, args.as_bytes().to_vec()).await?)
     }
 }
 

@@ -1,14 +1,14 @@
+use crate::error::Error;
 use crate::Result;
-use borsh::BorshDeserialize;
-use std::fmt::Debug;
 use aurora_engine_sdk::promise::PromiseId;
+use borsh::BorshDeserialize;
 use ethereum_types::Address;
 use near_account_id::AccountId;
+use serde::de::DeserializeOwned;
+use std::fmt::Debug;
 use workspaces::error::TxExecutionError;
 use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::types::Gas;
-use serde::de::DeserializeOwned;
-use crate::error::Error;
 
 pub type ExecutionSuccess<T> = ExecutionResult<T>;
 
@@ -23,10 +23,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseId> {
             buf.copy_from_slice(&bytes);
             PromiseId::new(u64::from_le_bytes(buf))
         };
-        Ok(ExecutionSuccess{
-            inner,
-            value,
-        })
+        Ok(ExecutionSuccess { inner, value })
     }
 }
 
@@ -35,10 +32,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<()> {
 
     fn try_from(result: ExecutionFinalResult) -> Result<Self> {
         let inner = result.into_result()?;
-        Ok(ExecutionSuccess {
-            inner,
-            value: (),
-        })
+        Ok(ExecutionSuccess { inner, value: () })
     }
 }
 
@@ -48,10 +42,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<AccountId> {
     fn try_from(result: ExecutionFinalResult) -> Result<Self> {
         let inner = result.into_result()?;
         let value: AccountId = AccountId::try_from_slice(&inner.raw_bytes()?)?;
-        Ok(ExecutionSuccess {
-            inner,
-            value,
-        })
+        Ok(ExecutionSuccess { inner, value })
     }
 }
 
@@ -61,10 +52,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<Address> {
     fn try_from(result: ExecutionFinalResult) -> Result<Self> {
         let inner = result.into_result()?;
         let value: Address = Address::from_slice(&inner.raw_bytes()?);
-        Ok(ExecutionSuccess {
-            inner,
-            value,
-        })
+        Ok(ExecutionSuccess { inner, value })
     }
 }
 

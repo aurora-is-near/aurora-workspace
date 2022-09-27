@@ -21,6 +21,11 @@ pub enum ErrorKind {
     TxExecutionError(#[from] workspaces::error::TxExecutionError),
     #[error(transparent)]
     ExecutionFailure(#[from] ExecutionFailure),
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+    #[cfg(feature = "ethabi")]
+    #[error(transparent)]
+    EthAbi(#[from] ethabi::Error),
 }
 
 #[derive(Debug, thiserror::Error)]
