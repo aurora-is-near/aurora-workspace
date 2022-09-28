@@ -18,9 +18,14 @@ near-primitives = "0.14"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
-workspaces = { git = "https://github.com/aurora-is-near/workspaces-rs.git", rev = "23b66e8a5c08226efad97ea63b7a41cbe47814ad" }
+workspaces = { git = "https://github.com/near/workspaces-rs.git", rev = "5311791a5a1654d1ba45fd318ed967abce25999d" }
+
+[dev-dependencies]
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
 
 [features]
 default = []
+mock = []
 eth-primitives = []
 full-serde = []

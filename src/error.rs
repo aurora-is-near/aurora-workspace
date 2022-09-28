@@ -1,4 +1,4 @@
-use crate::result::ExecutionFailure;
+// use crate::result::ExecutionFailure;
 use std::fmt::{Display, Formatter};
 use std::{fmt, io};
 
@@ -17,10 +17,8 @@ pub enum ErrorKind {
     WorkspaceExecutionFailure(#[from] workspaces::result::ExecutionFailure),
     #[error(transparent)]
     Io(#[from] io::Error),
-    #[error(transparent)]
-    TxExecutionError(#[from] workspaces::error::TxExecutionError),
-    #[error(transparent)]
-    ExecutionFailure(#[from] ExecutionFailure),
+    // #[error(transparent)]
+    // ExecutionFailure(#[from] ExecutionFailure),
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
     #[cfg(feature = "ethabi")]
@@ -41,10 +39,10 @@ where
     }
 }
 
-impl std::error::Error for ExecutionFailure {}
+// impl std::error::Error for ExecutionFailure {}
 
-impl Display for ExecutionFailure {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
+// impl Display for ExecutionFailure {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.value)
+//     }
+// }

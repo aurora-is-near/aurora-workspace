@@ -7,7 +7,7 @@ use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
     DeployErc20TokenArgs, FunctionCallArgsV2, GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs,
-    NEP141FtOnTransferArgs, NewCallArgs, StorageBalance, StorageDepositCallArgs,
+    NEP141FtOnTransferArgs, StorageBalance, StorageDepositCallArgs,
     StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, TransferCallCallArgs,
     ViewCallArgs,
 };
@@ -15,13 +15,12 @@ use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
-use ethabi::ParamType;
+use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
 use std::str::FromStr;
-use workspaces::network::{Betanet, Mainnet, Sandbox, Testnet};
 use workspaces::types::SecretKey;
 use workspaces::{Account, AccountId, Contract, Network, Worker};
 
@@ -50,7 +49,7 @@ enum AccountKind {
 }
 
 impl AccountKind {
-    fn call<'a, F: AsRef<str>>(&'a self, function: &'a F) -> EvmCallTransaction {
+    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction {
         let transaction = match self {
             AccountKind::Account { contract_id, inner } => {
                 inner.call(contract_id, function.as_ref())
@@ -82,24 +81,58 @@ impl AccountKind {
 }
 
 // TODO(engine): Self should be able to call owner functions.
-pub trait EvmSelf: EvmUser {}
+pub trait PrivateFunctions: UserFunctions {}
 
-pub trait EvmOwner: EvmUser {}
+pub trait OwnerFunctions: UserFunctions {}
 
-pub trait EvmProver: EvmUser {}
+pub trait ProverFunctions: UserFunctions {}
 
-pub trait EvmUser: private::Sealed {}
+pub trait UserFunctions: private::Sealed {}
 
-pub trait EvmTester {}
+pub trait Tester {}
 
 #[derive(Debug, Clone)]
-pub struct EvmAccount<U: EvmUser> {
+pub struct Private;
+
+impl PrivateFunctions for Private {}
+
+impl UserFunctions for Private {}
+
+impl private::Sealed for Private {}
+
+#[derive(Debug, Clone)]
+pub struct Owner;
+
+impl OwnerFunctions for Owner {}
+
+impl UserFunctions for Owner {}
+
+impl private::Sealed for Owner {}
+
+#[derive(Debug, Clone)]
+pub struct Prover;
+
+impl ProverFunctions for Prover {}
+
+impl UserFunctions for Prover {}
+
+impl private::Sealed for Prover {}
+
+#[derive(Debug, Clone)]
+pub struct User;
+
+impl UserFunctions for User {}
+
+impl private::Sealed for User {}
+
+#[derive(Debug, Clone)]
+pub struct EvmAccount<U> {
     account: AccountKind,
     phantom: PhantomData<U>,
 }
 
-impl<U: EvmSelf> EvmAccount<U> {
-    pub fn with_self(contract: Contract) -> EvmAccount<U> {
+impl EvmAccount<Private> {
+    pub fn with_self(contract: Contract) -> EvmAccount<Private> {
         Self {
             account: AccountKind::Contract(contract),
             phantom: PhantomData::default(),
@@ -107,8 +140,8 @@ impl<U: EvmSelf> EvmAccount<U> {
     }
 }
 
-impl<U: EvmOwner> EvmAccount<U> {
-    pub fn with_owner(account: Account, contract_id: AccountId) -> EvmAccount<U> {
+impl EvmAccount<Owner> {
+    pub fn with_owner(account: Account, contract_id: AccountId) -> EvmAccount<Owner> {
         Self {
             account: AccountKind::Account {
                 contract_id,
@@ -119,8 +152,8 @@ impl<U: EvmOwner> EvmAccount<U> {
     }
 }
 
-impl<U: EvmProver> EvmAccount<U> {
-    pub fn with_prover(account: Account, contract_id: AccountId) -> EvmAccount<U> {
+impl EvmAccount<Prover> {
+    pub fn with_prover(account: Account, contract_id: AccountId) -> EvmAccount<Prover> {
         Self {
             account: AccountKind::Account {
                 contract_id,
@@ -131,8 +164,8 @@ impl<U: EvmProver> EvmAccount<U> {
     }
 }
 
-impl<U: EvmUser> EvmAccount<U> {
-    pub async fn new(account: Account, contract_id: AccountId) -> EvmAccount<U> {
+impl EvmAccount<User> {
+    pub async fn new(account: Account, contract_id: AccountId) -> EvmAccount<User> {
         Self {
             account: AccountKind::Account {
                 contract_id,
@@ -141,8 +174,10 @@ impl<U: EvmUser> EvmAccount<U> {
             phantom: PhantomData::default(),
         }
     }
+}
 
-    fn near_call<'a, F: AsRef<str>>(&'a self, function: &'a F) -> EvmCallTransaction {
+impl<U> EvmAccount<U> {
+    fn near_call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction {
         self.account.call(function)
     }
 
@@ -331,9 +366,9 @@ impl<U: EvmUser> EvmAccount<U> {
     }
 
     #[cfg(feature = "ethabi")]
-    pub async fn code(&self, types: &[ParamType], address: Address) -> Result<ViewCode> {
+    pub async fn code(&self, types: &[ParamType], address: Address) -> Result<ViewResultDetails<Vec<Token>>> {
         let address = aurora_engine_types::types::Address::new(address);
-        ViewCode::decode(
+        ViewResultDetails::decode(
             types,
             self.near_view(&View::Code, address.try_to_vec()?).await?,
         )
@@ -448,12 +483,18 @@ pub enum EvmContractSource<P: AsRef<Path>> {
     Mainnet,
 }
 
+impl<P: AsRef<Path>> From<P> for EvmContractSource<P> {
+    fn from(path: P) -> Self {
+        EvmContractSource::Dir(path)
+    }
+}
+
 pub struct EthProverConfig {
     pub account_id: AccountId,
     pub evm_custodian_address: String,
 }
 
-pub struct DeployConfig {
+pub struct InitConfig {
     /// The owner ID of the contract.
     pub owner_id: AccountId,
     /// The prover ID of the contract.
@@ -497,145 +538,154 @@ pub struct DeployConfig {
 /// This type *can not* implement `Default` as the deployment may not already exist. Likewise, the
 /// library does not provide a ready built EVM binary to be deployed. This must be specified.
 #[derive(Debug, Clone)]
-pub struct EvmContract<N: Network + 'static, U: EvmSelf> {
-    contract: EvmAccount<U>,
-    phantom: PhantomData<N>,
+pub struct EvmContract {
+    contract: EvmAccount<Private>,
 }
 
-impl<N: Network + 'static, U: EvmSelf> AsRef<EvmAccount<U>> for EvmContract<N, U> {
-    fn as_ref(&self) -> &EvmAccount<U> {
+impl AsRef<EvmAccount<Private>> for EvmContract {
+    fn as_ref(&self) -> &EvmAccount<Private> {
         &self.contract
     }
 }
 
-impl<N: Network + 'static, U: EvmSelf> AsMut<EvmAccount<U>> for EvmContract<N, U> {
-    fn as_mut(&mut self) -> &mut EvmAccount<U> {
+impl AsMut<EvmAccount<Private>> for EvmContract {
+    fn as_mut(&mut self) -> &mut EvmAccount<Private> {
         &mut self.contract
     }
 }
 
-impl<N: Network + 'static, U: EvmSelf> Borrow<EvmAccount<U>> for EvmContract<N, U> {
-    fn borrow(&self) -> &EvmAccount<U> {
+impl Borrow<EvmAccount<Private>> for EvmContract {
+    fn borrow(&self) -> &EvmAccount<Private> {
         &self.contract
     }
 }
 
-impl<N: Network + 'static, U: EvmSelf> BorrowMut<EvmAccount<U>> for EvmContract<N, U> {
-    fn borrow_mut(&mut self) -> &mut EvmAccount<U> {
+impl BorrowMut<EvmAccount<Private>> for EvmContract {
+    fn borrow_mut(&mut self) -> &mut EvmAccount<Private> {
         &mut self.contract
     }
 }
 
 // TODO have another PhantomData (maybe) which will note if its the public, owner, etc.
-impl<N: Network + 'static, U: EvmSelf> From<Contract> for EvmContract<N, U> {
+impl From<Contract> for EvmContract {
     fn from(contract: Contract) -> Self {
         EvmContract {
             contract: EvmAccount::with_self(contract),
-            phantom: Default::default(),
         }
     }
 }
 
-impl<U: EvmSelf> EvmContract<Sandbox, U> {
-    pub async fn deploy_and_init<P: AsRef<Path>>(
-        account: Account,
-        deploy_config: DeployConfig,
-        source: EvmContractSource<P>,
-        worker: &Worker<Sandbox>,
-    ) -> Result<EvmContract<Sandbox, U>> {
-        let contract = match source {
-            EvmContractSource::Dir(path) => {
-                let wasm = std::fs::read(path)?;
-                account.deploy(&wasm).await?.into_result()?
-            }
-            EvmContractSource::Testnet => {
-                let testnet_worker = workspaces::testnet().await?;
-                let account_id = account.id();
-                worker
-                    .import_contract(account_id, &testnet_worker)
-                    .transact()
-                    .await?
-            }
-            EvmContractSource::Mainnet => {
-                let mainnet_worker = workspaces::mainnet().await?;
-                let account_id = account.id();
-                worker
-                    .import_contract(account_id, &mainnet_worker)
-                    .transact()
-                    .await?
-            }
-        };
+// impl<U: EvmSelf> EvmContract<U> {
+//     pub async fn deploy_and_init_sandbox<P: AsRef<Path>>(
+//         account: Account,
+//         deploy_config: InitConfig,
+//         source: EvmContractSource<P>,
+//         worker: &Worker<Sandbox>,
+//     ) -> Result<EvmContract<U>> {
+//         let contract = match source {
+//             EvmContractSource::Dir(path) => {
+//                 let wasm = std::fs::read(path)?;
+//                 account.deploy(&wasm).await?.into_result()?
+//             }
+//             EvmContractSource::Testnet => {
+//                 let testnet_worker = workspaces::testnet().await?;
+//                 let account_id = account.id();
+//                 worker
+//                     .import_contract(account_id, &testnet_worker)
+//                     .transact()
+//                     .await?
+//             }
+//             EvmContractSource::Mainnet => {
+//                 let mainnet_worker = workspaces::mainnet().await?;
+//                 let account_id = account.id();
+//                 worker
+//                     .import_contract(account_id, &mainnet_worker)
+//                     .transact()
+//                     .await?
+//             }
+//         };
+//
+//         Self::deploy_and_init_inner(contract, deploy_config).await
+//     }
+// }
 
-        Self::deploy_and_init_inner(contract, deploy_config).await
-    }
-}
+// impl<U: EvmSelf> EvmContract<U> {
+//     pub async fn deploy_and_init<P: AsRef<Path>>(
+//         account: Account,
+//         deploy_config: DeployConfig,
+//         path: P,
+//     ) -> Result<EvmContract<U>> {
+//         let contract = deploy_contract(path, account).await?;
+//         Self::deploy_and_init_inner(contract, deploy_config).await
+//     }
+// }
+//
+// impl<U: EvmSelf> EvmContract<U> {
+//     pub async fn deploy_and_init<P: AsRef<Path>>(
+//         account: Account,
+//         deploy_config: DeployConfig,
+//         path: P,
+//     ) -> Result<EvmContract<U>> {
+//         let contract = deploy_contract(path, account).await?;
+//         Self::deploy_and_init_inner(contract, deploy_config).await
+//     }
+// }
+//
+// impl<U: EvmSelf> EvmContract<U> {
+//     pub async fn deploy_and_init<P: AsRef<Path>>(
+//         account: Account,
+//         deploy_config: DeployConfig,
+//         path: P,
+//     ) -> Result<EvmContract<U>> {
+//         let contract = deploy_contract(path, account).await?;
+//         Self::deploy_and_init_inner(contract, deploy_config).await
+//     }
+// }
 
-impl<U: EvmSelf> EvmContract<Betanet, U> {
-    pub async fn deploy_and_init<P: AsRef<Path>>(
-        account: Account,
-        deploy_config: DeployConfig,
-        path: P,
-    ) -> Result<EvmContract<Betanet, U>> {
-        let contract = deploy_contract(path, account).await?;
-        Self::deploy_and_init_inner(contract, deploy_config).await
-    }
-}
-
-impl<U: EvmSelf> EvmContract<Testnet, U> {
-    pub async fn deploy_and_init<P: AsRef<Path>>(
-        account: Account,
-        deploy_config: DeployConfig,
-        path: P,
-    ) -> Result<EvmContract<Testnet, U>> {
-        let contract = deploy_contract(path, account).await?;
-        Self::deploy_and_init_inner(contract, deploy_config).await
-    }
-}
-
-impl<U: EvmSelf> EvmContract<Mainnet, U> {
-    pub async fn deploy_and_init<P: AsRef<Path>>(
-        account: Account,
-        deploy_config: DeployConfig,
-        path: P,
-    ) -> Result<EvmContract<Mainnet, U>> {
-        let contract = deploy_contract(path, account).await?;
-        Self::deploy_and_init_inner(contract, deploy_config).await
-    }
-}
-
-impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
-    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract<N, U> {
+impl EvmContract {
+    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract {
         EvmContract {
             contract: EvmAccount::with_self(contract.into()),
-            phantom: Default::default(),
         }
     }
 
-    async fn deploy_and_init_inner(
-        contract: Contract,
-        deploy_config: DeployConfig,
-    ) -> Result<EvmContract<N, U>> {
-        let new_args = NewCallArgs {
-            chain_id: aurora_engine_types::types::u256_to_arr(&deploy_config.chain_id),
+    pub async fn deploy_and_init(account: Account, init_config: InitConfig, wasm: Vec<u8>) -> Result<EvmContract> {
+        let contract = Self::deploy(account, wasm).await?;
+        contract.init(init_config).await?;
+        Ok(contract)
+    }
+
+    pub async fn deploy(account: Account, wasm: Vec<u8>) -> Result<EvmContract> {
+        let contract = account.deploy(&wasm).await?.into_result()?;
+        Ok(EvmContract { contract: EvmAccount::with_self(contract) })
+    }
+
+    pub async fn init(
+        &self,
+        init_config: InitConfig,
+    ) -> Result<()> {
+        use crate::input::NewInput;
+
+        let chain_id = {
+            let mut buf = [0u8; 32];
+            init_config.chain_id.to_big_endian(&mut buf);
+            buf
+        };
+        let new_args = NewInput {
+            chain_id,
             // TODO: https://github.com/aurora-is-near/aurora-engine/issues/604, unwrap is safe here
-            owner_id: aurora_engine_types::account_id::AccountId::from_str(
-                deploy_config.owner_id.as_str(),
-            )
-            .unwrap(),
-            bridge_prover_id: aurora_engine_types::account_id::AccountId::from_str(
-                deploy_config.prover_id.as_str(),
-            )
-            .unwrap(),
+            owner_id: init_config.owner_id,
+            bridge_prover_id: init_config.prover_id,
             upgrade_delay_blocks: 1,
         };
-        contract
-            .call("new")
+        self.contract
+            .near_call("new")
             .args_borsh(new_args)
             .transact()
             .await?
             .into_result()?;
 
-        if let Some(eth_prover_config) = deploy_config.eth_prover_config {
+        if let Some(eth_prover_config) = init_config.eth_prover_config {
             let new_eth_connector_args = InitCallArgs {
                 prover_account: aurora_engine_types::account_id::AccountId::from_str(
                     eth_prover_config.account_id.as_str(),
@@ -644,41 +694,32 @@ impl<N: Network + 'static, U: EvmSelf> EvmContract<N, U> {
                 eth_custodian_address: eth_prover_config.evm_custodian_address,
                 metadata: FungibleTokenMetadata::default(),
             };
-            contract
-                .call("new_eth_connector")
+            self.contract
+                .near_call("new_eth_connector")
                 .args_borsh(new_eth_connector_args)
                 .transact()
                 .await?
                 .into_result()?;
         }
 
-        Ok(EvmContract {
-            contract: EvmAccount::with_self(contract),
-            phantom: Default::default(),
-        })
+        Ok(())
     }
 
-    pub fn from_secret_key<D: AsRef<str>>(
+    pub fn from_secret_key<N: Network + 'static, D: AsRef<str>>(
         id: D,
         sk: SecretKey,
         worker: &Worker<N>,
-    ) -> Result<EvmContract<N, U>> {
+    ) -> Result<EvmContract> {
         let account_id = AccountId::from_str(id.as_ref())?;
         let contract = Contract::from_secret_key(account_id, sk, worker);
         Ok(EvmContract {
             contract: EvmAccount::with_self(contract),
-            phantom: Default::default(),
         })
     }
 
-    pub fn as_account(&self) -> &EvmAccount<U> {
+    pub fn as_account(&self) -> &EvmAccount<Private> {
         &self.contract
     }
-}
-
-async fn deploy_contract<P: AsRef<Path>>(path: P, account: Account) -> Result<Contract> {
-    let wasm = std::fs::read(path)?;
-    Ok(account.deploy(&wasm).await?.into_result()?)
 }
 
 mod private {
