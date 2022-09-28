@@ -6,7 +6,6 @@ use ethereum_types::Address;
 use near_account_id::AccountId;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
-use workspaces::error::TxExecutionError;
 use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::types::Gas;
 
@@ -82,7 +81,7 @@ impl<T: DeserializeOwned> ExecutionSuccess<T> {
     }
 }
 
-pub type ExecutionFailure = ExecutionResult<TxExecutionError>;
+// pub type ExecutionFailure = ExecutionResult<TxExecutionError>;
 
 #[derive(Debug)]
 pub struct ExecutionResult<T> {

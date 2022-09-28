@@ -102,11 +102,6 @@ pub struct ViewResultDetails<T> {
     pub logs: Vec<String>,
 }
 
-// #[cfg(not(feature = "ethabi"))]
-// impl_view_return![(ViewCode, Vec<u8>, code)];
-// #[cfg(feature = "ethabi")]
-// impl_view_return![(ViewCode, Vec<Token>, code)];
-
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String> {
     type Error = Error;
 
