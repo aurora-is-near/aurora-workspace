@@ -17,8 +17,6 @@ pub enum ErrorKind {
     WorkspaceExecutionFailure(#[from] workspaces::result::ExecutionFailure),
     #[error(transparent)]
     Io(#[from] io::Error),
-    // #[error(transparent)]
-    // ExecutionFailure(#[from] ExecutionFailure),
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
     #[cfg(feature = "ethabi")]
@@ -38,11 +36,3 @@ where
         Error(Box::new(ErrorKind::from(err)))
     }
 }
-
-// impl std::error::Error for ExecutionFailure {}
-
-// impl Display for ExecutionFailure {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-//         write!(f, "{}", self.value)
-//     }
-// }

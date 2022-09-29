@@ -1,0 +1,17 @@
+[package]
+name = "aurora-workspace-types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
+ethabi = "17.2.0"
+ethereum-types = "0.13.1"
+near-account-id = { version = "0.14", features = ["borsh", "serde"] }
+near-sdk = "4.0"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+hex = "0.4.3"

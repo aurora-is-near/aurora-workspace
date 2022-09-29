@@ -474,7 +474,7 @@ impl<U> EvmAccount<U> {
 }
 
 /// A collection of sources where you can get the contract.
-pub enum EvmContractSource<P: AsRef<Path>> {
+pub enum ContractSource<P: AsRef<Path>> {
     /// A path to the file containing the contract binary.
     Dir(P),
     /// Source the contract binary from NEAR testnet.
@@ -483,15 +483,26 @@ pub enum EvmContractSource<P: AsRef<Path>> {
     Mainnet,
 }
 
-impl<P: AsRef<Path>> From<P> for EvmContractSource<P> {
+impl<P: AsRef<Path>> From<P> for ContractSource<P> {
     fn from(path: P) -> Self {
-        EvmContractSource::Dir(path)
+        ContractSource::Dir(path)
     }
 }
 
 pub struct EthProverConfig {
     pub account_id: AccountId,
     pub evm_custodian_address: String,
+    pub metadata: FungibleTokenMetadata,
+}
+
+impl Default for EthProverConfig {
+    fn default() -> Self {
+        Self {
+            account_id: AccountId::from_str("eth-prover.test.near").expect("Ethereum prover ID somehow failed"),
+            evm_custodian_address: String::from("096DE9C2B8A5B8c22cEe3289B101f6960d68E51E"),
+            metadata: FungibleTokenMetadata::default(),
+        }
+    }
 }
 
 pub struct InitConfig {
@@ -503,6 +514,17 @@ pub struct InitConfig {
     pub eth_prover_config: Option<EthProverConfig>,
     /// The Ethereum chain ID.
     pub chain_id: U256,
+}
+
+impl Default for InitConfig {
+    fn default() -> Self {
+        Self {
+            owner_id: AccountId::from_str("owner.test.near").expect("Account ID somehow failed"),
+            prover_id: AccountId::from_str("prover.test.near").expect("Prover ID somehow failed"),
+            eth_prover_config: Some(EthProverConfig::default()),
+            chain_id: U256::from(1313161556),
+        }
+    }
 }
 
 // TODO: Put all parameters per input, not as the struct args!
@@ -575,75 +597,8 @@ impl From<Contract> for EvmContract {
     }
 }
 
-// impl<U: EvmSelf> EvmContract<U> {
-//     pub async fn deploy_and_init_sandbox<P: AsRef<Path>>(
-//         account: Account,
-//         deploy_config: InitConfig,
-//         source: EvmContractSource<P>,
-//         worker: &Worker<Sandbox>,
-//     ) -> Result<EvmContract<U>> {
-//         let contract = match source {
-//             EvmContractSource::Dir(path) => {
-//                 let wasm = std::fs::read(path)?;
-//                 account.deploy(&wasm).await?.into_result()?
-//             }
-//             EvmContractSource::Testnet => {
-//                 let testnet_worker = workspaces::testnet().await?;
-//                 let account_id = account.id();
-//                 worker
-//                     .import_contract(account_id, &testnet_worker)
-//                     .transact()
-//                     .await?
-//             }
-//             EvmContractSource::Mainnet => {
-//                 let mainnet_worker = workspaces::mainnet().await?;
-//                 let account_id = account.id();
-//                 worker
-//                     .import_contract(account_id, &mainnet_worker)
-//                     .transact()
-//                     .await?
-//             }
-//         };
-//
-//         Self::deploy_and_init_inner(contract, deploy_config).await
-//     }
-// }
-
-// impl<U: EvmSelf> EvmContract<U> {
-//     pub async fn deploy_and_init<P: AsRef<Path>>(
-//         account: Account,
-//         deploy_config: DeployConfig,
-//         path: P,
-//     ) -> Result<EvmContract<U>> {
-//         let contract = deploy_contract(path, account).await?;
-//         Self::deploy_and_init_inner(contract, deploy_config).await
-//     }
-// }
-//
-// impl<U: EvmSelf> EvmContract<U> {
-//     pub async fn deploy_and_init<P: AsRef<Path>>(
-//         account: Account,
-//         deploy_config: DeployConfig,
-//         path: P,
-//     ) -> Result<EvmContract<U>> {
-//         let contract = deploy_contract(path, account).await?;
-//         Self::deploy_and_init_inner(contract, deploy_config).await
-//     }
-// }
-//
-// impl<U: EvmSelf> EvmContract<U> {
-//     pub async fn deploy_and_init<P: AsRef<Path>>(
-//         account: Account,
-//         deploy_config: DeployConfig,
-//         path: P,
-//     ) -> Result<EvmContract<U>> {
-//         let contract = deploy_contract(path, account).await?;
-//         Self::deploy_and_init_inner(contract, deploy_config).await
-//     }
-// }
-
 impl EvmContract {
-    pub async fn new<C: Into<Contract>>(contract: C) -> EvmContract {
+    pub fn new<C: Into<Contract>>(contract: C) -> EvmContract {
         EvmContract {
             contract: EvmAccount::with_self(contract.into()),
         }
@@ -664,7 +619,7 @@ impl EvmContract {
         &self,
         init_config: InitConfig,
     ) -> Result<()> {
-        use crate::input::NewInput;
+        use crate::types::input::NewInput;
 
         let chain_id = {
             let mut buf = [0u8; 32];
@@ -680,7 +635,7 @@ impl EvmContract {
         };
         self.contract
             .near_call("new")
-            .args_borsh(new_args)
+            .args_json(new_args)
             .transact()
             .await?
             .into_result()?;

@@ -1,31 +1,8 @@
-[package]
-name = "aurora-workspace"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
-aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb" }
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
-borsh = { version = "0.9", default-features = false }
-ethabi = { version = "17.2.0", optional = true }
-ethereum-types = { version = "0.13.1" }
-lazy_static = "1.4"
-near-account-id = { version = "0.14", features = ["borsh", "serde"] }
-near-primitives = "0.14"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-thiserror = "1"
-workspaces = { git = "https://github.com/near/workspaces-rs.git", rev = "5311791a5a1654d1ba45fd318ed967abce25999d" }
-
-[dev-dependencies]
-anyhow = "1"
-tokio = { version = "1", features = ["full"] }
-
-[features]
-default = []
-mock = []
-eth-primitives = []
-full-serde = []
+[workspace]
+members = [
+    "workspace",
+    "workspace-types",
+]
+exclude = [
+    "res/mock_evm",
+]
