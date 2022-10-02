@@ -69,4 +69,9 @@ impl MockEvmContract {
     pub fn submit(&mut self, #[serializer(borsh)] _input: Raw) -> SubmitResult {
         dummy_submit_result()
     }
+
+    #[result_serializer(borsh)]
+    pub fn register_relayer(&mut self, #[serializer(borsh)] input: Raw) {
+        assert_eq!(input.0.len(), 20);
+    }
 }

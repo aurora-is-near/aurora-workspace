@@ -90,3 +90,19 @@ async fn test_submit() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_register_relayer() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+
+    contract
+        .as_account()
+        .register_relayer(Address::from([1u8; 20]))
+        .transact()
+        .await?
+        .into_value();
+
+    // Nothing to expect here...
+
+    Ok(())
+}

@@ -13,7 +13,6 @@ aurora-workspace-types = { path = "../workspace-types" }
 borsh = { version = "0.9", default-features = false }
 ethabi = { version = "17.2.0", optional = true }
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
-lazy_static = "1.4"
 near-primitives = "0.14"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -24,6 +23,7 @@ workspaces = { git = "https://github.com/near/workspaces-rs.git", rev = "5311791
 aurora-workspace = { path = ".", features = ["mock"] }
 anyhow = "1"
 hex = "0.4.3"
+lazy_static = "1.4"
 tokio = { version = "1" }
 
 [features]
