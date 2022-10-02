@@ -12,7 +12,7 @@ use aurora_engine::parameters::{
 };
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
-use aurora_workspace_types::input::DeployErc20Input;
+use aurora_workspace_types::input::{CallInput, DeployErc20Input};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
@@ -203,9 +203,8 @@ impl<U> EvmAccount<U> {
         let value: U256 = amount.into();
         let mut buf = [0u8; 32];
         value.to_big_endian(&mut buf);
-        let args = FunctionCallArgsV2 {
-            contract: aurora_engine_types::types::Address::try_from_slice(contract.as_bytes())
-                .expect("Conversion can not fail"),
+        let args = CallInput {
+            contract: contract.0,
             value: buf,
             input,
         };
