@@ -64,4 +64,9 @@ impl MockEvmContract {
     pub fn call(&mut self, #[serializer(borsh)] _input: CallInput) -> SubmitResult {
         dummy_submit_result()
     }
+
+    #[result_serializer(borsh)]
+    pub fn submit(&mut self, #[serializer(borsh)] _input: Raw) -> SubmitResult {
+        dummy_submit_result()
+    }
 }

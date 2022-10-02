@@ -212,7 +212,7 @@ impl<U> EvmAccount<U> {
     }
 
     pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
-        CallSubmit(self.near_call(&Call::Submit).args(input))
+        CallSubmit(self.near_call(&Call::Submit).args_borsh(Raw(input)))
     }
 
     pub fn register_relayer<A: Into<Address>>(&self, address: A) -> CallRegisterRelayer {
