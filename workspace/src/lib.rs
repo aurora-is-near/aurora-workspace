@@ -12,7 +12,8 @@ pub type Result<T, E = error::Error> = std::result::Result<T, E>;
 
 pub mod types {
     pub use aurora_engine::proof::Proof;
-    pub use near_account_id::AccountId;
+    pub use aurora_workspace_types::AccountId;
+    pub use aurora_workspace_types::ParseAccountError;
     pub use workspaces::types::KeyType;
     pub use workspaces::types::SecretKey;
     pub use workspaces::Account;

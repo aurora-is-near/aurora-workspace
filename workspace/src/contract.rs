@@ -1,7 +1,7 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20Token, CallDeposit, CallEvm, CallFtOnTransfer,
-    CallFtTransfer, CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit,
-    CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw, View, ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallDeposit, CallEvm, CallFtOnTransfer, CallFtTransfer,
+    CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallSubmit, CallWithdraw, View, ViewResultDetails,
 };
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
@@ -12,32 +12,17 @@ use aurora_engine::parameters::{
 };
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
+use aurora_workspace_types::input::DeployErc20Input;
+use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
-use ethereum_types::{Address, H256, U256};
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
 use std::str::FromStr;
 use workspaces::types::SecretKey;
-use workspaces::{Account, AccountId, Contract, Network, Worker};
-use aurora_workspace_types::input::RawInput;
-
-// pub const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
-// pub const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
-// pub const OWNER_ACCOUNT_ID: &str = "owner.test.near";
-// pub const PROVER_ACCOUNT_ID: &str = "prover.test.near";
-// pub const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
-
-// lazy_static! {
-//     static ref DEFAULT_AURORA_ACCOUNT_ID: AccountId =
-//         AccountId::from_str("aurora.test.near").unwrap();
-//     static ref DEFAULT_OWNER_ACCOUNT_ID: AccountId =
-//         AccountId::from_str("owner.test.near").unwrap();
-//     static ref DEFAULT_PROVER_ACCOUNT_ID: AccountId =
-//         AccountId::from_str("prover.test.near").unwrap();
-// }
+use workspaces::{Account, Contract, Network, Worker};
 
 #[derive(Debug, Clone)]
 enum AccountKind {
@@ -193,17 +178,25 @@ impl<U> EvmAccount<U> {
         self.account.id()
     }
 
+    /// Deploys contract code using the caller's NEAR account ID as an Ethereum address.
+    ///
+    /// The logic which creates the ETH address is as follows:
+    ///
+    /// `Address = keccak(NEAR account Id)[12..]`
     pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode {
-        let args = RawInput(code);
+        let args = Raw(code);
         CallDeployCode(self.near_call(&Call::DeployCode).args_borsh(args))
     }
 
-    pub fn deploy_erc20_token<A: AsRef<str>>(&self, account_id: A) -> CallDeployErc20Token {
-        // TODO: impl Error for parse account error
-        let args = DeployErc20TokenArgs {
-            nep141: aurora_engine_types::account_id::AccountId::new(account_id.as_ref()).unwrap(),
-        };
-        CallDeployErc20Token(self.near_call(&Call::DeployErc20Token).args_borsh(args))
+    /// Deploys an ERC-20 contract for a given NEP-141 account ID.
+    ///
+    /// The calling NEAR account ID is translated to an Ethereum address for
+    /// deployment with the given logic:
+    ///
+    /// `Address = keccak(NEAR account Id)[12..]`
+    pub fn deploy_erc20(&self, account_id: AccountId) -> CallDeployErc20 {
+        let args = DeployErc20Input { nep141: account_id };
+        CallDeployErc20(self.near_call(&Call::DeployErc20Token).args_borsh(args))
     }
 
     pub fn call<A: Into<U256>>(&self, contract: Address, amount: A, input: Vec<u8>) -> CallEvm {
@@ -211,7 +204,8 @@ impl<U> EvmAccount<U> {
         let mut buf = [0u8; 32];
         value.to_big_endian(&mut buf);
         let args = FunctionCallArgsV2 {
-            contract: aurora_engine_types::types::Address::new(contract),
+            contract: aurora_engine_types::types::Address::try_from_slice(contract.as_bytes())
+                .expect("Conversion can not fail"),
             value: buf,
             input,
         };
@@ -249,7 +243,10 @@ impl<U> EvmAccount<U> {
 
     pub fn withdraw<A: Into<Address>>(&self, receiver_address: A, amount: u128) -> CallWithdraw {
         let args = WithdrawCallArgs {
-            recipient_address: aurora_engine_types::types::Address::new(receiver_address.into()),
+            recipient_address: aurora_engine_types::types::Address::try_from_slice(
+                receiver_address.into().as_bytes(),
+            )
+            .expect("Conversion can not fail"),
             amount: aurora_engine_types::types::NEP141Wei::new(amount),
         };
         CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
@@ -358,26 +355,26 @@ impl<U> EvmAccount<U> {
         ))
     }
 
-    #[cfg(not(feature = "ethabi"))]
-    pub async fn code<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<Vec<u8>>> {
-        let address = aurora_engine_types::types::Address::new(address.into());
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::Code, address.try_to_vec()?).await?,
-        ))
-    }
+    // #[cfg(not(feature = "ethabi"))]
+    // pub async fn code<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<Vec<u8>>> {
+    //     let address = aurora_engine_types::types::Address::new(address.into());
+    //     Ok(ViewResultDetails::from(
+    //         self.near_view(&View::Code, address.try_to_vec()?).await?,
+    //     ))
+    // }
 
-    #[cfg(feature = "ethabi")]
-    pub async fn code(
-        &self,
-        types: &[ParamType],
-        address: Address,
-    ) -> Result<ViewResultDetails<Vec<Token>>> {
-        let address = aurora_engine_types::types::Address::new(address);
-        ViewResultDetails::decode(
-            types,
-            self.near_view(&View::Code, address.try_to_vec()?).await?,
-        )
-    }
+    // #[cfg(feature = "ethabi")]
+    // pub async fn code(
+    //     &self,
+    //     types: &[ParamType],
+    //     address: Address,
+    // ) -> Result<ViewResultDetails<Vec<Token>>> {
+    //     let address = aurora_engine_types::types::Address::new(address);
+    //     ViewResultDetails::decode(
+    //         types,
+    //         self.near_view(&View::Code, address.try_to_vec()?).await?,
+    //     )
+    // }
 
     pub async fn balance<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<u128>> {
         Ok(ViewResultDetails::from_u256(
@@ -393,37 +390,37 @@ impl<U> EvmAccount<U> {
         ))
     }
 
-    pub async fn storage<A: Into<Address>, K: Into<H256>>(
-        &self,
-        address: A,
-        key: K,
-    ) -> Result<ViewResultDetails<H256>> {
-        let args = GetStorageAtArgs {
-            address: aurora_engine_types::types::Address::new(address.into()),
-            key: key.into().0,
-        };
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::Storage, args.try_to_vec()?).await?,
-        ))
-    }
+    // pub async fn storage<A: Into<Address>, K: Into<H256>>(
+    //     &self,
+    //     address: A,
+    //     key: K,
+    // ) -> Result<ViewResultDetails<H256>> {
+    //     let args = GetStorageAtArgs {
+    //         address: aurora_engine_types::types::Address::new(address.into()),
+    //         key: key.into().0,
+    //     };
+    //     Ok(ViewResultDetails::from(
+    //         self.near_view(&View::Storage, args.try_to_vec()?).await?,
+    //     ))
+    // }
 
-    pub async fn view<A: Into<Address>, V: Into<U256>>(
-        &self,
-        sender: A,
-        address: A,
-        amount: V,
-        input: Vec<u8>,
-    ) -> Result<ViewResultDetails<TransactionStatus>> {
-        let mut buf = [0u8; 32];
-        amount.into().to_big_endian(&mut buf);
-        let args = ViewCallArgs {
-            sender: aurora_engine_types::types::Address::new(sender.into()),
-            address: aurora_engine_types::types::Address::new(address.into()),
-            amount: buf,
-            input,
-        };
-        ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
-    }
+    // pub async fn view<A: Into<Address>, V: Into<U256>>(
+    //     &self,
+    //     sender: A,
+    //     address: A,
+    //     amount: V,
+    //     input: Vec<u8>,
+    // ) -> Result<ViewResultDetails<TransactionStatus>> {
+    //     let mut buf = [0u8; 32];
+    //     amount.into().to_big_endian(&mut buf);
+    //     let args = ViewCallArgs {
+    //         sender: aurora_engine_types::types::Address::new(sender.into()),
+    //         address: aurora_engine_types::types::Address::new(address.into()),
+    //         amount: buf,
+    //         input,
+    //     };
+    //     ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
+    // }
 
     pub async fn is_proof_used(&self, proof: Proof) -> Result<ViewResultDetails<bool>> {
         let args = IsUsedProofCallArgs { proof };
@@ -462,9 +459,9 @@ impl<U> EvmAccount<U> {
         ))
     }
 
-    pub async fn eth_total_supply(&self) -> Result<ViewResultDetails<U256>> {
-        ViewResultDetails::try_from_json(self.near_view(&View::EthTotalSupply, vec![]).await?)
-    }
+    // pub async fn eth_total_supply(&self) -> Result<ViewResultDetails<U256>> {
+    //     ViewResultDetails::try_from_json(self.near_view(&View::EthTotalSupply, vec![]).await?)
+    // }
 
     pub async fn storage_balance_of<A: AsRef<str>>(
         &self,

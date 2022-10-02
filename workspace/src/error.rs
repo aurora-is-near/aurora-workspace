@@ -9,7 +9,7 @@ pub enum ErrorKind {
     #[error(transparent)]
     ParseIntError(#[from] std::num::ParseIntError),
     #[error(transparent)]
-    ParseAccountError(#[from] near_account_id::ParseAccountError),
+    ParseAccountError(#[from] crate::types::ParseAccountError),
     #[error(transparent)]
     Workspace(#[from] workspaces::error::Error),
     #[error(transparent)]
