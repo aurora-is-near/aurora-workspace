@@ -78,3 +78,21 @@ pub struct FtOnTransferInput {
     pub amount: u128,
     pub msg: String,
 }
+
+#[cfg(feature = "deposit-withdraw")]
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct ProofInput {
+    pub log_index: u64,
+    pub log_entry_data: Vec<u8>,
+    pub receipt_index: u64,
+    pub receipt_data: Vec<u8>,
+    pub header_data: Vec<u8>,
+    pub proof: Vec<Vec<u8>>,
+}
+
+#[cfg(feature = "deposit-withdraw")]
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct WithdrawInput {
+    pub recipient_address: [u8; 20],
+    pub amount: u128,
+}

@@ -1,18 +1,21 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallDeposit, CallEvm, CallFtOnTransfer, CallFtTransfer,
+    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallFtTransfer,
     CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallSubmit, CallWithdraw, View, ViewResultDetails,
+    CallStorageWithdraw, CallSubmit, View, ViewResultDetails,
 };
+#[cfg(feature = "deposit-withdraw")]
+use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
-    DeployErc20TokenArgs, FunctionCallArgsV2, GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs,
-    NEP141FtOnTransferArgs, StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
-    TransactionStatus, TransferCallArgs, TransferCallCallArgs, ViewCallArgs,
+    InitCallArgs, IsUsedProofCallArgs,
+    StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
+    TransferCallArgs, TransferCallCallArgs,
 };
 use aurora_engine::proof::Proof;
-use aurora_engine_types::parameters::WithdrawCallArgs;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput, WithdrawInput};
+#[cfg(feature = "deposit-withdraw")]
+use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
@@ -222,36 +225,18 @@ impl<U> EvmAccount<U> {
         )
     }
 
-    pub fn ft_on_transfer<A: Into<u128>>(
-        &self,
-        sender_id: AccountId,
-        amount: A,
-        message: String,
-    ) -> Result<CallFtOnTransfer> {
-        let sender_id = AccountId::from_str(sender_id.as_ref())?;
-        let args = FtOnTransferInput {
-            sender_id,
-            amount: amount.into(),
-            msg: message,
-        };
-        Ok(CallFtOnTransfer(
-            self.near_call(&Call::FtOnTransfer).args_json(args),
-        ))
+    #[cfg(feature = "deposit-withdraw")]
+    pub fn deposit(&self, proof: ProofInput) -> CallDeposit {
+        CallDeposit(self.near_call(&Call::Deposit).args_borsh(proof))
     }
 
-    pub fn withdraw<A: Into<Address>>(&self, receiver_address: A, amount: u128) -> CallWithdraw {
-        let args = WithdrawCallArgs {
-            recipient_address: aurora_engine_types::types::Address::try_from_slice(
-                receiver_address.into().as_bytes(),
-            )
-            .expect("Conversion can not fail"),
-            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+    #[cfg(feature = "deposit-withdraw")]
+    pub fn withdraw<R: Into<Address>, A: Into<u128>>(&self, receiver_address: R, amount: A) -> CallWithdraw {
+        let args = WithdrawInput {
+            recipient_address: receiver_address.into().0,
+            amount: amount.into(),
         };
         CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
-    }
-
-    pub fn deposit(&self, proof: Proof) -> CallDeposit {
-        CallDeposit(self.near_call(&Call::Deposit).args_borsh(proof))
     }
 
     pub fn ft_transfer<R: AsRef<str>>(
@@ -268,6 +253,23 @@ impl<U> EvmAccount<U> {
             memo,
         };
         CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(args))
+    }
+
+    pub fn ft_on_transfer<A: Into<u128>>(
+        &self,
+        sender_id: AccountId,
+        amount: A,
+        message: String,
+    ) -> Result<CallFtOnTransfer> {
+        let sender_id = AccountId::from_str(sender_id.as_ref())?;
+        let args = FtOnTransferInput {
+            sender_id,
+            amount: amount.into(),
+            msg: message,
+        };
+        Ok(CallFtOnTransfer(
+            self.near_call(&Call::FtOnTransfer).args_json(args),
+        ))
     }
 
     pub fn ft_transfer_call<R: AsRef<str>>(

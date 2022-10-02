@@ -30,5 +30,6 @@ tokio = { version = "1" }
 default = []
 eth-primitives = []
 full-serde = []
+deposit-withdraw = ["aurora-workspace-types/deposit-withdraw"]
 # TODO: "mock" temporary until aurora-engine supports near_sdk
-mock = []
+mock = ["aurora-workspace-types/mock"]
