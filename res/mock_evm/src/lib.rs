@@ -8,6 +8,7 @@ use crate::out::SubmitResult;
 mod metadata;
 mod storage;
 mod out;
+pub mod ft;
 
 fn dummy_submit_result() -> SubmitResult {
     let log = Log::new(
