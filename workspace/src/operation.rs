@@ -47,17 +47,21 @@ impl_call_return![
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
     (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
-    (
-        CallWithdraw,
-        ExecutionSuccess<WithdrawResult>,
-        try_from_borsh
-    ),
-    (CallDeposit, ExecutionSuccess<PromiseId>, try_from),
     (CallFtTransfer, ExecutionSuccess<()>, try_from),
     (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
     (CallStorageDeposit, ExecutionSuccess<()>, try_from),
     (CallStorageUnregister, ExecutionSuccess<()>, try_from),
     (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
+];
+
+#[cfg(feature = "deposit-withdraw")]
+impl_call_return![
+    (CallDeposit, ExecutionSuccess<PromiseId>, try_from),
+    (
+        CallWithdraw,
+        ExecutionSuccess<WithdrawResult>,
+        try_from_borsh
+    )
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
