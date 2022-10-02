@@ -1,8 +1,8 @@
-use std::str::FromStr;
-use near_account_id::AccountId;
-use workspaces::types::{KeyType, SecretKey};
-use aurora_workspace::{InitConfig, EvmContract};
 use aurora_workspace::contract::EthProverConfig;
+use aurora_workspace::{EvmContract, InitConfig};
+use near_account_id::AccountId;
+use std::str::FromStr;
+use workspaces::types::{KeyType, SecretKey};
 
 const EVM_ACCOUNT_ID: &str = "aurora.test.near";
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
@@ -14,7 +14,10 @@ const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub async fn init_and_deploy_contract() -> anyhow::Result<EvmContract> {
     let worker = workspaces::sandbox().await?;
     let sk = SecretKey::from_random(KeyType::ED25519);
-    let evm_account = worker.create_tla(AccountId::from_str("aurora.test.near")?, sk).await?.into_result()?;
+    let evm_account = worker
+        .create_tla(AccountId::from_str("aurora.test.near")?, sk)
+        .await?
+        .into_result()?;
     let eth_prover_config = EthProverConfig::default();
     let init_config = InitConfig {
         owner_id: AccountId::from_str("owner.test.near")?,

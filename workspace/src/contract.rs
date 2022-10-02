@@ -7,9 +7,8 @@ use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
     DeployErc20TokenArgs, FunctionCallArgsV2, GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs,
-    NEP141FtOnTransferArgs, StorageBalance, StorageDepositCallArgs,
-    StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, TransferCallCallArgs,
-    ViewCallArgs,
+    NEP141FtOnTransferArgs, StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
+    TransactionStatus, TransferCallArgs, TransferCallCallArgs, ViewCallArgs,
 };
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
@@ -23,6 +22,7 @@ use std::path::Path;
 use std::str::FromStr;
 use workspaces::types::SecretKey;
 use workspaces::{Account, AccountId, Contract, Network, Worker};
+use aurora_workspace_types::input::RawInput;
 
 // pub const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 // pub const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
@@ -194,7 +194,8 @@ impl<U> EvmAccount<U> {
     }
 
     pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode {
-        CallDeployCode(self.near_call(&Call::DeployCode).args(code))
+        let args = RawInput(code);
+        CallDeployCode(self.near_call(&Call::DeployCode).args_borsh(args))
     }
 
     pub fn deploy_erc20_token<A: AsRef<str>>(&self, account_id: A) -> CallDeployErc20Token {
@@ -366,7 +367,11 @@ impl<U> EvmAccount<U> {
     }
 
     #[cfg(feature = "ethabi")]
-    pub async fn code(&self, types: &[ParamType], address: Address) -> Result<ViewResultDetails<Vec<Token>>> {
+    pub async fn code(
+        &self,
+        types: &[ParamType],
+        address: Address,
+    ) -> Result<ViewResultDetails<Vec<Token>>> {
         let address = aurora_engine_types::types::Address::new(address);
         ViewResultDetails::decode(
             types,
@@ -498,7 +503,8 @@ pub struct EthProverConfig {
 impl Default for EthProverConfig {
     fn default() -> Self {
         Self {
-            account_id: AccountId::from_str("eth-prover.test.near").expect("Ethereum prover ID somehow failed"),
+            account_id: AccountId::from_str("eth-prover.test.near")
+                .expect("Ethereum prover ID somehow failed"),
             evm_custodian_address: String::from("096DE9C2B8A5B8c22cEe3289B101f6960d68E51E"),
             metadata: FungibleTokenMetadata::default(),
         }
@@ -604,7 +610,11 @@ impl EvmContract {
         }
     }
 
-    pub async fn deploy_and_init(account: Account, init_config: InitConfig, wasm: Vec<u8>) -> Result<EvmContract> {
+    pub async fn deploy_and_init(
+        account: Account,
+        init_config: InitConfig,
+        wasm: Vec<u8>,
+    ) -> Result<EvmContract> {
         let contract = Self::deploy(account, wasm).await?;
         contract.init(init_config).await?;
         Ok(contract)
@@ -612,13 +622,12 @@ impl EvmContract {
 
     pub async fn deploy(account: Account, wasm: Vec<u8>) -> Result<EvmContract> {
         let contract = account.deploy(&wasm).await?.into_result()?;
-        Ok(EvmContract { contract: EvmAccount::with_self(contract) })
+        Ok(EvmContract {
+            contract: EvmAccount::with_self(contract),
+        })
     }
 
-    pub async fn init(
-        &self,
-        init_config: InitConfig,
-    ) -> Result<()> {
+    pub async fn init(&self, init_config: InitConfig) -> Result<()> {
         use crate::types::input::NewInput;
 
         let chain_id = {
@@ -633,9 +642,18 @@ impl EvmContract {
             bridge_prover_id: init_config.prover_id,
             upgrade_delay_blocks: 1,
         };
+        // TODO: temporary until aurora-engine supports near_sdk
+        #[cfg(feature = "mock")]
         self.contract
             .near_call("new")
             .args_json(new_args)
+            .transact()
+            .await?
+            .into_result()?;
+        #[cfg(not(feature = "mock"))]
+        self.contract
+            .near_call("new")
+            .args_borsh(new_args)
             .transact()
             .await?
             .into_result()?;

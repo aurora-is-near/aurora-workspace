@@ -1,16 +1,13 @@
+use aurora_workspace_types::input::{RawInput, SetEthConnectorInput};
+use aurora_workspace_types::output::{Log, TransactionStatus};
+use aurora_workspace_types::{AccountId, Address, H256};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LazyOption, LookupMap, UnorderedMap, UnorderedSet};
-use near_sdk::json_types::{Base64VecU8, U128};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{
-    near_bindgen, CryptoHash, PanicOnDefault, Promise, PromiseOrValue,
-};
-use aurora_workspace_types::AccountId;
-use aurora_workspace_types::input::{NewInput, SetEthConnectorInput};
-use aurora_workspace_types::output::SubmitReturn;
+use near_sdk::{near_bindgen, PanicOnDefault};
+use crate::out::SubmitResult;
 
 mod metadata;
 mod storage;
+mod out;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -25,7 +22,12 @@ pub struct MockEvmContract {
 #[near_bindgen]
 impl MockEvmContract {
     #[init]
-    pub fn new(chain_id: [u8; 32], owner_id: AccountId, bridge_prover_id: AccountId, upgrade_delay_blocks: u64) -> MockEvmContract {
+    pub fn new(
+        chain_id: [u8; 32],
+        owner_id: AccountId,
+        bridge_prover_id: AccountId,
+        upgrade_delay_blocks: u64,
+    ) -> MockEvmContract {
         MockEvmContract {
             chain_id,
             owner_id,
@@ -40,7 +42,12 @@ impl MockEvmContract {
     }
 
     #[result_serializer(borsh)]
-    pub fn deploy_code(&mut self, #[serializer(borsh)] input: Vec<u8>) -> SubmitReturn {
-
+    pub fn deploy_code(&mut self, #[serializer(borsh)] input: RawInput) -> SubmitResult {
+        let log = Log::new(
+            Address::from([1u8; 20]),
+            vec![H256::from([2u8; 32])],
+            vec![3u8; 10],
+        );
+        SubmitResult::new(TransactionStatus::Succeed(vec![0]), 100_000, vec![log])
     }
 }

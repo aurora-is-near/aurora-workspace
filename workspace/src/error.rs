@@ -1,4 +1,3 @@
-// use crate::result::ExecutionFailure;
 use std::fmt::{Display, Formatter};
 use std::{fmt, io};
 

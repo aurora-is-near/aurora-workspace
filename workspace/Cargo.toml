@@ -22,10 +22,14 @@ thiserror = "1"
 workspaces = { git = "https://github.com/near/workspaces-rs.git", rev = "5311791a5a1654d1ba45fd318ed967abce25999d" }
 
 [dev-dependencies]
+aurora-workspace = { path = ".", features = ["mock"] }
 anyhow = "1"
+hex = "0.4.3"
 tokio = { version = "1" }
 
 [features]
 default = []
 eth-primitives = []
 full-serde = []
+# TODO: "mock" temporary until aurora-engine supports near_sdk
+mock = []

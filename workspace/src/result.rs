@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::error::Error;
 use crate::Result;
 use aurora_engine_sdk::promise::PromiseId;
@@ -90,6 +91,14 @@ pub struct ExecutionResult<T> {
 }
 
 impl<T> ExecutionResult<T> {
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+
+    pub fn into_value(self) -> T {
+        self.value
+    }
+
     pub fn total_gas_burnt(&self) -> Gas {
         self.inner.total_gas_burnt
     }
@@ -116,5 +125,17 @@ impl<T> ExecutionResult<T> {
 
     pub fn logs(&self) -> Vec<&str> {
         self.inner.logs()
+    }
+}
+
+impl<T> AsRef<T> for ExecutionResult<T> {
+    fn as_ref(&self) -> &T {
+        &self.value
+    }
+}
+
+impl<T> Borrow<T> for ExecutionResult<T> {
+    fn borrow(&self) -> &T {
+        &self.value
     }
 }
