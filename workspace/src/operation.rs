@@ -1,8 +1,9 @@
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::Result;
+use crate::types::output::SubmitResult;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine::parameters::{StorageBalance, SubmitResult, TransactionStatus, WithdrawResult};
+use aurora_engine::parameters::{StorageBalance, TransactionStatus, WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use borsh::BorshDeserialize;

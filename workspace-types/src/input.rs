@@ -1,9 +1,27 @@
-use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::borsh::{self, BorshSerialize, BorshDeserialize};
+use std::io::{self, Write};
 use near_account_id::AccountId;
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawInput(pub Vec<u8>);
+
+impl BorshSerialize for RawInput {
+    fn serialize<W: Write>(&self, writer: &mut W) -> io::Result<()> {
+        writer.write_all(&self.0)
+    }
+}
+
+impl BorshDeserialize for RawInput {
+    fn deserialize(bytes: &mut &[u8]) -> io::Result<Self> {
+        let res = bytes.to_vec();
+        *bytes = &[];
+        Ok(Self(res))
+    }
+}
 
 /// Json-encoded parameters for the `new` function.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 pub struct NewInput {
     /// Chain id, according to the EIP-115 / ethereum-lists spec.
     pub chain_id: [u8; 32],
