@@ -1,4 +1,4 @@
-use aurora_workspace_types::input::{DeployErc20Input, SetEthConnectorInput};
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, SetEthConnectorInput};
 use aurora_workspace_types::output::{Log, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256, Raw};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -8,6 +8,15 @@ use crate::out::SubmitResult;
 mod metadata;
 mod storage;
 mod out;
+
+fn dummy_submit_result() -> SubmitResult {
+    let log = Log::new(
+        Address::from([1u8; 20]),
+        vec![H256::from([2u8; 32])],
+        vec![3u8; 10],
+    );
+    SubmitResult::new(TransactionStatus::Succeed(vec![0]), 100_000, vec![log])
+}
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -43,16 +52,16 @@ impl MockEvmContract {
 
     #[result_serializer(borsh)]
     pub fn deploy_code(&mut self, #[serializer(borsh)] _input: Raw) -> SubmitResult {
-        let log = Log::new(
-            Address::from([1u8; 20]),
-            vec![H256::from([2u8; 32])],
-            vec![3u8; 10],
-        );
-        SubmitResult::new(TransactionStatus::Succeed(vec![0]), 100_000, vec![log])
+        dummy_submit_result()
     }
 
     #[result_serializer(borsh)]
     pub fn deploy_erc20_token(&mut self, #[serializer(borsh)] _input: DeployErc20Input) -> Raw {
         Raw(vec![1u8; 20])
+    }
+
+    #[result_serializer(borsh)]
+    pub fn call(&mut self, #[serializer(borsh)] _input: CallInput) -> SubmitResult {
+        dummy_submit_result()
     }
 }

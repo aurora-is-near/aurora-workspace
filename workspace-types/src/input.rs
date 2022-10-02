@@ -64,3 +64,10 @@ pub struct SetEthConnectorInput {
 pub struct DeployErc20Input {
     pub nep141: AccountId,
 }
+
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct CallInput {
+    pub contract: [u8; 20],
+    pub value: [u8; 32],
+    pub input: Vec<u8>,
+}
