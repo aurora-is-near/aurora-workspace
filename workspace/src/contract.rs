@@ -12,7 +12,7 @@ use aurora_engine::parameters::{
 };
 use aurora_engine::proof::Proof;
 use aurora_engine_types::parameters::WithdrawCallArgs;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input};
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
@@ -222,17 +222,16 @@ impl<U> EvmAccount<U> {
         )
     }
 
-    pub fn ft_on_transfer<S: AsRef<str>, A: Into<u128>>(
+    pub fn ft_on_transfer<A: Into<u128>>(
         &self,
-        sender_id: S,
+        sender_id: AccountId,
         amount: A,
         message: String,
     ) -> Result<CallFtOnTransfer> {
         let sender_id = AccountId::from_str(sender_id.as_ref())?;
-        let args = NEP141FtOnTransferArgs {
-            // TODO: impl error
-            sender_id: aurora_engine_types::account_id::AccountId::new(sender_id.as_str()).unwrap(),
-            amount: aurora_engine_types::types::Balance::new(amount.into()),
+        let args = FtOnTransferInput {
+            sender_id,
+            amount: amount.into(),
             msg: message,
         };
         Ok(CallFtOnTransfer(

@@ -46,7 +46,7 @@ impl_call_return![
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<()>, try_from),
+    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
     (
         CallWithdraw,
         ExecutionSuccess<WithdrawResult>,

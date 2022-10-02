@@ -71,3 +71,10 @@ pub struct CallInput {
     pub value: [u8; 32],
     pub input: Vec<u8>,
 }
+
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
+pub struct FtOnTransferInput {
+    pub sender_id: AccountId,
+    pub amount: u128,
+    pub msg: String,
+}
