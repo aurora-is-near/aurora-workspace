@@ -1,10 +1,10 @@
+use crate::error::ErrorKind;
 use crate::Address;
-use crate::H256;
 use crate::Result;
+use crate::H256;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::io;
-use crate::error::ErrorKind;
 
 /// Borsh-encoded parameters for the `call`, `call_with_args`, `deploy_code`,
 /// and `deploy_with_input` methods.
@@ -112,7 +112,10 @@ pub enum TransactionStatus {
 
 impl TransactionStatus {
     pub fn is_ok(&self) -> bool {
-        matches!(*self, TransactionStatus::Succeed(_) | TransactionStatus::Revert(_))
+        matches!(
+            *self,
+            TransactionStatus::Succeed(_) | TransactionStatus::Revert(_)
+        )
     }
 
     pub fn is_success(&self) -> bool {
@@ -259,4 +262,5 @@ mod tests {
         let post_return =
             <SubmitResult as BorshDeserialize>::deserialize(&mut serialized.as_slice()).unwrap();
         assert_eq!(pre_return, post_return);
-    }}
+    }
+}

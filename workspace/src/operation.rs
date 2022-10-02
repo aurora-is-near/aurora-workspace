@@ -1,16 +1,16 @@
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
-use crate::Result;
 use crate::types::output::SubmitResult;
+use crate::Result;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus, WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
+use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
-use near_account_id::AccountId;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
@@ -42,7 +42,7 @@ impl_call_return![
         ExecutionSuccess<SubmitResult>,
         try_from_borsh
     ),
-    (CallDeployErc20Token, ExecutionSuccess<Address>, try_from),
+    (CallDeployErc20, ExecutionSuccess<Address>, try_from),
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
@@ -239,15 +239,15 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> 
     }
 }
 
-impl ViewResultDetails<U256> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let total_supply: Wei = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result: total_supply.raw(),
-            logs: view.logs,
-        })
-    }
-}
+// impl ViewResultDetails<U256> {
+//     pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+//         let total_supply: Wei = serde_json::from_slice(view.result.as_slice())?;
+//         Ok(Self {
+//             result: total_supply.raw(),
+//             logs: view.logs,
+//         })
+//     }
+// }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
     type Error = Error;

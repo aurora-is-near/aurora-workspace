@@ -18,8 +18,8 @@ pub enum ErrorKind {
 pub struct Error(Box<ErrorKind>);
 
 impl<E> From<E> for Error
-    where
-        ErrorKind: From<E>,
+where
+    ErrorKind: From<E>,
 {
     fn from(err: E) -> Self {
         Error(Box::new(ErrorKind::from(err)))

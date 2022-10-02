@@ -1,11 +1,11 @@
-use std::borrow::Borrow;
 use crate::error::Error;
+use crate::types::AccountId;
 use crate::Result;
 use aurora_engine_sdk::promise::PromiseId;
 use borsh::BorshDeserialize;
 use ethereum_types::Address;
-use near_account_id::AccountId;
 use serde::de::DeserializeOwned;
+use std::borrow::Borrow;
 use std::fmt::Debug;
 use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::types::Gas;

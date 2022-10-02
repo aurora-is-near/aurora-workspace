@@ -1,24 +1,6 @@
-use std::io::{self, Write};
-use near_account_id::AccountId;
+use crate::AccountId;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RawInput(pub Vec<u8>);
-
-impl BorshSerialize for RawInput {
-    fn serialize<W: Write>(&self, writer: &mut W) -> io::Result<()> {
-        writer.write_all(&self.0)
-    }
-}
-
-impl BorshDeserialize for RawInput {
-    fn deserialize(bytes: &mut &[u8]) -> io::Result<Self> {
-        let res = bytes.to_vec();
-        *bytes = &[];
-        Ok(Self(res))
-    }
-}
 
 /// Json-encoded parameters for the `new` function.
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
@@ -76,4 +58,9 @@ pub struct SetEthConnectorInput {
     pub prover_account: AccountId,
     pub eth_custodian_address: String,
     pub metadata: FungibleTokenMetadata,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct DeployErc20Input {
+    pub nep141: AccountId,
 }

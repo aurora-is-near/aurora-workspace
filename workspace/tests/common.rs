@@ -1,6 +1,5 @@
 use aurora_workspace::contract::EthProverConfig;
-use aurora_workspace::{EvmContract, InitConfig};
-use near_account_id::AccountId;
+use aurora_workspace::{types::AccountId, EvmContract, InitConfig};
 use std::str::FromStr;
 use workspaces::types::{KeyType, SecretKey};
 
