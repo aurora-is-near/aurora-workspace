@@ -8,14 +8,13 @@ use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{
-    InitCallArgs, IsUsedProofCallArgs,
-    StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
-    TransferCallArgs, TransferCallCallArgs,
+    InitCallArgs, IsUsedProofCallArgs, StorageBalance, StorageDepositCallArgs,
+    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
 };
 use aurora_engine::proof::Proof;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput, WithdrawInput};
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
 #[cfg(feature = "deposit-withdraw")]
-use aurora_workspace_types::input::ProofInput;
+use aurora_workspace_types::input::{ProofInput, WithdrawInput};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
@@ -231,7 +230,11 @@ impl<U> EvmAccount<U> {
     }
 
     #[cfg(feature = "deposit-withdraw")]
-    pub fn withdraw<R: Into<Address>, A: Into<u128>>(&self, receiver_address: R, amount: A) -> CallWithdraw {
+    pub fn withdraw<R: Into<Address>, A: Into<u128>>(
+        &self,
+        receiver_address: R,
+        amount: A,
+    ) -> CallWithdraw {
         let args = WithdrawInput {
             recipient_address: receiver_address.into().0,
             amount: amount.into(),
@@ -260,16 +263,15 @@ impl<U> EvmAccount<U> {
         sender_id: AccountId,
         amount: A,
         message: String,
-    ) -> Result<CallFtOnTransfer> {
-        let sender_id = AccountId::from_str(sender_id.as_ref())?;
+    ) -> CallFtOnTransfer {
         let args = FtOnTransferInput {
             sender_id,
             amount: amount.into(),
             msg: message,
         };
-        Ok(CallFtOnTransfer(
+        CallFtOnTransfer(
             self.near_call(&Call::FtOnTransfer).args_json(args),
-        ))
+        )
     }
 
     pub fn ft_transfer_call<R: AsRef<str>>(
@@ -303,13 +305,11 @@ impl<U> EvmAccount<U> {
         CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
     }
 
-    // TODO we are not NEP-145 compliant
     pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister {
         let val = serde_json::json!({ "force": force });
         CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
     }
 
-    // TODO we are not NEP-145 compliant
     pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw {
         let args = StorageWithdrawCallArgs {
             amount: amount.map(aurora_engine_types::types::Yocto::new),

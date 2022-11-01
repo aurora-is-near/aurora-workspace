@@ -8,7 +8,7 @@ use std::io;
 
 /// Borsh-encoded parameters for the `call`, `call_with_args`, `deploy_code`,
 /// and `deploy_with_input` methods.
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SubmitResult {
     status: TransactionStatus,
     total_gas_used: u64,
@@ -64,6 +64,18 @@ impl SubmitResult {
             TransactionStatus::CallTooDeep => Err(ErrorKind::CallTooDeep.into()),
             TransactionStatus::OutOfOffset => Err(ErrorKind::OutOfBounds.into()),
         }
+    }
+}
+
+impl BorshSerialize for SubmitResult {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
+        let auto = AutoSubmitResultDes {
+            version: Self::VERSION,
+            status: self.status.clone(),
+            gas_used: self.total_gas_used,
+            logs: self.logs.clone(),
+        };
+        auto.serialize(writer)
     }
 }
 
