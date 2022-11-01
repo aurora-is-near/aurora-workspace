@@ -2,7 +2,7 @@ pub mod error;
 pub mod input;
 pub mod output;
 
-pub use ethereum_types::{Address, H256, U256, H160};
+pub use ethereum_types::{Address, H160, H256, U256};
 pub use near_account_id::AccountId;
 pub use near_account_id::ParseAccountError;
 

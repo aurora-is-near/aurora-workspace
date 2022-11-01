@@ -1,6 +1,3 @@
-use std::fmt::{Display, Formatter};
-use std::{fmt, io};
-
 #[derive(Debug, thiserror::Error)]
 pub enum ErrorKind {
     #[error("transaction ran out of gas")]
