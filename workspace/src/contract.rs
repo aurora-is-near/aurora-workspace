@@ -53,9 +53,12 @@ impl AccountKind {
     ) -> Result<workspaces::result::ViewResultDetails> {
         Ok(match self {
             AccountKind::Account { contract_id, inner } => {
-                inner.view(contract_id, function.as_ref(), args).await?
+                inner
+                    .view(contract_id, function.as_ref())
+                    .args(args)
+                    .await?
             }
-            AccountKind::Contract(con) => con.view(function.as_ref(), args).await?,
+            AccountKind::Contract(con) => con.view(function.as_ref()).args(args).await?,
         })
     }
 
@@ -269,9 +272,7 @@ impl<U> EvmAccount<U> {
             amount: amount.into(),
             msg: message,
         };
-        CallFtOnTransfer(
-            self.near_call(&Call::FtOnTransfer).args_json(args),
-        )
+        CallFtOnTransfer(self.near_call(&Call::FtOnTransfer).args_json(args))
     }
 
     pub fn ft_transfer_call<R: AsRef<str>>(

@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize", "rlp"] }
 near-sdk = "4.0"
-near-account-id = "0.14"
+near-account-id = "0.15"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 rlp = "0.5.1"

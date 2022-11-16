@@ -36,21 +36,21 @@ async fn test_ft_on_transfer() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test]
-async fn test_ft_transfer_call() -> anyhow::Result<()> {
-    let contract = common::init_and_deploy_contract().await?;
-
-    let res = contract
-        .as_account()
-        .ft_transfer_call(
-            "receiver.test",
-            10,
-            Some("some memo".to_string()),
-            "some message".to_string(),
-        )
-        .transact()
-        .await?
-        .into_value();
-
-    Ok(())
-}
+// #[tokio::test]
+// async fn test_ft_transfer_call() -> anyhow::Result<()> {
+//     let contract = common::init_and_deploy_contract().await?;
+//
+//     let res = contract
+//         .as_account()
+//         .ft_transfer_call(
+//             "receiver.test",
+//             10,
+//             Some("some memo".to_string()),
+//             "some message".to_string(),
+//         )
+//         .transact()
+//         .await?
+//         .into_value();
+//
+//     Ok(())
+// }
