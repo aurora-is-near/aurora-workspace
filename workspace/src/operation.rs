@@ -16,15 +16,15 @@ use workspaces::result::ExecutionFinalResult;
 
 macro_rules! impl_call_return  {
     ($(($name:ident, $return:ty, $fun:ident)),*) => {
-        $(pub struct $name<'a, 'b>(pub(crate) EvmCallTransaction<'a, 'b>);
+        $(pub struct $name<'a>(pub(crate) EvmCallTransaction<'a>);
 
-        impl<'a, 'b> $name<'a, 'b> {
-            pub fn gas(mut self, gas: u64) -> $name<'a, 'b> {
+        impl<'a> $name<'a> {
+            pub fn gas(mut self, gas: u64) -> $name<'a> {
                 self.0 = self.0.gas(gas);
                 self
             }
 
-            pub fn max_gas(mut self) -> $name<'a, 'b> {
+            pub fn max_gas(mut self) -> $name<'a> {
                 self.0 = self.0.max_gas();
                 self
             }
@@ -413,21 +413,21 @@ impl AsRef<str> for TestCallFunction {
     }
 }
 
-pub struct EvmCallTransaction<'a, 'b> {
-    inner: CallTransaction<'a, 'b>,
+pub struct EvmCallTransaction<'a> {
+    inner: CallTransaction<'a>,
 }
 
-impl<'a, 'b> EvmCallTransaction<'a, 'b> {
-    pub(crate) fn call(transaction: CallTransaction<'a, 'b>) -> Self {
+impl<'a, 'b> EvmCallTransaction<'a> {
+    pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
         EvmCallTransaction { inner: transaction }
     }
 
-    pub(crate) fn args(mut self, args: Vec<u8>) -> EvmCallTransaction<'a, 'b> {
+    pub(crate) fn args(mut self, args: Vec<u8>) -> EvmCallTransaction<'a> {
         self.inner = self.inner.args(args);
         self
     }
 
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> EvmCallTransaction<'a, 'b> {
+    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> EvmCallTransaction<'a> {
         self.inner = self.inner.args_json(args);
         self
     }
@@ -435,17 +435,17 @@ impl<'a, 'b> EvmCallTransaction<'a, 'b> {
     pub(crate) fn args_borsh<B: borsh::BorshSerialize>(
         mut self,
         args: B,
-    ) -> EvmCallTransaction<'a, 'b> {
+    ) -> EvmCallTransaction<'a> {
         self.inner = self.inner.args_borsh(args);
         self
     }
 
-    pub fn gas(mut self, gas: u64) -> EvmCallTransaction<'a, 'b> {
+    pub fn gas(mut self, gas: u64) -> EvmCallTransaction<'a> {
         self.inner = self.inner.gas(gas);
         self
     }
 
-    pub fn max_gas(mut self) -> EvmCallTransaction<'a, 'b> {
+    pub fn max_gas(mut self) -> EvmCallTransaction<'a> {
         self.inner = self.inner.max_gas();
         self
     }
