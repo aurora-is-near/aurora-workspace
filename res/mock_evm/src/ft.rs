@@ -12,4 +12,8 @@ impl MockEvmContract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: u128, msg: String) -> String {
         serde_json::to_string(&0).expect("Failed to serialize message")
     }
+
+    pub fn ft_transfer_call(&mut self, receiver_id: AccountId, amount: u128, memo: Option<String>, msg: String) -> u64 {
+        amount.try_into().unwrap() //8 bytes
+    }
 }
