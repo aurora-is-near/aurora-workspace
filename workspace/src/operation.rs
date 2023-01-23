@@ -102,6 +102,7 @@ impl AsRef<str> for Call {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ViewResultDetails<T> {
     pub result: T,
     pub logs: Vec<String>,
