@@ -1,6 +1,7 @@
 use aurora_workspace::operation::ViewResultDetails;
-use aurora_workspace::types::AccountId;
+use aurora_workspace::types::{AccountId};
 use std::str::FromStr;
+use ethereum_types::H256;
 
 mod common;
 
@@ -49,3 +50,63 @@ async fn test_chain_id() -> anyhow::Result<()> {
     assert_eq!(expected, res);
     Ok(())
 }
+
+#[tokio::test]
+async fn test_bridge_prover() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .bridge_prover()
+        .await?;
+    let expected = ViewResultDetails{
+        result: AccountId::from_str("prover.test.near").expect("Invalid account"),
+        logs: vec![]
+    };
+    assert_eq!(expected, res);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_upgrade_index() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .upgrade_index()
+        .await?;
+    let expected = ViewResultDetails{
+        result: 1,
+        logs: vec![]
+    };
+    assert_eq!(expected, res);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_paused_precompiles() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .paused_precompiles()
+        .await?;
+    let expected = ViewResultDetails{
+        result: 0,
+        logs: vec![]
+    };
+    assert_eq!(expected, res);
+    Ok(())
+}
+
+// #[tokio::test]
+// async fn test_block_hash() -> anyhow::Result<()> {
+//     let contract = common::init_and_deploy_contract().await?;
+//     let res = contract
+//         .as_account()
+//         .block_hash(0u64)
+//         .await?;
+//     let expected = ViewResultDetails{
+//         result: H256::from([0u8; 32]),
+//         logs: vec![]
+//     };
+//     assert_eq!(res,expected);
+//     Ok(())
+// }
