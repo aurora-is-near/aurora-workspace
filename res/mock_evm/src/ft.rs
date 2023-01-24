@@ -1,5 +1,6 @@
 use crate::*;
 use near_sdk::serde_json;
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 
 #[near_bindgen]
 impl MockEvmContract {
@@ -13,6 +14,7 @@ impl MockEvmContract {
         serde_json::to_string(&0).expect("Failed to serialize message")
     }
 
+    #[result_serializer(borsh)]
     pub fn ft_transfer_call(&mut self, receiver_id: AccountId, amount: u128, memo: Option<String>, msg: String) -> u64 {
         amount.try_into().unwrap() //8 bytes
     }

@@ -51,7 +51,6 @@ async fn test_ft_transfer_call() -> anyhow::Result<()> {
         .transact()
         .await?
         .into_value();
-    // why the amount is 10000000u128 lead to this value 3472328296227680305 ?
-    assert_eq!(res, aurora_engine_sdk::promise::PromiseId::new(3472328296227680305));
+    assert_eq!(res, aurora_engine_sdk::promise::PromiseId::new(10000000));
     Ok(())
 }
