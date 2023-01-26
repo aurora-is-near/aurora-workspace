@@ -349,7 +349,6 @@ impl<U> EvmAccount<U> {
     }
 
     pub async fn block_hash(&self, block_height: u64) -> Result<ViewResultDetails<H256>> {
-        // TODO: check if this actually needs to be borsh. Should be equivalent.
         let args = block_height.try_to_vec()?;
         Ok(ViewResultDetails::from(
             self.near_view(&View::BlockHash, args).await?,
