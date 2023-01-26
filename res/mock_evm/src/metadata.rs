@@ -1,11 +1,29 @@
 use std::thread::AccessError;
 use crate::*;
+use aurora_workspace_types::input::FungibleTokenMetadata;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 
 #[near_bindgen]
 impl MockEvmContract {
     pub fn get_version(&self) -> String {
         "v1".to_string()
+    }
+
+    pub fn ft_total_supply(&self) -> u128 {
+        0u128
+    }
+
+    pub fn ft_balance_of(&self, account: String) -> u128 {
+        0u128
+    }
+
+    pub fn storage_balance_of(&self, account: String) -> u128 {
+        0u128
+    }
+
+    #[result_serializer(borsh)]
+    pub fn ft_metadata(&self) -> FungibleTokenMetadata {
+        FungibleTokenMetadata::default()
     }
 
     #[result_serializer(borsh)]
@@ -30,10 +48,26 @@ impl MockEvmContract {
 
     #[result_serializer(borsh)]
     pub fn get_paused_precompiles(&self) -> u32 {
-        0
+        0u32
     }
 
-    // pub fn get_block_hash(&self, #[serializer(borsh)] block_height: u64) -> H256 {
-    //     H256::from([0u8; 32])
-    // }
+    #[result_serializer(borsh)]
+    pub fn get_block_hash(&self, #[serializer(borsh)] index: u64) -> [u8; 32] {
+        [0u8; 32]
+    }
+
+    #[result_serializer(borsh)]
+    pub fn get_balance(&self, #[serializer(borsh)] address: [u8; 20]) -> [u64; 4] {
+        [0u64; 4]
+    }
+
+    #[result_serializer(borsh)]
+    pub fn get_nonce(&self, #[serializer(borsh)] address: [u8; 20]) -> [u64; 4] {
+        [0u64; 4]
+    }
+
+    #[result_serializer(borsh)]
+    pub fn ft_balance_of_eth(&self, #[serializer(borsh)] address: [u8; 20]) -> [u64; 4] {
+        [0u64; 4]
+    }
 }

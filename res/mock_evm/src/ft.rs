@@ -16,6 +16,6 @@ impl MockEvmContract {
 
     #[result_serializer(borsh)]
     pub fn ft_transfer_call(&mut self, receiver_id: AccountId, amount: u128, memo: Option<String>, msg: String) -> u64 {
-        amount.try_into().unwrap() //8 bytes
+        amount.try_into().unwrap()
     }
 }
