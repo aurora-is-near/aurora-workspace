@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize", "rlp"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
 near-sdk = "4.0"
 near-account-id = "0.15"
 serde = { version = "1", features = ["derive"] }

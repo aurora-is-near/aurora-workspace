@@ -1,6 +1,8 @@
 use aurora_workspace::operation::ViewResultDetails;
 use aurora_workspace::types::AccountId;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
+// use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::parameters::StorageBalanceOfCallArgs;
+use aurora_workspace_types::input::StorageBalance;
 use ethereum_types::{H256, U256};
 use std::str::FromStr;
 
@@ -14,7 +16,7 @@ async fn test_version() -> anyhow::Result<()> {
         result: "\"v1\"".to_string().into(),
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -26,7 +28,7 @@ async fn test_owner() -> anyhow::Result<()> {
         result: AccountId::from_str("owner.test.near").expect("Invalid account"),
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -38,7 +40,7 @@ async fn test_chain_id() -> anyhow::Result<()> {
         result: 1313161556u128,
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -50,7 +52,7 @@ async fn test_bridge_prover() -> anyhow::Result<()> {
         result: AccountId::from_str("prover.test.near").expect("Invalid account"),
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -62,7 +64,7 @@ async fn test_upgrade_index() -> anyhow::Result<()> {
         result: 1,
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -74,7 +76,7 @@ async fn test_paused_precompiles() -> anyhow::Result<()> {
         result: 0,
         logs: vec![],
     };
-    assert_eq!(expected, res);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -89,7 +91,7 @@ async fn test_block_hash() -> anyhow::Result<()> {
         result: H256::from([0u8; 32]),
         logs: vec![],
     };
-    assert_eq!(res,expected);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -104,7 +106,7 @@ async fn test_balance() -> anyhow::Result<()> {
         result: 0u128,
         logs: vec![],
     };
-    assert_eq!(res,expected);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -119,7 +121,7 @@ async fn test_nonce() -> anyhow::Result<()> {
         result: 0u128,
         logs: vec![],
     };
-    assert_eq!(res,expected);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -134,7 +136,7 @@ async fn test_nonce() -> anyhow::Result<()> {
 //         result: false,
 //         logs: vec![],
 //     };
-//     assert_eq!(res,expected);
+//     assert_eq!(res, expected);
 //     Ok(())
 // }
 
@@ -149,7 +151,7 @@ async fn test_ft_total_supply() -> anyhow::Result<()> {
         result: 0u128,
         logs: vec![],
     };
-    assert_eq!(res,expected);
+    assert_eq!(res, expected);
     Ok(())
 }
 
@@ -164,10 +166,10 @@ async fn test_ft_total_supply() -> anyhow::Result<()> {
 //         result: 0u128,
 //         logs: vec![],
 //     };
-//     assert_eq!(res,expected);
+//     assert_eq!(res, expected);
 //     Ok(())
 // }
-
+//
 // #[tokio::test]
 // async fn test_ft_metadata() -> anyhow::Result<()> {
 //     let contract = common::init_and_deploy_contract().await?;
@@ -179,9 +181,24 @@ async fn test_ft_total_supply() -> anyhow::Result<()> {
 //         result: FungibleTokenMetadata::default(),
 //         logs: vec![],
 //     };
-//     assert_eq!(res,expected);
+//     assert_eq!(res, expected);
 //     Ok(())
 // }
+
+#[tokio::test]
+async fn test_storage_balance_of() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let _res = contract
+        .as_account()
+        .storage_balance_of("account.test.near")
+        .await?;
+    // let expected = ViewResultDetails {
+    //     result: StorageBalance::default(),
+    //     logs: vec![],
+    // };
+    // assert_eq!(res, expected);
+    Ok(())
+}
 
 #[tokio::test]
 async fn test_eth_balance_of() -> anyhow::Result<()> {

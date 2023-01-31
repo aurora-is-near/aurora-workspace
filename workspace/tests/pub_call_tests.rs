@@ -1,5 +1,7 @@
 use aurora_workspace_types::output::{Log, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256};
+use workspaces::types::{KeyType, SecretKey};
+use aurora_workspace::EvmContract;
 use std::str::FromStr;
 
 mod common;
@@ -88,6 +90,14 @@ async fn test_submit() -> anyhow::Result<()> {
 
     assert_eq!(res, expected);
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_from_secret_key() -> anyhow::Result<()> {
+    let testnet_worker = workspaces::testnet().await?;
+    let sk = SecretKey::from_random(KeyType::ED25519);
+    let _contract = EvmContract::from_secret_key("aurora.test.near", sk, &testnet_worker).unwrap();
     Ok(())
 }
 

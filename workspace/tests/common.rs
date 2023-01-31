@@ -3,7 +3,6 @@ use aurora_workspace::{types::AccountId, EvmContract, InitConfig};
 use std::str::FromStr;
 use workspaces::types::{KeyType, SecretKey};
 
-const EVM_ACCOUNT_ID: &str = "aurora.test.near";
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
 const OWNER_ACCOUNT_ID: &str = "owner.test.near";

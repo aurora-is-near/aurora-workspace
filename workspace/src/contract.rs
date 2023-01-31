@@ -7,9 +7,10 @@ use crate::operation::{
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::json::parse_json;
 use aurora_engine::parameters::{
     InitCallArgs, IsUsedProofCallArgs, StorageBalance, StorageDepositCallArgs,
-    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
+    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs, StorageBalanceOfCallArgs,
 };
 use aurora_engine::proof::Proof;
 use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};

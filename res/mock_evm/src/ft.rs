@@ -1,6 +1,5 @@
 use crate::*;
 use near_sdk::serde_json;
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 
 #[near_bindgen]
 impl MockEvmContract {
