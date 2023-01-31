@@ -1,8 +1,7 @@
 use aurora_workspace::operation::ViewResultDetails;
 use aurora_workspace::types::AccountId;
-// use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine::parameters::StorageBalanceOfCallArgs;
-use aurora_workspace_types::input::StorageBalance;
+use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_workspace_types::input::{IsUsedProofCallArgs, StorageBalance, ProofInput} ;
 use ethereum_types::{H256, U256};
 use std::str::FromStr;
 
@@ -125,20 +124,21 @@ async fn test_nonce() -> anyhow::Result<()> {
     Ok(())
 }
 
-// #[tokio::test]
-// async fn test_is_proof_used() -> anyhow::Result<()> {
-//     let contract = common::init_and_deploy_contract().await?;
-//     let res = contract
-//         .as_account()
-//         .is_proof_used(ProofArgs)
-//         .await?;
-//     let expected = ViewResultDetails {
-//         result: false,
-//         logs: vec![],
-//     };
-//     assert_eq!(res, expected);
-//     Ok(())
-// }
+#[tokio::test]
+async fn test_is_proof_used() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let proof = ProofInput::default();
+    let res = contract
+        .as_account()
+        .is_proof_used(proof)
+        .await?;
+    let expected = ViewResultDetails {
+        result: true,
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+    Ok(())
+}
 
 #[tokio::test]
 async fn test_ft_total_supply() -> anyhow::Result<()> {
@@ -155,35 +155,50 @@ async fn test_ft_total_supply() -> anyhow::Result<()> {
     Ok(())
 }
 
-// #[tokio::test]
-// async fn test_ft_balance_of() -> anyhow::Result<()> {
-//     let contract = common::init_and_deploy_contract().await?;
-//     let res = contract
-//         .as_account()
-//         .ft_balance_of("some_account.test")
-//         .await?;
-//     let expected = ViewResultDetails {
-//         result: 0u128,
-//         logs: vec![],
-//     };
-//     assert_eq!(res, expected);
-//     Ok(())
-// }
-//
-// #[tokio::test]
-// async fn test_ft_metadata() -> anyhow::Result<()> {
-//     let contract = common::init_and_deploy_contract().await?;
-//     let res = contract
-//         .as_account()
-//         .ft_metadata()
-//         .await?;
-//     let expected = ViewResultDetails {
-//         result: FungibleTokenMetadata::default(),
-//         logs: vec![],
-//     };
-//     assert_eq!(res, expected);
-//     Ok(())
-// }
+#[tokio::test]
+async fn test_ft_balance_of() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .ft_balance_of("some_account.test")
+        .await?;
+    let expected = ViewResultDetails {
+        result: 0u128,
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_ft_metadata() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .ft_metadata()
+        .await?;
+    let expected = ViewResultDetails {
+        result: FungibleTokenMetadata::default(),
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_eth_total_supply() -> anyhow::Result<()> {
+    let contract = common::init_and_deploy_contract().await?;
+    let res = contract
+        .as_account()
+        .eth_total_supply()
+        .await?;
+    let expected = ViewResultDetails {
+        result: U256::from(0),
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+    Ok(())
+}
 
 #[tokio::test]
 async fn test_storage_balance_of() -> anyhow::Result<()> {
@@ -192,11 +207,6 @@ async fn test_storage_balance_of() -> anyhow::Result<()> {
         .as_account()
         .storage_balance_of("account.test.near")
         .await?;
-    // let expected = ViewResultDetails {
-    //     result: StorageBalance::default(),
-    //     logs: vec![],
-    // };
-    // assert_eq!(res, expected);
     Ok(())
 }
 

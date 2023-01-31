@@ -1,6 +1,5 @@
 use crate::*;
-use near_sdk::serde_json;
-use aurora_workspace_types::input::{FungibleTokenMetadata, StorageBalance};
+use aurora_workspace_types::input::{FungibleTokenMetadata, StorageBalance, IsUsedProofCallArgs};
 
 #[near_bindgen]
 impl MockEvmContract {
@@ -12,13 +11,18 @@ impl MockEvmContract {
         0u128
     }
 
-    // pub fn ft_balance_of(&self, account: String) -> u128 {
-    //     0u128
-    // }
+    pub fn ft_balance_of(&self, #[serializer(borsh)] account: String) -> u128 {
+        0u128
+    }
 
     #[result_serializer(borsh)]
     pub fn ft_metadata(&self) -> FungibleTokenMetadata {
         FungibleTokenMetadata::default()
+    }
+
+    #[result_serializer(borsh)]
+    pub fn ft_total_eth_supply_on_aurora(&self) ->  [u64; 4] {
+        [0u64; 4]
     }
 
     #[result_serializer(borsh)]
@@ -66,7 +70,11 @@ impl MockEvmContract {
         [0u64; 4]
     }
 
-    pub fn storage_balance_of(&self, account: String) -> StorageBalance {
+    pub fn storage_balance_of(&self, #[serializer(borsh)] account: AccountId) -> StorageBalance {
         StorageBalance::default()
+    }
+
+    pub fn is_used_proof(&self, #[serializer(borsh)] proof: IsUsedProofCallArgs) -> bool {
+        true
     }
 }

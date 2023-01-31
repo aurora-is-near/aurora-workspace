@@ -224,7 +224,7 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> 
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let is_proof_used: bool = borsh::try_from_slice_with_schema(view.result.as_slice())?;
+        let is_proof_used: bool = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result: is_proof_used,
             logs: view.logs,
@@ -258,8 +258,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Fungib
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: FungibleTokenMetadata = FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
         Ok(Self {
-            result: serde_json::from_slice(view.result.as_slice())?,
+            result,
             logs: view.logs,
         })
     }
