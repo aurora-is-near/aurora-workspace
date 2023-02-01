@@ -1,7 +1,7 @@
+use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_workspace::operation::ViewResultDetails;
 use aurora_workspace::types::AccountId;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_workspace_types::input::{IsUsedProofCallArgs, StorageBalance, ProofInput} ;
+use aurora_workspace_types::input::{IsUsedProofCallArgs, ProofInput, StorageBalance};
 use ethereum_types::{H256, U256};
 use std::str::FromStr;
 
@@ -82,10 +82,7 @@ async fn test_paused_precompiles() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_block_hash() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .block_hash(0u64)
-        .await?;
+    let res = contract.as_account().block_hash(0u64).await?;
     let expected = ViewResultDetails {
         result: H256::from([0u8; 32]),
         logs: vec![],
@@ -97,10 +94,7 @@ async fn test_block_hash() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_balance() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .balance([0u8; 20])
-        .await?;
+    let res = contract.as_account().balance([0u8; 20]).await?;
     let expected = ViewResultDetails {
         result: 0u128,
         logs: vec![],
@@ -112,10 +106,7 @@ async fn test_balance() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_nonce() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .nonce([0u8; 20])
-        .await?;
+    let res = contract.as_account().nonce([0u8; 20]).await?;
     let expected = ViewResultDetails {
         result: 0u128,
         logs: vec![],
@@ -128,10 +119,7 @@ async fn test_nonce() -> anyhow::Result<()> {
 async fn test_is_proof_used() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
     let proof = ProofInput::default();
-    let res = contract
-        .as_account()
-        .is_proof_used(proof)
-        .await?;
+    let res = contract.as_account().is_proof_used(proof).await?;
     let expected = ViewResultDetails {
         result: true,
         logs: vec![],
@@ -143,10 +131,7 @@ async fn test_is_proof_used() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_ft_total_supply() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .ft_total_supply()
-        .await?;
+    let res = contract.as_account().ft_total_supply().await?;
     let expected = ViewResultDetails {
         result: 0u128,
         logs: vec![],
@@ -173,10 +158,7 @@ async fn test_ft_balance_of() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_ft_metadata() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .ft_metadata()
-        .await?;
+    let res = contract.as_account().ft_metadata().await?;
     let expected = ViewResultDetails {
         result: FungibleTokenMetadata::default(),
         logs: vec![],
@@ -188,10 +170,7 @@ async fn test_ft_metadata() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_eth_total_supply() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .eth_total_supply()
-        .await?;
+    let res = contract.as_account().eth_total_supply().await?;
     let expected = ViewResultDetails {
         result: U256::from(0),
         logs: vec![],
@@ -213,16 +192,11 @@ async fn test_storage_balance_of() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_eth_balance_of() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
-    let res = contract
-        .as_account()
-        .eth_balance_of([0u8; 20])
-        .await?;
+    let res = contract.as_account().eth_balance_of([0u8; 20]).await?;
     let expected = ViewResultDetails {
         result: U256::from(0),
         logs: vec![],
     };
-    assert_eq!(res,expected);
+    assert_eq!(res, expected);
     Ok(())
 }
-
-

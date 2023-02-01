@@ -9,15 +9,15 @@ use crate::{EvmCallTransaction, Result};
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::json::parse_json;
 use aurora_engine::parameters::{
-    InitCallArgs, StorageBalance, StorageDepositCallArgs,
-    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs, StorageBalanceOfCallArgs,
+    InitCallArgs, StorageBalance, StorageBalanceOfCallArgs, StorageDepositCallArgs,
+    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
 };
 use aurora_engine::proof::Proof;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
+use aurora_workspace_types::input::IsUsedProofCallArgs;
+use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_workspace_types::input::WithdrawInput;
-use aurora_workspace_types::input::ProofInput;
-use aurora_workspace_types::input::IsUsedProofCallArgs;
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
@@ -443,11 +443,7 @@ impl<U> EvmAccount<U> {
     ) -> Result<ViewResultDetails<u128>> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
-        // let args = serde_json::to_string(&account_id.as_ref())?;
-        ViewResultDetails::try_from(
-            self.near_view(&View::FtBalanceOf, args)
-                .await?,
-        )
+        ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
     pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
@@ -465,10 +461,9 @@ impl<U> EvmAccount<U> {
     }
 
     pub async fn eth_total_supply(&self) -> Result<ViewResultDetails<U256>> {
-        Ok(
-            ViewResultDetails::from(
-                self.near_view(&View::EthTotalSupply, vec![]).await?
-            ))
+        Ok(ViewResultDetails::from(
+            self.near_view(&View::EthTotalSupply, vec![]).await?,
+        ))
     }
 
     pub async fn storage_balance_of<A: AsRef<str>>(
@@ -477,10 +472,7 @@ impl<U> EvmAccount<U> {
     ) -> Result<ViewResultDetails<StorageBalance>> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
-        ViewResultDetails::try_from(
-            self.near_view(&View::StorageBalanceOf, args)
-                .await?,
-        )
+        ViewResultDetails::try_from(self.near_view(&View::StorageBalanceOf, args).await?)
     }
 }
 

@@ -258,7 +258,8 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Fungib
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: FungibleTokenMetadata = FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
+        let result: FungibleTokenMetadata =
+            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
         Ok(Self {
             result,
             logs: view.logs,
