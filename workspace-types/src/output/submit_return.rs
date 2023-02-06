@@ -236,6 +236,44 @@ mod tests {
     use ethereum_types::H160;
 
     #[test]
+    fn test_log_new() {
+        let zero_address = H160([0u8; 20]);
+        let log = Log::new(
+            zero_address,
+            vec![H256([0u8; 32])],
+            H256([0u8; 32]).0.to_vec()
+        );
+        assert_eq!(log.address(), &zero_address);
+        assert_eq!(log.topics(), &vec![H256([0u8; 32])]);
+        assert_eq!(log.data(), H256([0u8; 32]).0.to_vec());
+    }
+
+    #[test]
+    fn test_submit_result_success() {
+        let zero_address = H160([0u8; 20]);
+        let total_gas_used = 100_000;
+        let log = Log::new(
+            zero_address,
+            vec![H256([0u8; 32])], // topics
+            H256([0u8; 32]).0.to_vec() // random data
+        );
+        let submit_res = SubmitResult::new(
+            TransactionStatus::Succeed(vec![0u8]), // status
+            total_gas_used, // total gas
+            vec![log.clone()],
+        );
+        // assert total gas used
+        assert_eq!(submit_res.gas_used(), 21000);
+        assert_eq!(submit_res.logs(), vec![log]);
+        assert_eq!(submit_res.is_ok(), true);
+        assert_eq!(submit_res.is_success(), true);
+        assert_eq!(submit_res.is_revert(), false);
+        assert_eq!(submit_res.is_err(), false);
+        assert_eq!(submit_res.into_result().unwrap(), TransactionStatus::Succeed(vec![0u8]));
+    }
+
+
+    #[test]
     fn test_submit_result_deserialize() {
         // sourced from aurora-engine manually.
         let input_hex = "\
