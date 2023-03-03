@@ -3,9 +3,10 @@ use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
+use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
+use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
@@ -102,6 +103,7 @@ impl AsRef<str> for Call {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ViewResultDetails<T> {
     pub result: T,
     pub logs: Vec<String>,
@@ -163,6 +165,17 @@ impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u32> {
     }
 }
 
+impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u8> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+        let mut buf = [0u8; 1];
+        buf.copy_from_slice(view.result.as_slice());
+        Self {
+            result: buf[0],
+            logs: view.logs,
+        }
+    }
+}
+
 impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<H256> {
     fn from(view: workspaces::result::ViewResultDetails) -> Self {
         Self {
@@ -172,7 +185,6 @@ impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<H256> {
     }
 }
 
-#[cfg(not(feature = "ethabi"))]
 impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<Vec<u8>> {
     fn from(view: workspaces::result::ViewResultDetails) -> Self {
         Self {
@@ -223,9 +235,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> 
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let is_proof_used: bool = borsh::try_from_slice_with_schema(view.result.as_slice())?;
+        let result: bool = borsh::try_from_slice_with_schema(view.result.as_slice())?;
         Ok(Self {
-            result: is_proof_used,
+            result,
             logs: view.logs,
         })
     }
@@ -235,23 +247,23 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> 
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let total_supply: u128 = serde_json::from_slice(view.result.as_slice())?;
+        let result: u128 = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
-            result: total_supply,
+            result,
             logs: view.logs,
         })
     }
 }
 
-// impl ViewResultDetails<U256> {
-//     pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-//         let total_supply: Wei = serde_json::from_slice(view.result.as_slice())?;
-//         Ok(Self {
-//             result: total_supply.raw(),
-//             logs: view.logs,
-//         })
-//     }
-// }
+impl ViewResultDetails<U256> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: Wei = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result: result.raw(),
+            logs: view.logs,
+        })
+    }
+}
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
     type Error = Error;
@@ -299,6 +311,7 @@ pub enum View {
     PausedFlags,     // TODO
     AccountsCounter, // TODO
     Erc20FromNep141, // TODO
+    Nep141FromErc20, // TODO
 }
 
 impl AsRef<str> for View {
@@ -327,6 +340,7 @@ impl AsRef<str> for View {
             PausedFlags => "get_paused_flags",
             AccountsCounter => "get_accounts_counter",
             Erc20FromNep141 => "get_erc20_from_nep141",
+            Nep141FromErc20 => "get_nep141_from_erc20",
         }
     }
 }
