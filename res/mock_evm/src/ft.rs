@@ -1,11 +1,12 @@
 use crate::*;
+use near_sdk::json_types::U128;
 use near_sdk::serde_json;
 
 #[near_bindgen]
 impl MockEvmContract {
-    pub fn ft_transfer(&mut self, receiver_id: String, amount: u128, memo: Option<String>) {
+    pub fn ft_transfer(&mut self, receiver_id: String, amount: U128, memo: Option<String>) {
         assert_eq!(receiver_id, "some_account.test");
-        assert_eq!(amount, 10);
+        assert_eq!(amount.0, 10);
         assert_eq!(memo, Some("some message".to_string()));
     }
 
