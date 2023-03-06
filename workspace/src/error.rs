@@ -1,5 +1,4 @@
-use std::fmt::{Display, Formatter};
-use std::{fmt, io};
+use std::io;
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, thiserror::Error)]
