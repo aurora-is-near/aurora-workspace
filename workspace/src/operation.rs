@@ -1,11 +1,11 @@
+#![allow(dead_code)]
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine::parameters::{StorageBalance, TransactionStatus, WithdrawResult};
+use aurora_engine::parameters::{StorageBalance, TransactionStatus};
 use aurora_engine_sdk::promise::PromiseId;
-use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
