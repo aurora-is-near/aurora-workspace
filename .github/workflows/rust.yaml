@@ -17,6 +17,7 @@ jobs:
       - name: Build smart contract
         run: |
           cd res/mock_evm
+          rustup target add wasm32-unknown-unknown
           ./build.sh
           cd ../..
       - name: Run checks
