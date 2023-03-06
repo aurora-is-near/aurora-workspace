@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  check:
+    name: Checks
+    runs-on: [self-hosted, heavy]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Build smart contract
+        run: |
+          cd res/mock_evm
+          ./build.sh
+          cd ../..
+      - name: Run checks
+        run: |
+          cargo fmt --all --check
+          cargo clippy --all -- -D warnings
+          cargo test --all
