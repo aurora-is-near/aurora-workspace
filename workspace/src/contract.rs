@@ -6,13 +6,13 @@ use crate::operation::{
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EvmCallTransaction, Result};
-use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine::json::parse_json;
 use aurora_engine::parameters::{
-    InitCallArgs, StorageBalance, StorageBalanceOfCallArgs, StorageDepositCallArgs,
-    StorageWithdrawCallArgs, TransferCallArgs, TransferCallCallArgs,
+    GetStorageAtArgs, InitCallArgs, StorageBalance, StorageBalanceOfCallArgs,
+    StorageDepositCallArgs, StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs,
+    TransferCallCallArgs,
 };
 use aurora_engine::proof::Proof;
+use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::ViewCallArgs};
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -39,7 +39,7 @@ enum AccountKind {
 }
 
 impl AccountKind {
-    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction {
+    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
         let transaction = match self {
             AccountKind::Account { contract_id, inner } => {
                 inner.call(contract_id, function.as_ref())
@@ -170,7 +170,7 @@ impl EvmAccount<User> {
 }
 
 impl<U> EvmAccount<U> {
-    fn near_call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction {
+    fn near_call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
         self.account.call(function)
     }
 
@@ -191,7 +191,7 @@ impl<U> EvmAccount<U> {
     /// The logic which creates the ETH address is as follows:
     ///
     /// `Address = keccak(NEAR account Id)[12..]`
-    pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode {
+    pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode<'_> {
         let args = Raw(code);
         CallDeployCode(self.near_call(&Call::DeployCode).args_borsh(args))
     }
@@ -202,12 +202,12 @@ impl<U> EvmAccount<U> {
     /// deployment with the given logic:
     ///
     /// `Address = keccak(NEAR account Id)[12..]`
-    pub fn deploy_erc20(&self, account_id: AccountId) -> CallDeployErc20 {
+    pub fn deploy_erc20(&self, account_id: AccountId) -> CallDeployErc20<'_> {
         let args = DeployErc20Input { nep141: account_id };
         CallDeployErc20(self.near_call(&Call::DeployErc20Token).args_borsh(args))
     }
 
-    pub fn call<A: Into<U256>>(&self, contract: Address, amount: A, input: Vec<u8>) -> CallEvm {
+    pub fn call<A: Into<U256>>(&self, contract: Address, amount: A, input: Vec<u8>) -> CallEvm<'_> {
         let value: U256 = amount.into();
         let mut buf = [0u8; 32];
         value.to_big_endian(&mut buf);
@@ -219,11 +219,11 @@ impl<U> EvmAccount<U> {
         CallEvm(self.near_call(&Call::Evm).args_borsh(args))
     }
 
-    pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
+    pub fn submit(&self, input: Vec<u8>) -> CallSubmit<'_> {
         CallSubmit(self.near_call(&Call::Submit).args_borsh(Raw(input)))
     }
 
-    pub fn register_relayer<A: Into<Address>>(&self, address: A) -> CallRegisterRelayer {
+    pub fn register_relayer<A: Into<Address>>(&self, address: A) -> CallRegisterRelayer<'_> {
         CallRegisterRelayer(
             self.near_call(&Call::RegisterRelayer)
                 .args(address.into().0.to_vec()),
@@ -231,7 +231,7 @@ impl<U> EvmAccount<U> {
     }
 
     #[cfg(feature = "deposit-withdraw")]
-    pub fn deposit(&self, proof: ProofInput) -> CallDeposit {
+    pub fn deposit(&self, proof: ProofInput) -> CallDeposit<'_> {
         CallDeposit(self.near_call(&Call::Deposit).args_borsh(proof))
     }
 
@@ -240,7 +240,7 @@ impl<U> EvmAccount<U> {
         &self,
         receiver_address: R,
         amount: A,
-    ) -> CallWithdraw {
+    ) -> CallWithdraw<'_> {
         let args = WithdrawInput {
             recipient_address: receiver_address.into().0,
             amount: amount.into(),
@@ -253,7 +253,7 @@ impl<U> EvmAccount<U> {
         receiver_id: R,
         amount: u128,
         memo: Option<String>,
-    ) -> CallFtTransfer {
+    ) -> CallFtTransfer<'_> {
         let args = TransferCallArgs {
             // TODO: impl error
             receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
@@ -269,7 +269,7 @@ impl<U> EvmAccount<U> {
         sender_id: AccountId,
         amount: A,
         message: String,
-    ) -> CallFtOnTransfer {
+    ) -> CallFtOnTransfer<'_> {
         let args = FtOnTransferInput {
             sender_id,
             amount: amount.into(),
@@ -284,7 +284,7 @@ impl<U> EvmAccount<U> {
         amount: u128,
         memo: Option<String>,
         message: String,
-    ) -> CallFtTransferCall {
+    ) -> CallFtTransferCall<'_> {
         let args = TransferCallCallArgs {
             receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
                 .unwrap(),
@@ -300,7 +300,7 @@ impl<U> EvmAccount<U> {
         &self,
         account_id: Option<A>,
         registration_only: Option<bool>,
-    ) -> CallStorageDeposit {
+    ) -> CallStorageDeposit<'_> {
         let args = StorageDepositCallArgs {
             account_id: account_id
                 .map(|a| aurora_engine_types::account_id::AccountId::new(a.as_ref()).unwrap()),
@@ -309,12 +309,12 @@ impl<U> EvmAccount<U> {
         CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
     }
 
-    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister {
+    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
         let val = serde_json::json!({ "force": force });
         CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
     }
 
-    pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw {
+    pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw<'_> {
         let args = StorageWithdrawCallArgs {
             amount: amount.map(aurora_engine_types::types::Yocto::new),
         };
@@ -358,26 +358,27 @@ impl<U> EvmAccount<U> {
         ))
     }
 
-    // #[cfg(not(feature = "ethabi"))]
-    // pub async fn code<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<Vec<u8>>> {
-    //     let address = aurora_engine_types::types::Address::new(address.into());
-    //     Ok(ViewResultDetails::from(
-    //         self.near_view(&View::Code, address.try_to_vec()?).await?,
-    //     ))
-    // }
+    #[cfg(not(feature = "ethabi"))]
+    pub async fn code<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<Vec<u8>>> {
+        let address = address.into();
+        Ok(ViewResultDetails::from(
+            self.near_view(&View::Code, address.as_bytes().to_vec())
+                .await?,
+        ))
+    }
 
-    // #[cfg(feature = "ethabi")]
-    // pub async fn code(
-    //     &self,
-    //     types: &[ParamType],
-    //     address: Address,
-    // ) -> Result<ViewResultDetails<Vec<Token>>> {
-    //     let address = aurora_engine_types::types::Address::new(address);
-    //     ViewResultDetails::decode(
-    //         types,
-    //         self.near_view(&View::Code, address.try_to_vec()?).await?,
-    //     )
-    // }
+    #[cfg(feature = "ethabi")]
+    pub async fn code(
+        &self,
+        types: &[ParamType],
+        address: Address,
+    ) -> Result<ViewResultDetails<Vec<Token>>> {
+        let address = aurora_engine_types::types::Address::new(address);
+        ViewResultDetails::decode(
+            types,
+            self.near_view(&View::Code, address.try_to_vec()?).await?,
+        )
+    }
 
     pub async fn balance<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<u128>> {
         Ok(ViewResultDetails::from_u256(
@@ -393,37 +394,37 @@ impl<U> EvmAccount<U> {
         ))
     }
 
-    // pub async fn storage<A: Into<Address>, K: Into<H256>>(
-    //     &self,
-    //     address: A,
-    //     key: K,
-    // ) -> Result<ViewResultDetails<H256>> {
-    //     let args = GetStorageAtArgs {
-    //         address: aurora_engine_types::types::Address::new(address.into()),
-    //         key: key.into().0,
-    //     };
-    //     Ok(ViewResultDetails::from(
-    //         self.near_view(&View::Storage, args.try_to_vec()?).await?,
-    //     ))
-    // }
+    pub async fn storage<A: Into<Address>, K: Into<H256>>(
+        &self,
+        address: A,
+        key: K,
+    ) -> Result<ViewResultDetails<H256>> {
+        let args = GetStorageAtArgs {
+            address: aurora_engine_types::types::Address::new(address.into()),
+            key: key.into().0,
+        };
+        Ok(ViewResultDetails::from(
+            self.near_view(&View::Storage, args.try_to_vec()?).await?,
+        ))
+    }
 
-    // pub async fn view<A: Into<Address>, V: Into<U256>>(
-    //     &self,
-    //     sender: A,
-    //     address: A,
-    //     amount: V,
-    //     input: Vec<u8>,
-    // ) -> Result<ViewResultDetails<TransactionStatus>> {
-    //     let mut buf = [0u8; 32];
-    //     amount.into().to_big_endian(&mut buf);
-    //     let args = ViewCallArgs {
-    //         sender: aurora_engine_types::types::Address::new(sender.into()),
-    //         address: aurora_engine_types::types::Address::new(address.into()),
-    //         amount: buf,
-    //         input,
-    //     };
-    //     ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
-    // }
+    pub async fn view<A: Into<Address>, V: Into<U256>>(
+        &self,
+        sender: A,
+        address: A,
+        amount: V,
+        input: Vec<u8>,
+    ) -> Result<ViewResultDetails<TransactionStatus>> {
+        let mut buf = [0u8; 32];
+        amount.into().to_big_endian(&mut buf);
+        let args = ViewCallArgs {
+            sender: aurora_engine_types::types::Address::new(sender.into()),
+            address: aurora_engine_types::types::Address::new(address.into()),
+            amount: buf,
+            input,
+        };
+        ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
+    }
 
     pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
         let args = IsUsedProofCallArgs { proof };
@@ -461,9 +462,7 @@ impl<U> EvmAccount<U> {
     }
 
     pub async fn eth_total_supply(&self) -> Result<ViewResultDetails<U256>> {
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::EthTotalSupply, vec![]).await?,
-        ))
+        ViewResultDetails::try_from_json(self.near_view(&View::EthTotalSupply, vec![]).await?)
     }
 
     pub async fn storage_balance_of<A: AsRef<str>>(
@@ -473,6 +472,32 @@ impl<U> EvmAccount<U> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
         ViewResultDetails::try_from(self.near_view(&View::StorageBalanceOf, args).await?)
+    }
+
+    pub async fn erc20_from_nep141(
+        &self,
+        nep141_account_id: AccountId,
+    ) -> Result<ViewResultDetails<AccountId>> {
+        ViewResultDetails::try_from(
+            self.near_view(&View::Erc20FromNep141, nep141_account_id.try_to_vec()?)
+                .await?,
+        )
+    }
+
+    pub async fn nep141_from_erc20(
+        &self,
+        erc20_account_id: AccountId,
+    ) -> Result<ViewResultDetails<AccountId>> {
+        ViewResultDetails::try_from(
+            self.near_view(&View::Nep141FromErc20, erc20_account_id.try_to_vec()?)
+                .await?,
+        )
+    }
+
+    pub async fn paused_flags(&self) -> Result<ViewResultDetails<u8>> {
+        Ok(ViewResultDetails::from(
+            self.near_view(&View::PausedFlags, Vec::new()).await?,
+        ))
     }
 }
 

@@ -1,14 +1,14 @@
+use crate::out::SubmitResult;
 use aurora_workspace_types::input::{CallInput, DeployErc20Input, SetEthConnectorInput};
 use aurora_workspace_types::output::{Log, TransactionStatus};
-use aurora_workspace_types::{AccountId, Address, H256, Raw};
+use aurora_workspace_types::{AccountId, Address, Raw, H256};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{near_bindgen, PanicOnDefault};
-use crate::out::SubmitResult;
 
-mod metadata;
-mod storage;
-mod out;
 pub mod ft;
+mod metadata;
+mod out;
+mod storage;
 
 fn dummy_submit_result() -> SubmitResult {
     let log = Log::new(

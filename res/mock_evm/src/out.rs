@@ -1,6 +1,6 @@
+use aurora_workspace_types::output::{Log, TransactionStatus};
 use near_sdk::borsh::{self, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use aurora_workspace_types::output::{Log, TransactionStatus};
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, Serialize, Deserialize)]
 pub struct SubmitResult {
