@@ -7,6 +7,7 @@ const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
 const OWNER_ACCOUNT_ID: &str = "owner.test.near";
 const PROVER_ACCOUNT_ID: &str = "prover.test.near";
+#[allow(dead_code)]
 const EVM_CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 const WASM_BIN_FILE_PATH: &str = "../res/bin/main.wasm";
 

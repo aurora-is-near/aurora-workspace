@@ -1,6 +1,5 @@
-use std::ascii;
-
-use aurora_workspace_types::{output::TransactionStatus, AccountId, Raw};
+use aurora_workspace_types::input::{FungibleTokenMetadata, IsUsedProofCallArgs, StorageBalance};
+use aurora_workspace_types::{output::TransactionStatus, AccountId, Raw, U256};
 use near_sdk::{borsh, near_bindgen};
 
 use crate::{MockEvmContract, MockEvmContractExt};
@@ -11,6 +10,15 @@ impl MockEvmContract {
         "v1".to_string()
     }
 
+    #[result_serializer(borsh)]
+    pub fn get_owner(&self) -> AccountId {
+        "owner.test.near".parse().unwrap()
+    }
+
+    pub fn get_chain_id(&self) -> String {
+        1313161556.to_string()
+    }
+
     pub fn ft_total_eth_supply_on_aurora(&self) -> String {
         "0".into()
     }
@@ -19,7 +27,7 @@ impl MockEvmContract {
         0
     }
 
-    pub fn ft_balance_of(&self, #[serializer(borsh)] account: String) -> u128 {
+    pub fn ft_balance_of(&self, #[serializer(borsh)] _account: String) -> u128 {
         0
     }
 
@@ -94,11 +102,11 @@ impl MockEvmContract {
         [0u64; 4]
     }
 
-    pub fn storage_balance_of(&self, #[serializer(borsh)] account: AccountId) -> StorageBalance {
+    pub fn storage_balance_of(&self, #[serializer(borsh)] _account: AccountId) -> StorageBalance {
         StorageBalance::default()
     }
 
-    pub fn is_used_proof(&self, #[serializer(borsh)] proof: IsUsedProofCallArgs) -> bool {
+    pub fn is_used_proof(&self, #[serializer(borsh)] _proof: IsUsedProofCallArgs) -> bool {
         true
     }
 }

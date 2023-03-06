@@ -1,6 +1,7 @@
 use crate::AccountId;
 use aurora_engine_types::types::Yocto;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -100,7 +101,7 @@ pub struct CallInput {
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct FtOnTransferInput {
     pub sender_id: AccountId,
-    pub amount: u128,
+    pub amount: U128,
     pub msg: String,
 }
 

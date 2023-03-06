@@ -13,7 +13,6 @@ near-sdk = "4.0"
 serde = { version = "1", features = ["derive"] }
 getrandom = {version = "0.2", default-features = false, features = ["custom"]}
 
-
 [profile.release]
 codegen-units = 1
 opt-level = "z"

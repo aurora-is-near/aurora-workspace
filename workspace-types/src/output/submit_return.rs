@@ -241,7 +241,7 @@ mod tests {
         let log = Log::new(
             zero_address,
             vec![H256([0u8; 32])],
-            H256([0u8; 32]).0.to_vec()
+            H256([0u8; 32]).0.to_vec(),
         );
         assert_eq!(log.address(), &zero_address);
         assert_eq!(log.topics(), &vec![H256([0u8; 32])]);
@@ -254,24 +254,26 @@ mod tests {
         let total_gas_used = 100_000;
         let log = Log::new(
             zero_address,
-            vec![H256([0u8; 32])], // topics
-            H256([0u8; 32]).0.to_vec() // random data
+            vec![H256([0u8; 32])],      // topics
+            H256([0u8; 32]).0.to_vec(), // random data
         );
         let submit_res = SubmitResult::new(
             TransactionStatus::Succeed(vec![0u8]), // status
-            total_gas_used, // total gas
+            total_gas_used,                        // total gas
             vec![log.clone()],
         );
         // assert total gas used
-        assert_eq!(submit_res.gas_used(), 21000);
+        assert_eq!(submit_res.gas_used(), total_gas_used);
         assert_eq!(submit_res.logs(), vec![log]);
-        assert_eq!(submit_res.is_ok(), true);
-        assert_eq!(submit_res.is_success(), true);
-        assert_eq!(submit_res.is_revert(), false);
-        assert_eq!(submit_res.is_err(), false);
-        assert_eq!(submit_res.into_result().unwrap(), TransactionStatus::Succeed(vec![0u8]));
+        assert!(submit_res.is_ok());
+        assert!(submit_res.is_success());
+        assert!(!submit_res.is_revert());
+        assert!(!submit_res.is_err());
+        assert_eq!(
+            submit_res.into_result().unwrap(),
+            TransactionStatus::Succeed(vec![0u8])
+        );
     }
-
 
     #[test]
     fn test_submit_result_deserialize() {
