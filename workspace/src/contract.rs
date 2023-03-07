@@ -664,7 +664,7 @@ impl EvmContract {
         };
         self.contract
             .near_call("new")
-            .args_json(new_args)
+            .args_borsh(new_args)
             .transact()
             .await?
             .into_result()?;
