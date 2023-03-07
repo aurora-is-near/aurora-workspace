@@ -14,11 +14,12 @@ aurora-workspace-types = { path = "../workspace-types" }
 borsh = { version = "0.9", default-features = false }
 ethabi = { version = "18", optional = true }
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
+near-sdk = "4.0"
 near-primitives = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
-workspaces = { git = "https://github.com/near/workspaces-rs.git", rev = "34bb786470700c7f95b0c88201a58b8792b6dba1" }
+workspaces = { version = "0.7.0", features = ["unstable"] }
 
 [dev-dependencies]
 anyhow = "1"
@@ -31,5 +32,3 @@ default = []
 eth-primitives = []
 full-serde = []
 deposit-withdraw = ["aurora-workspace-types/deposit-withdraw"]
-# TODO: "mock" temporary until aurora-engine supports near_sdk
-mock = ["aurora-workspace-types/mock"]

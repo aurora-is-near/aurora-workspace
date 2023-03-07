@@ -7,6 +7,7 @@ readme = "README.md"
 
 [dependencies]
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize", "rlp"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "745b0cc5f85432a421ba12b699e5e1cc12e3a6bb",  features = ["impl-serde"] }
 near-sdk = "4.0"
 near-account-id = "0.15"
 serde = { version = "1", features = ["derive"] }
@@ -14,9 +15,7 @@ thiserror = "1"
 rlp = "0.5.1"
 
 [dev-dependencies]
-aurora-workspace-types = { path = ".", features = ["mock"] }
 hex = "0.4.3"
 
 [features]
 deposit-withdraw = []
-mock = []

@@ -3,8 +3,10 @@ use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
+use aurora_engine::fungible_token::FungibleTokenMetadata;
+#[cfg(feature = "deposit-withdraw")]
+use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
-use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::WithdrawResult};
 use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
@@ -235,7 +237,7 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> 
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: bool = borsh::try_from_slice_with_schema(view.result.as_slice())?;
+        let result: bool = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result,
             logs: view.logs,
@@ -269,8 +271,10 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Fungib
     type Error = Error;
 
     fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: FungibleTokenMetadata =
+            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
         Ok(Self {
-            result: serde_json::from_slice(view.result.as_slice())?,
+            result,
             logs: view.logs,
         })
     }
