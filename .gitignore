@@ -13,3 +13,6 @@ bin/
 
 # IDE settings generated from IDEs
 .idea
+
+# MacOS index files
+.DS_Store
