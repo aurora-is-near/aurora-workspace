@@ -7,10 +7,11 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-workspace-types = { path = "../../workspace-types", features = ["mock"] }
+aurora-workspace-types = { path = "../../workspace-types" }
 hex = "0.4.3"
 near-sdk = "4.0"
 serde = { version = "1", features = ["derive"] }
+getrandom = {version = "0.2", default-features = false, features = ["custom"]}
 
 [profile.release]
 codegen-units = 1

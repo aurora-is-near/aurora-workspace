@@ -7,18 +7,20 @@ use crate::operation::{
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EvmCallTransaction, Result};
 use aurora_engine::parameters::{
-    GetStorageAtArgs, InitCallArgs, IsUsedProofCallArgs, StorageBalance, StorageDepositCallArgs,
+    GetStorageAtArgs, InitCallArgs, StorageBalance, StorageDepositCallArgs,
     StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, TransferCallCallArgs,
 };
-use aurora_engine::proof::Proof;
 use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::ViewCallArgs};
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
+use aurora_workspace_types::input::IsUsedProofCallArgs;
+use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
-use aurora_workspace_types::input::{ProofInput, WithdrawInput};
+use aurora_workspace_types::input::WithdrawInput;
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
+use near_sdk::json_types::U128;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -245,30 +247,30 @@ impl<U> EvmAccount<U> {
         CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
     }
 
-    pub fn ft_transfer<R: AsRef<str>>(
+    pub fn ft_transfer<R: AsRef<str>, A: Into<U128>>(
         &self,
         receiver_id: R,
-        amount: u128,
+        amount: A,
         memo: Option<String>,
     ) -> CallFtTransfer<'_> {
         let args = TransferCallArgs {
             // TODO: impl error
             receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
                 .unwrap(),
-            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount.into().0),
             memo,
         };
         CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(args))
     }
 
-    pub fn ft_on_transfer<A: Into<u128>>(
+    pub fn ft_on_transfer<A: Into<U128>, R: AsRef<str>>(
         &self,
-        sender_id: AccountId,
+        sender_id: R,
         amount: A,
         message: String,
     ) -> CallFtOnTransfer<'_> {
         let args = FtOnTransferInput {
-            sender_id,
+            sender_id: AccountId::from_str(sender_id.as_ref()).unwrap(),
             amount: amount.into(),
             msg: message,
         };
@@ -330,10 +332,8 @@ impl<U> EvmAccount<U> {
         ViewResultDetails::try_from(self.near_view(&View::BridgeProver, vec![]).await?)
     }
 
-    pub async fn chain_id(&self) -> Result<ViewResultDetails<u128>> {
-        Ok(ViewResultDetails::from_u256(
-            self.near_view(&View::ChainId, vec![]).await?,
-        ))
+    pub async fn chain_id(&self) -> Result<ViewResultDetails<String>> {
+        ViewResultDetails::try_from(self.near_view(&View::ChainId, vec![]).await?)
     }
 
     pub async fn upgrade_index(&self) -> Result<ViewResultDetails<u64>> {
@@ -349,7 +349,6 @@ impl<U> EvmAccount<U> {
     }
 
     pub async fn block_hash(&self, block_height: u64) -> Result<ViewResultDetails<H256>> {
-        // TODO: check if this actually needs to be borsh. Should be equivalent.
         let args = block_height.try_to_vec()?;
         Ok(ViewResultDetails::from(
             self.near_view(&View::BlockHash, args).await?,
@@ -424,7 +423,7 @@ impl<U> EvmAccount<U> {
         ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
     }
 
-    pub async fn is_proof_used(&self, proof: Proof) -> Result<ViewResultDetails<bool>> {
+    pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
         let args = IsUsedProofCallArgs { proof };
         ViewResultDetails::try_from(
             self.near_view(&View::IsProofUsed, args.try_to_vec()?)
@@ -440,11 +439,9 @@ impl<U> EvmAccount<U> {
         &self,
         account_id: A,
     ) -> Result<ViewResultDetails<u128>> {
-        let args = serde_json::to_string(&account_id.as_ref())?;
-        ViewResultDetails::try_from(
-            self.near_view(&View::FtBalanceOf, args.as_bytes().to_vec())
-                .await?,
-        )
+        let account = AccountId::from_str(account_id.as_ref()).unwrap();
+        let args = borsh::to_vec(&account).unwrap();
+        ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
     pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
@@ -469,11 +466,9 @@ impl<U> EvmAccount<U> {
         &self,
         account_id: A,
     ) -> Result<ViewResultDetails<StorageBalance>> {
-        let args = serde_json::to_string(account_id.as_ref())?;
-        ViewResultDetails::try_from(
-            self.near_view(&View::StorageBalanceOf, args.as_bytes().to_vec())
-                .await?,
-        )
+        let account = AccountId::from_str(account_id.as_ref()).unwrap();
+        let args = borsh::to_vec(&account).unwrap();
+        ViewResultDetails::try_from(self.near_view(&View::StorageBalanceOf, args).await?)
     }
 
     pub async fn erc20_from_nep141(
@@ -667,15 +662,6 @@ impl EvmContract {
             bridge_prover_id: init_config.prover_id,
             upgrade_delay_blocks: 1,
         };
-        // TODO: temporary until aurora-engine supports near_sdk
-        #[cfg(feature = "mock")]
-        self.contract
-            .near_call("new")
-            .args_json(new_args)
-            .transact()
-            .await?
-            .into_result()?;
-        #[cfg(not(feature = "mock"))]
         self.contract
             .near_call("new")
             .args_borsh(new_args)

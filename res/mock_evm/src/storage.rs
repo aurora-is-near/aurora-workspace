@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 
 pub const STATE_KEY: &[u8; 5] = b"STATE";

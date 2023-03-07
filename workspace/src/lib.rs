@@ -1,6 +1,6 @@
 pub mod contract;
 pub mod error;
-pub(crate) mod operation;
+pub mod operation;
 pub(crate) mod result;
 
 pub use contract::{EvmAccount, EvmContract, InitConfig};
