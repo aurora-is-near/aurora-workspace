@@ -236,19 +236,6 @@ mod tests {
     use ethereum_types::H160;
 
     #[test]
-    fn test_log_new() {
-        let zero_address = H160([0u8; 20]);
-        let log = Log::new(
-            zero_address,
-            vec![H256([0u8; 32])],
-            H256([0u8; 32]).0.to_vec(),
-        );
-        assert_eq!(log.address(), &zero_address);
-        assert_eq!(log.topics(), &vec![H256([0u8; 32])]);
-        assert_eq!(log.data(), H256([0u8; 32]).0.to_vec());
-    }
-
-    #[test]
     fn test_submit_result_success() {
         let zero_address = H160([0u8; 20]);
         let total_gas_used = 100_000;

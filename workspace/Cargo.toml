@@ -28,9 +28,7 @@ lazy_static = "1.4"
 tokio = { version = "1" }
 
 [features]
-default = ["mock"]
+default = []
 eth-primitives = []
 full-serde = []
 deposit-withdraw = ["aurora-workspace-types/deposit-withdraw"]
-# TODO: "mock" temporary until aurora-engine supports near_sdk
-mock = ["aurora-workspace-types/mock"]

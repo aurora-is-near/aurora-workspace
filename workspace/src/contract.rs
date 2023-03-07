@@ -662,18 +662,9 @@ impl EvmContract {
             bridge_prover_id: init_config.prover_id,
             upgrade_delay_blocks: 1,
         };
-        // TODO: temporary until aurora-engine supports near_sdk
-        #[cfg(feature = "mock")]
         self.contract
             .near_call("new")
             .args_json(new_args)
-            .transact()
-            .await?
-            .into_result()?;
-        #[cfg(not(feature = "mock"))]
-        self.contract
-            .near_call("new")
-            .args_borsh(new_args)
             .transact()
             .await?
             .into_result()?;

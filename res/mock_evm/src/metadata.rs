@@ -1,5 +1,5 @@
 use aurora_workspace_types::input::{FungibleTokenMetadata, IsUsedProofCallArgs, StorageBalance};
-use aurora_workspace_types::{output::TransactionStatus, AccountId, Raw, U256};
+use aurora_workspace_types::{output::TransactionStatus, AccountId, Raw};
 use near_sdk::{borsh, near_bindgen};
 
 use crate::{MockEvmContract, MockEvmContractExt};
