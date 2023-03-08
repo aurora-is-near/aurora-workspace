@@ -6,12 +6,14 @@ use crate::Result;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
+use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
@@ -52,7 +54,12 @@ impl_call_return![
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json)
+    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
+    (CallFtTransfer, ExecutionSuccess<()>, try_from),
+    (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
+    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
+    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
+    (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
 ];
 
 #[cfg(feature = "deposit-withdraw")]
@@ -75,6 +82,11 @@ pub(crate) enum Call {
     FtOnTransfer,
     Withdraw,
     Deposit,
+    FtTransfer,
+    FtTransferCall,
+    StorageDeposit,
+    StorageUnregister,
+    StorageWithdraw,
 }
 
 impl AsRef<str> for Call {
@@ -89,6 +101,11 @@ impl AsRef<str> for Call {
             FtOnTransfer => "ft_on_transfer",
             Withdraw => "withdraw",
             Deposit => "deposit",
+            FtTransfer => "ft_transfer",
+            FtTransferCall => "ft_transfer_call",
+            StorageDeposit => "storage_deposit",
+            StorageUnregister => "storage_unregister",
+            StorageWithdraw => "storage_withdraw",
         }
     }
 }
@@ -250,6 +267,19 @@ impl ViewResultDetails<U256> {
         let result: Wei = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result: result.raw(),
+            logs: view.logs,
+        })
+    }
+}
+
+impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
+    type Error = Error;
+
+    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: FungibleTokenMetadata =
+            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
             logs: view.logs,
         })
     }
