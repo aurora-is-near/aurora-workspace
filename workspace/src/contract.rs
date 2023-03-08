@@ -5,10 +5,8 @@ use crate::operation::{
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EngineCallTransaction, Result};
-use aurora_engine::parameters::{
-    GetStorageAtArgs, InitCallArgs, StorageBalance, TransactionStatus,
-};
-use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::ViewCallArgs};
+use aurora_engine::parameters::ViewCallArgs;
+use aurora_engine::parameters::{GetStorageAtArgs, StorageBalance, TransactionStatus};
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -386,10 +384,6 @@ impl<U: UserFunctions> EvmAccount<U> {
         ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
-    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
-        ViewResultDetails::try_from(self.near_view(&View::FtMetadata, vec![]).await?)
-    }
-
     pub async fn eth_balance_of<A: Into<Address>>(
         &self,
         address: A,
@@ -456,30 +450,11 @@ impl<P: AsRef<Path>> From<P> for ContractSource<P> {
     }
 }
 
-pub struct EthProverConfig {
-    pub account_id: AccountId,
-    pub evm_custodian_address: String,
-    pub metadata: FungibleTokenMetadata,
-}
-
-impl Default for EthProverConfig {
-    fn default() -> Self {
-        Self {
-            account_id: AccountId::from_str("eth-prover.test.near")
-                .expect("Ethereum prover ID somehow failed"),
-            evm_custodian_address: String::from("096DE9C2B8A5B8c22cEe3289B101f6960d68E51E"),
-            metadata: FungibleTokenMetadata::default(),
-        }
-    }
-}
-
 pub struct InitConfig {
     /// The owner ID of the contract.
     pub owner_id: AccountId,
     /// The prover ID of the contract.
     pub prover_id: AccountId,
-    /// The optional configuration for the Ethereum prover (bridge).
-    pub eth_prover_config: Option<EthProverConfig>,
     /// The Ethereum chain ID.
     pub chain_id: U256,
 }
@@ -489,7 +464,6 @@ impl Default for InitConfig {
         Self {
             owner_id: AccountId::from_str("owner.test.near").expect("Account ID somehow failed"),
             prover_id: AccountId::from_str("prover.test.near").expect("Prover ID somehow failed"),
-            eth_prover_config: Some(EthProverConfig::default()),
             chain_id: U256::from(1313161556),
         }
     }
@@ -610,23 +584,6 @@ impl EvmContract {
             .transact()
             .await?
             .into_result()?;
-
-        if let Some(eth_prover_config) = init_config.eth_prover_config {
-            let new_eth_connector_args = InitCallArgs {
-                prover_account: aurora_engine_types::account_id::AccountId::from_str(
-                    eth_prover_config.account_id.as_str(),
-                )
-                .unwrap(),
-                eth_custodian_address: eth_prover_config.evm_custodian_address,
-                metadata: FungibleTokenMetadata::default(),
-            };
-            self.contract
-                .near_call("new_eth_connector")
-                .args_borsh(new_eth_connector_args)
-                .transact()
-                .await?
-                .into_result()?;
-        }
 
         Ok(())
     }

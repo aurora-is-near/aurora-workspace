@@ -43,17 +43,6 @@ pub struct NewInput {
     pub upgrade_delay_blocks: u64,
 }
 
-/// Fungible token Reference hash type.
-/// Used for FungibleTokenMetadata
-#[derive(Debug, BorshDeserialize, BorshSerialize, Clone, PartialEq, Eq)]
-pub struct FungibleReferenceHash([u8; 32]);
-
-impl AsRef<[u8]> for FungibleReferenceHash {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
-}
-
 #[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
 pub struct DeployErc20Input {
     pub nep141: AccountId,
