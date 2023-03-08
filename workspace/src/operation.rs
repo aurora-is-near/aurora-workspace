@@ -19,7 +19,7 @@ use workspaces::result::ExecutionFinalResult;
 
 macro_rules! impl_call_return  {
     ($(($name:ident, $return:ty, $fun:ident)),*) => {
-        $(pub struct $name<'a>(pub(crate) EvmCallTransaction<'a>);
+        $(pub struct $name<'a>(pub(crate) EngineCallTransaction<'a>);
 
         impl<'a> $name<'a> {
             pub fn gas(mut self, gas: u64) -> $name<'a> {
@@ -431,45 +431,41 @@ impl AsRef<str> for TestCallFunction {
     }
 }
 
-pub struct EvmCallTransaction<'a> {
+pub struct EngineCallTransaction<'a> {
     inner: CallTransaction<'a>,
 }
 
-impl<'a, 'b> EvmCallTransaction<'a> {
+impl<'a, 'b> EngineCallTransaction<'a> {
     pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
-        EvmCallTransaction { inner: transaction }
+        Self { inner: transaction }
     }
 
-    pub(crate) fn args(mut self, args: Vec<u8>) -> EvmCallTransaction<'a> {
+    pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
         self.inner = self.inner.args(args);
         self
     }
 
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> EvmCallTransaction<'a> {
+    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
         self.inner = self.inner.args_json(args);
         self
     }
 
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(
-        mut self,
-        args: B,
-    ) -> EvmCallTransaction<'a> {
+    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
         self.inner = self.inner.args_borsh(args);
         self
     }
 
-    pub fn gas(mut self, gas: u64) -> EvmCallTransaction<'a> {
+    pub fn gas(mut self, gas: u64) -> Self {
         self.inner = self.inner.gas(gas);
         self
     }
 
-    pub fn max_gas(mut self) -> EvmCallTransaction<'a> {
+    pub fn max_gas(mut self) -> Self {
         self.inner = self.inner.max_gas();
         self
     }
 
     pub async fn transact(self) -> Result<ExecutionFinalResult> {
-        // TODO: return EVM execution result.
         Ok(self.inner.transact().await?)
     }
 }

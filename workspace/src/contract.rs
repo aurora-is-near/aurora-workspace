@@ -5,7 +5,7 @@ use crate::operation::{
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
-use crate::{EvmCallTransaction, Result};
+use crate::{EngineCallTransaction, Result};
 use aurora_engine::parameters::{
     GetStorageAtArgs, InitCallArgs, StorageBalance, StorageDepositCallArgs,
     StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, TransferCallCallArgs,
@@ -38,14 +38,14 @@ enum AccountKind {
 }
 
 impl AccountKind {
-    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
+    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EngineCallTransaction<'_> {
         let transaction = match self {
             AccountKind::Account { contract_id, inner } => {
                 inner.call(contract_id, function.as_ref())
             }
             AccountKind::Contract(con) => con.call(function.as_ref()),
         };
-        EvmCallTransaction::call(transaction)
+        EngineCallTransaction::call(transaction)
     }
 
     async fn view<F: AsRef<str>>(
@@ -118,7 +118,7 @@ impl UserFunctions for User {}
 impl private::Sealed for User {}
 
 #[derive(Debug, Clone)]
-pub struct EvmAccount<U> {
+pub struct EvmAccount<U: UserFunctions> {
     account: AccountKind,
     phantom: PhantomData<U>,
 }
@@ -168,8 +168,11 @@ impl EvmAccount<User> {
     }
 }
 
-impl<U> EvmAccount<U> {
-    fn near_call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
+impl<U: UserFunctions> EvmAccount<U> {
+    fn near_call<'a, F: AsRef<str> + ?Sized>(
+        &'a self,
+        function: &'a F,
+    ) -> EngineCallTransaction<'_> {
         self.account.call(function)
     }
 
