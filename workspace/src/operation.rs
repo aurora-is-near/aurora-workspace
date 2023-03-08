@@ -7,7 +7,6 @@ use aurora_engine::fungible_token::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
-use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
@@ -22,13 +21,18 @@ macro_rules! impl_call_return  {
         $(pub struct $name<'a>(pub(crate) EngineCallTransaction<'a>);
 
         impl<'a> $name<'a> {
-            pub fn gas(mut self, gas: u64) -> $name<'a> {
+            pub fn gas(mut self, gas: u64) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
 
-            pub fn max_gas(mut self) -> $name<'a> {
+            pub fn max_gas(mut self) -> Self {
                 self.0 = self.0.max_gas();
+                self
+            }
+
+            pub fn deposit(mut self, deposit: u128) -> Self {
+                self.0 = self.0.deposit(deposit);
                 self
             }
 
@@ -49,12 +53,7 @@ impl_call_return![
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
-    (CallFtTransfer, ExecutionSuccess<()>, try_from),
-    (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
-    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
-    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
-    (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
+    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json)
 ];
 
 #[cfg(feature = "deposit-withdraw")]
@@ -77,11 +76,6 @@ pub(crate) enum Call {
     FtOnTransfer,
     Withdraw,
     Deposit,
-    FtTransfer,
-    FtTransferCall,
-    StorageDeposit,
-    StorageUnregister,
-    StorageWithdraw,
 }
 
 impl AsRef<str> for Call {
@@ -96,11 +90,6 @@ impl AsRef<str> for Call {
             FtOnTransfer => "ft_on_transfer",
             Withdraw => "withdraw",
             Deposit => "deposit",
-            FtTransfer => "ft_transfer",
-            FtTransferCall => "ft_transfer_call",
-            StorageDeposit => "storage_deposit",
-            StorageUnregister => "storage_unregister",
-            StorageWithdraw => "storage_withdraw",
         }
     }
 }
@@ -462,6 +451,11 @@ impl<'a, 'b> EngineCallTransaction<'a> {
 
     pub fn max_gas(mut self) -> Self {
         self.inner = self.inner.max_gas();
+        self
+    }
+
+    pub fn deposit(mut self, deposit: u128) -> Self {
+        self.inner = self.inner.deposit(deposit);
         self
     }
 
