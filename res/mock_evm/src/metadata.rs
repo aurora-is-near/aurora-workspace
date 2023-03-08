@@ -1,4 +1,4 @@
-use aurora_workspace_types::input::{FungibleTokenMetadata, IsUsedProofCallArgs, StorageBalance};
+use aurora_workspace_types::input::{IsUsedProofCallArgs, StorageBalance};
 use aurora_workspace_types::{output::TransactionStatus, AccountId, Raw};
 use near_sdk::{borsh, near_bindgen};
 
@@ -29,11 +29,6 @@ impl MockEvmContract {
 
     pub fn ft_balance_of(&self, #[serializer(borsh)] _account: String) -> u128 {
         0
-    }
-
-    #[result_serializer(borsh)]
-    pub fn ft_metadata(&self) -> FungibleTokenMetadata {
-        FungibleTokenMetadata::default()
     }
 
     #[result_serializer(borsh)]

@@ -1,5 +1,5 @@
 use crate::out::SubmitResult;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, NewInput, SetEthConnectorInput};
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, NewInput};
 use aurora_workspace_types::output::{Log, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, Raw, H256};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -26,7 +26,6 @@ pub struct MockEvmContract {
     pub owner_id: AccountId,
     pub bridge_prover_id: AccountId,
     pub upgrade_delay_blocks: u64,
-    pub eth_connector: Option<SetEthConnectorInput>,
 }
 
 #[near_bindgen]
@@ -38,12 +37,7 @@ impl MockEvmContract {
             owner_id: input.owner_id,
             bridge_prover_id: input.bridge_prover_id,
             upgrade_delay_blocks: input.upgrade_delay_blocks,
-            eth_connector: None,
         }
-    }
-
-    pub fn new_eth_connector(&mut self, #[serializer(borsh)] input: SetEthConnectorInput) {
-        self.eth_connector = Some(input);
     }
 
     #[result_serializer(borsh)]

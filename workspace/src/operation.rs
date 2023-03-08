@@ -3,7 +3,6 @@ use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
@@ -251,19 +250,6 @@ impl ViewResultDetails<U256> {
         let result: Wei = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result: result.raw(),
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: FungibleTokenMetadata =
-            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
             logs: view.logs,
         })
     }

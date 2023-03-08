@@ -1,4 +1,3 @@
-use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine_types::parameters::engine::TransactionStatus;
 use aurora_workspace::operation::ViewResultDetails;
 use aurora_workspace::types::AccountId;
@@ -141,17 +140,6 @@ async fn test_ft_balance_of() {
         .unwrap();
     let expected = ViewResultDetails {
         result: 0u128,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_ft_metadata() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().ft_metadata().await.unwrap();
-    let expected = ViewResultDetails {
-        result: FungibleTokenMetadata::default(),
         logs: vec![],
     };
     assert_eq!(res, expected);
