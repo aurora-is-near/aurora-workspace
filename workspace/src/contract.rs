@@ -1,12 +1,16 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallRegisterRelayer,
-    CallSubmit, View, ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallFtTransfer,
+    CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallSubmit, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EngineCallTransaction, Result};
 use aurora_engine::parameters::ViewCallArgs;
-use aurora_engine::parameters::{GetStorageAtArgs, StorageBalance, TransactionStatus};
+use aurora_engine::parameters::{
+    GetStorageAtArgs, StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
+    TransactionStatus, TransferCallArgs, TransferCallCallArgs,
+};
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -16,6 +20,7 @@ use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
@@ -246,6 +251,22 @@ impl<U: UserFunctions> EvmAccount<U> {
         CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
     }
 
+    pub fn ft_transfer<R: AsRef<str>, A: Into<U128>>(
+        &self,
+        receiver_id: R,
+        amount: A,
+        memo: Option<String>,
+    ) -> CallFtTransfer<'_> {
+        let args = TransferCallArgs {
+            // TODO: impl error
+            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
+                .unwrap(),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount.into().0),
+            memo,
+        };
+        CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(args))
+    }
+
     pub fn ft_on_transfer<A: Into<U128>, R: AsRef<str>>(
         &self,
         sender_id: R,
@@ -258,6 +279,49 @@ impl<U: UserFunctions> EvmAccount<U> {
             msg: message,
         };
         CallFtOnTransfer(self.near_call(&Call::FtOnTransfer).args_json(args))
+    }
+
+    pub fn ft_transfer_call<R: AsRef<str>>(
+        &self,
+        receiver_id: R,
+        amount: u128,
+        memo: Option<String>,
+        message: String,
+    ) -> CallFtTransferCall<'_> {
+        let args = TransferCallCallArgs {
+            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
+                .unwrap(),
+            amount: aurora_engine_types::types::NEP141Wei::new(amount),
+            memo,
+            msg: message,
+        };
+        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(args))
+    }
+
+    // TODO we are not NEP-145 compliant
+    pub fn storage_deposit<A: AsRef<str>>(
+        &self,
+        account_id: Option<A>,
+        registration_only: Option<bool>,
+    ) -> CallStorageDeposit<'_> {
+        let args = StorageDepositCallArgs {
+            account_id: account_id
+                .map(|a| aurora_engine_types::account_id::AccountId::new(a.as_ref()).unwrap()),
+            registration_only,
+        };
+        CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
+    }
+
+    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
+        let val = serde_json::json!({ "force": force });
+        CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
+    }
+
+    pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw<'_> {
+        let args = StorageWithdrawCallArgs {
+            amount: amount.map(aurora_engine_types::types::Yocto::new),
+        };
+        CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
     }
 
     pub async fn version(&self) -> Result<ViewResultDetails<String>> {
@@ -382,6 +446,10 @@ impl<U: UserFunctions> EvmAccount<U> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
         ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
+    }
+
+    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
+        ViewResultDetails::try_from(self.near_view(&View::FtMetadata, vec![]).await?)
     }
 
     pub async fn eth_balance_of<A: Into<Address>>(
