@@ -66,12 +66,38 @@ impl MockEvmContract {
     }
 
     //
+    // OWNER CALL METHODS
+    //
+
+    #[allow(unused_variables)]
+    pub fn factory_update(&mut self, #[serializer(borsh)] bytes: Raw) {}
+
+    #[allow(unused_variables)]
+    pub fn factory_set_wnear_address(
+        &mut self,
+        #[serializer(borsh)] input: aurora_engine_types::types::Address,
+    ) {
+    }
+
+    #[allow(unused_variables)]
+    pub fn deploy_upgrade(&mut self) {}
+
+    #[allow(unused_variables)]
+    pub fn resume_precompiles(&mut self, #[serializer(borsh)] paused_mask: u32) {}
+
+    #[allow(unused_variables)]
+    pub fn stage_upgrade(&mut self, #[serializer(borsh)] input: Raw) {}
+
+    pub fn state_migration(&mut self) {}
+
+    //
     // SELF CALL METHODS
     //
 
     pub fn set_eth_connector_contract_data(&mut self, #[serializer(borsh)] _input: Raw) {}
 
-    pub fn set_paused_flags(&mut self, #[serializer(borsh)] _input: Raw) {}
+    #[allow(unused_variables)]
+    pub fn set_paused_flags(&mut self, #[serializer(borsh)] paused_mask: u32) {}
 
     //
     // CALLBACK HANDLER METHODS
