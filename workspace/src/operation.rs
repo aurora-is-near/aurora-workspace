@@ -75,14 +75,15 @@ impl_call_return![
     (CallSetPausedFlags, ExecutionSuccess<()>, try_from_borsh),
     (
         CallFactoryUpdateAddressVersion,
-        ExecutionSuccess<u8>,
-        try_from_borsh
+        ExecutionSuccess<()>,
+        try_from
     ),
-    (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
+    (CallRefundOnError, ExecutionSuccess<()>, try_from),
     (CallFactoryUpdate, ExecutionSuccess<()>, try_from),
     (CallFactorySetWNearAddress, ExecutionSuccess<()>, try_from),
     (CallDeployUpgrade, ExecutionSuccess<()>, try_from),
     (CallResumePrecompiles, ExecutionSuccess<()>, try_from),
+    (CallPausePrecompiles, ExecutionSuccess<()>, try_from),
     (CallStageUpgrade, ExecutionSuccess<()>, try_from),
     (CallStateMigration, ExecutionSuccess<()>, try_from),
 ];
@@ -440,14 +441,14 @@ impl AsRef<str> for SelfCall {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum TestCallFunction {
+pub enum TestCall {
     MintAccount,
     VerifyLogEntry,
 }
 
-impl AsRef<str> for TestCallFunction {
+impl AsRef<str> for TestCall {
     fn as_ref(&self) -> &str {
-        use TestCallFunction::*;
+        use TestCall::*;
         match self {
             MintAccount => "mint_account",
             VerifyLogEntry => "verify_log_entry",
