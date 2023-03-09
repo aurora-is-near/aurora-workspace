@@ -1,5 +1,6 @@
 use aurora_workspace_types::AccountId;
 use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
 mod common;
@@ -8,9 +9,11 @@ mod common;
 async fn test_ft_transfer() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
 
-    contract
+    let res = contract
         .as_account()
         .ft_transfer("some_account.test", 10, Some("some message".to_string()))
+        .max_gas()
+        .deposit(1)
         .transact()
         .await?;
 
@@ -28,11 +31,11 @@ async fn test_ft_on_transfer() -> anyhow::Result<()> {
             U128::from(100),
             String::new(),
         )
+        .max_gas()
         .transact()
         .await?
         .into_value();
-
-    assert_eq!(0u8.to_string(), res);
+    assert_eq!(U128::from(0), res);
 
     Ok(())
 }
@@ -41,17 +44,25 @@ async fn test_ft_on_transfer() -> anyhow::Result<()> {
 async fn test_ft_transfer_call() -> anyhow::Result<()> {
     let contract = common::init_and_deploy_contract().await?;
 
-    let res = contract
+    let res: PromiseOrValue<U128> = contract
         .as_account()
         .ft_transfer_call(
             "receiver.test",
-            10,
+            U128::from(33),
             Some("some memo".to_string()),
             "some message".to_string(),
         )
+        .max_gas()
+        .deposit(1)
         .transact()
         .await?
         .into_value();
+
+    let val = match res {
+        PromiseOrValue::Value(v) => v,
+        _ => panic!("Failed parse"),
+    };
+    assert_eq!(U128::from(33), val);
 
     Ok(())
 }
