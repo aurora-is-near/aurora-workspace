@@ -6,7 +6,6 @@ use crate::Result;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
-use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
@@ -14,6 +13,8 @@ use borsh::BorshDeserialize;
 use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
@@ -54,9 +55,13 @@ impl_call_return![
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
+    (CallFtOnTransfer, ExecutionSuccess<U128>, try_from_json),
     (CallFtTransfer, ExecutionSuccess<()>, try_from),
-    (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
+    (
+        CallFtTransferCall,
+        ExecutionSuccess<PromiseOrValue<U128>>,
+        try_from
+    ),
     (CallStorageDeposit, ExecutionSuccess<()>, try_from),
     (CallStorageUnregister, ExecutionSuccess<()>, try_from),
     (CallStorageWithdraw, ExecutionSuccess<()>, try_from)

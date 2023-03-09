@@ -9,7 +9,7 @@ use crate::{EngineCallTransaction, Result};
 use aurora_engine::parameters::ViewCallArgs;
 use aurora_engine::parameters::{
     GetStorageAtArgs, StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
-    TransactionStatus, TransferCallArgs, TransferCallCallArgs,
+    TransactionStatus, TransferCallArgs,
 };
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
@@ -22,6 +22,7 @@ use borsh::BorshSerialize;
 use ethabi::{ParamType, Token};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
+use serde_json::json;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -284,17 +285,17 @@ impl<U: UserFunctions> EvmAccount<U> {
     pub fn ft_transfer_call<R: AsRef<str>>(
         &self,
         receiver_id: R,
-        amount: u128,
+        amount: U128,
         memo: Option<String>,
-        message: String,
+        msg: String,
     ) -> CallFtTransferCall<'_> {
-        let args = TransferCallCallArgs {
-            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
+        let args = json!( {
+            "receiver_id": aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
                 .unwrap(),
-            amount: aurora_engine_types::types::NEP141Wei::new(amount),
-            memo,
-            msg: message,
-        };
+            "amount": amount,
+            "memo": memo,
+            "msg": msg,
+        });
         CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(args))
     }
 
