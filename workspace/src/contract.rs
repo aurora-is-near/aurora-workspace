@@ -1,13 +1,15 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFactoryUpdateAddressVersion,
-    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallRefundOnError, CallRegisterRelayer,
-    CallSetEthConnectorContractData, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallSubmit, SelfCall, View, ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallDeployUpgrade, CallEvm, CallFactorySetWNearAddress,
+    CallFactoryUpdate, CallFactoryUpdateAddressVersion, CallFtOnTransfer, CallFtTransfer,
+    CallFtTransferCall, CallRefundOnError, CallRegisterRelayer, CallResumePrecompiles,
+    CallSetEthConnectorContractData, CallSetPausedFlags, CallStageUpgrade, CallStateMigration,
+    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, OwnerCall,
+    SelfCall, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EngineCallTransaction, Result};
-use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::PausePrecompilesCallArgs};
 use aurora_engine::{
     parameters::{
         GetStorageAtArgs, PauseEthConnectorCallArgs, SetContractDataCallArgs, StorageBalance,
@@ -385,6 +387,47 @@ impl<U: UserFunctions> EvmAccount<U> {
             amount: amount.map(aurora_engine_types::types::Yocto::new),
         };
         CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
+    }
+
+    pub fn factory_update(&self, bytes: Vec<u8>) -> CallFactoryUpdate<'_> {
+        CallFactoryUpdate(
+            self.near_call(&OwnerCall::FactoryUpdate)
+                .args_borsh(Raw(bytes)),
+        )
+    }
+
+    pub fn factory_set_wnear_address(
+        &self,
+        address: impl Into<Address>,
+    ) -> CallFactorySetWNearAddress<'_> {
+        let bytes = address.into().0;
+        CallFactorySetWNearAddress(
+            self.near_call(&OwnerCall::FactorySetWNEARAddress)
+                .args_borsh(aurora_engine_types::types::Address::new(bytes.into())),
+        )
+    }
+
+    pub fn stage_upgrade(&self, bytes: Vec<u8>) -> CallStageUpgrade<'_> {
+        CallStageUpgrade(
+            self.near_call(&OwnerCall::StageUpgrade)
+                .args_borsh(Raw(bytes)),
+        )
+    }
+
+    pub fn deploy_upgrade(&self) -> CallDeployUpgrade<'_> {
+        CallDeployUpgrade(self.near_call(&OwnerCall::DeployUpgrade))
+    }
+
+    pub fn resume_precompiles(&self, paused_mask: u32) -> CallResumePrecompiles<'_> {
+        let args = PausePrecompilesCallArgs { paused_mask };
+        CallResumePrecompiles(
+            self.near_call(&OwnerCall::ResumePrecompiles)
+                .args_borsh(args),
+        )
+    }
+
+    pub fn state_migration(&self) -> CallStateMigration<'_> {
+        CallStateMigration(self.near_call(&OwnerCall::StateMigration))
     }
 
     pub async fn version(&self) -> Result<ViewResultDetails<String>> {
