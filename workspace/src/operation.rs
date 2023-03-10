@@ -3,23 +3,25 @@ use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
+use aurora_engine::fungible_token::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
+#[cfg(feature = "deposit-withdraw")]
+use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
 macro_rules! impl_call_return  {
-    ($(($name:ident, $return:ty, $fun:ident)),*) => {
+    ($(($name:ident, $return:ty, $deser_fn:ident)),* $(,)?) => {
         $(pub struct $name<'a>(pub(crate) EngineCallTransaction<'a>);
 
         impl<'a> $name<'a> {
@@ -39,7 +41,7 @@ macro_rules! impl_call_return  {
             }
 
             pub async fn transact(self) -> Result<$return> {
-                ExecutionSuccess::$fun(self.0.transact().await?)
+                ExecutionSuccess::$deser_fn(self.0.transact().await?)
             }
         })*
     }
@@ -64,7 +66,19 @@ impl_call_return![
     ),
     (CallStorageDeposit, ExecutionSuccess<()>, try_from),
     (CallStorageUnregister, ExecutionSuccess<()>, try_from),
-    (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
+    (CallStorageWithdraw, ExecutionSuccess<()>, try_from),
+    (
+        CallSetEthConnectorContractData,
+        ExecutionSuccess<()>,
+        try_from_borsh
+    ),
+    (CallSetPausedFlags, ExecutionSuccess<()>, try_from_borsh),
+    (
+        CallFactoryUpdateAddressVersion,
+        ExecutionSuccess<u8>,
+        try_from_borsh
+    ),
+    (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
 ];
 
 #[cfg(feature = "deposit-withdraw")]
@@ -322,10 +336,10 @@ pub enum View {
     EthTotalSupply,
     FtMetadata,
     StorageBalanceOf,
-    PausedFlags,     // TODO
+    PausedFlags,
     AccountsCounter, // TODO
-    Erc20FromNep141, // TODO
-    Nep141FromErc20, // TODO
+    Erc20FromNep141,
+    Nep141FromErc20,
 }
 
 impl AsRef<str> for View {
@@ -401,12 +415,9 @@ impl AsRef<str> for OwnerCall {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SelfCall {
-    NewEthConnector,
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
-    FinishDeposit,
-    FtResolveTransfer,
     SetPausedFlags,
 }
 
@@ -414,12 +425,9 @@ impl AsRef<str> for SelfCall {
     fn as_ref(&self) -> &str {
         use SelfCall::*;
         match self {
-            NewEthConnector => "new_eth_connector",
             SetEthConnectorContractData => "set_eth_connector_contract_data",
             FactoryUpdateAddressVersion => "factory_update_address_version",
             RefundOnError => "refund_on_error",
-            FinishDeposit => "finish_deposit",
-            FtResolveTransfer => "resolve_transfer",
             SetPausedFlags => "set_paused_flags",
         }
     }
