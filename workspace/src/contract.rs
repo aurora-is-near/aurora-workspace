@@ -1,15 +1,20 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallFtTransfer,
-    CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallSubmit, View, ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFactoryUpdateAddressVersion,
+    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallRefundOnError, CallRegisterRelayer,
+    CallSetEthConnectorContractData, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallSubmit, SelfCall, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EngineCallTransaction, Result};
-use aurora_engine::parameters::ViewCallArgs;
-use aurora_engine::parameters::{
-    GetStorageAtArgs, StorageBalance, StorageDepositCallArgs, StorageWithdrawCallArgs,
-    TransactionStatus, TransferCallArgs,
+use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::{
+    parameters::{
+        GetStorageAtArgs, PauseEthConnectorCallArgs, SetContractDataCallArgs, StorageBalance,
+        StorageDepositCallArgs, StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs,
+        ViewCallArgs,
+    },
+    xcc::AddressVersionUpdateArgs,
 };
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
@@ -20,7 +25,6 @@ use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use serde_json::json;
 use std::borrow::{Borrow, BorrowMut};
@@ -188,6 +192,64 @@ impl<U: UserFunctions> EvmAccount<U> {
 
     pub fn id(&self) -> &AccountId {
         self.account.id()
+    }
+
+    pub fn set_eth_connector_contract_data(
+        &self,
+        prover_account: impl AsRef<str>,
+        eth_custodian_address: impl Into<String>,
+        metadata: FungibleTokenMetadata,
+    ) -> CallSetEthConnectorContractData<'_> {
+        let args = SetContractDataCallArgs {
+            prover_account: aurora_engine_types::account_id::AccountId::new(
+                prover_account.as_ref(),
+            )
+            .unwrap(),
+            eth_custodian_address: eth_custodian_address.into(),
+            metadata,
+        };
+        CallSetEthConnectorContractData(
+            self.near_call(&SelfCall::SetEthConnectorContractData)
+                .args_borsh(args),
+        )
+    }
+
+    pub fn set_paused_flags(&self, paused_mask: u8) -> CallSetPausedFlags<'_> {
+        let args = PauseEthConnectorCallArgs { paused_mask };
+        CallSetPausedFlags(self.near_call(&SelfCall::SetPausedFlags).args_borsh(args))
+    }
+
+    pub fn factory_update_address_version(
+        &self,
+        address: impl Into<Address>,
+        version: u32,
+    ) -> CallFactoryUpdateAddressVersion<'_> {
+        let args = AddressVersionUpdateArgs {
+            address: aurora_engine_types::types::Address::new(address.into()),
+            version: aurora_engine::xcc::CodeVersion(version),
+        };
+        CallFactoryUpdateAddressVersion(
+            self.near_call(&SelfCall::FactoryUpdateAddressVersion)
+                .args_borsh(args),
+        )
+    }
+
+    pub fn refund_on_error<A: Into<Address>>(
+        &self,
+        recipient_address: A,
+        erc20_address: Option<A>,
+        amount: U256,
+    ) -> CallRefundOnError<'_> {
+        let mut raw_amount: aurora_engine_types::types::RawU256 = Default::default();
+        amount.to_big_endian(&mut raw_amount);
+        let args = aurora_engine_types::parameters::RefundCallArgs {
+            recipient_address: aurora_engine_types::types::Address::new(recipient_address.into()),
+            erc20_address: erc20_address
+                .map(Into::into)
+                .map(aurora_engine_types::types::Address::new),
+            amount: raw_amount,
+        };
+        CallRefundOnError(self.near_call(&SelfCall::RefundOnError).args_borsh(args))
     }
 
     /// Deploys contract code using the caller's NEAR account ID as an Ethereum address.
