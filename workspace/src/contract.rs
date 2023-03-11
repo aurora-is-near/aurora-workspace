@@ -1,16 +1,21 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFtOnTransfer, CallFtTransfer,
-    CallFtTransferCall, CallRegisterRelayer, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallSubmit, View, ViewResultDetails,
+    Call, CallDeployCode, CallDeployErc20, CallEvm, CallFactoryUpdateAddressVersion,
+    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallRefundOnError, CallRegisterRelayer,
+    CallSetEthConnectorContractData, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallSubmit, SelfCall, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
-use crate::{EvmCallTransaction, Result};
-use aurora_engine::parameters::{
-    GetStorageAtArgs, InitCallArgs, StorageBalance, StorageDepositCallArgs,
-    StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, TransferCallCallArgs,
+use crate::{EngineCallTransaction, Result};
+use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::{
+    parameters::{
+        GetStorageAtArgs, PauseEthConnectorCallArgs, SetContractDataCallArgs, StorageBalance,
+        StorageDepositCallArgs, StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs,
+        ViewCallArgs,
+    },
+    xcc::AddressVersionUpdateArgs,
 };
-use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::ViewCallArgs};
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -21,6 +26,7 @@ use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use near_sdk::json_types::U128;
+use serde_json::json;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -38,14 +44,14 @@ enum AccountKind {
 }
 
 impl AccountKind {
-    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
+    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EngineCallTransaction<'_> {
         let transaction = match self {
             AccountKind::Account { contract_id, inner } => {
                 inner.call(contract_id, function.as_ref())
             }
             AccountKind::Contract(con) => con.call(function.as_ref()),
         };
-        EvmCallTransaction::call(transaction)
+        EngineCallTransaction::call(transaction)
     }
 
     async fn view<F: AsRef<str>>(
@@ -118,7 +124,7 @@ impl UserFunctions for User {}
 impl private::Sealed for User {}
 
 #[derive(Debug, Clone)]
-pub struct EvmAccount<U> {
+pub struct EvmAccount<U: UserFunctions> {
     account: AccountKind,
     phantom: PhantomData<U>,
 }
@@ -168,8 +174,11 @@ impl EvmAccount<User> {
     }
 }
 
-impl<U> EvmAccount<U> {
-    fn near_call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EvmCallTransaction<'_> {
+impl<U: UserFunctions> EvmAccount<U> {
+    fn near_call<'a, F: AsRef<str> + ?Sized>(
+        &'a self,
+        function: &'a F,
+    ) -> EngineCallTransaction<'_> {
         self.account.call(function)
     }
 
@@ -183,6 +192,64 @@ impl<U> EvmAccount<U> {
 
     pub fn id(&self) -> &AccountId {
         self.account.id()
+    }
+
+    pub fn set_eth_connector_contract_data(
+        &self,
+        prover_account: impl AsRef<str>,
+        eth_custodian_address: impl Into<String>,
+        metadata: FungibleTokenMetadata,
+    ) -> CallSetEthConnectorContractData<'_> {
+        let args = SetContractDataCallArgs {
+            prover_account: aurora_engine_types::account_id::AccountId::new(
+                prover_account.as_ref(),
+            )
+            .unwrap(),
+            eth_custodian_address: eth_custodian_address.into(),
+            metadata,
+        };
+        CallSetEthConnectorContractData(
+            self.near_call(&SelfCall::SetEthConnectorContractData)
+                .args_borsh(args),
+        )
+    }
+
+    pub fn set_paused_flags(&self, paused_mask: u8) -> CallSetPausedFlags<'_> {
+        let args = PauseEthConnectorCallArgs { paused_mask };
+        CallSetPausedFlags(self.near_call(&SelfCall::SetPausedFlags).args_borsh(args))
+    }
+
+    pub fn factory_update_address_version(
+        &self,
+        address: impl Into<Address>,
+        version: u32,
+    ) -> CallFactoryUpdateAddressVersion<'_> {
+        let args = AddressVersionUpdateArgs {
+            address: aurora_engine_types::types::Address::new(address.into()),
+            version: aurora_engine::xcc::CodeVersion(version),
+        };
+        CallFactoryUpdateAddressVersion(
+            self.near_call(&SelfCall::FactoryUpdateAddressVersion)
+                .args_borsh(args),
+        )
+    }
+
+    pub fn refund_on_error<A: Into<Address>>(
+        &self,
+        recipient_address: A,
+        erc20_address: Option<A>,
+        amount: U256,
+    ) -> CallRefundOnError<'_> {
+        let mut raw_amount: aurora_engine_types::types::RawU256 = Default::default();
+        amount.to_big_endian(&mut raw_amount);
+        let args = aurora_engine_types::parameters::RefundCallArgs {
+            recipient_address: aurora_engine_types::types::Address::new(recipient_address.into()),
+            erc20_address: erc20_address
+                .map(Into::into)
+                .map(aurora_engine_types::types::Address::new),
+            amount: raw_amount,
+        };
+        CallRefundOnError(self.near_call(&SelfCall::RefundOnError).args_borsh(args))
     }
 
     /// Deploys contract code using the caller's NEAR account ID as an Ethereum address.
@@ -280,17 +347,17 @@ impl<U> EvmAccount<U> {
     pub fn ft_transfer_call<R: AsRef<str>>(
         &self,
         receiver_id: R,
-        amount: u128,
+        amount: U128,
         memo: Option<String>,
-        message: String,
+        msg: String,
     ) -> CallFtTransferCall<'_> {
-        let args = TransferCallCallArgs {
-            receiver_id: aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
+        let args = json!( {
+            "receiver_id": aurora_engine_types::account_id::AccountId::new(receiver_id.as_ref())
                 .unwrap(),
-            amount: aurora_engine_types::types::NEP141Wei::new(amount),
-            memo,
-            msg: message,
-        };
+            "amount": amount,
+            "memo": memo,
+            "msg": msg,
+        });
         CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(args))
     }
 
@@ -514,30 +581,11 @@ impl<P: AsRef<Path>> From<P> for ContractSource<P> {
     }
 }
 
-pub struct EthProverConfig {
-    pub account_id: AccountId,
-    pub evm_custodian_address: String,
-    pub metadata: FungibleTokenMetadata,
-}
-
-impl Default for EthProverConfig {
-    fn default() -> Self {
-        Self {
-            account_id: AccountId::from_str("eth-prover.test.near")
-                .expect("Ethereum prover ID somehow failed"),
-            evm_custodian_address: String::from("096DE9C2B8A5B8c22cEe3289B101f6960d68E51E"),
-            metadata: FungibleTokenMetadata::default(),
-        }
-    }
-}
-
 pub struct InitConfig {
     /// The owner ID of the contract.
     pub owner_id: AccountId,
     /// The prover ID of the contract.
     pub prover_id: AccountId,
-    /// The optional configuration for the Ethereum prover (bridge).
-    pub eth_prover_config: Option<EthProverConfig>,
     /// The Ethereum chain ID.
     pub chain_id: U256,
 }
@@ -547,7 +595,6 @@ impl Default for InitConfig {
         Self {
             owner_id: AccountId::from_str("owner.test.near").expect("Account ID somehow failed"),
             prover_id: AccountId::from_str("prover.test.near").expect("Prover ID somehow failed"),
-            eth_prover_config: Some(EthProverConfig::default()),
             chain_id: U256::from(1313161556),
         }
     }
@@ -668,23 +715,6 @@ impl EvmContract {
             .transact()
             .await?
             .into_result()?;
-
-        if let Some(eth_prover_config) = init_config.eth_prover_config {
-            let new_eth_connector_args = InitCallArgs {
-                prover_account: aurora_engine_types::account_id::AccountId::from_str(
-                    eth_prover_config.account_id.as_str(),
-                )
-                .unwrap(),
-                eth_custodian_address: eth_prover_config.evm_custodian_address,
-                metadata: FungibleTokenMetadata::default(),
-            };
-            self.contract
-                .near_call("new_eth_connector")
-                .args_borsh(new_eth_connector_args)
-                .transact()
-                .await?
-                .into_result()?;
-        }
 
         Ok(())
     }

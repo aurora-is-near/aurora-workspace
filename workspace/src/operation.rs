@@ -7,6 +7,7 @@ use aurora_engine::fungible_token::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
+#[cfg(feature = "deposit-withdraw")]
 use aurora_engine_sdk::promise::PromiseId;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
@@ -14,26 +15,33 @@ use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use ethereum_types::{Address, H256, U256};
+use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
 macro_rules! impl_call_return  {
-    ($(($name:ident, $return:ty, $fun:ident)),*) => {
-        $(pub struct $name<'a>(pub(crate) EvmCallTransaction<'a>);
+    ($(($name:ident, $return:ty, $deser_fn:ident)),* $(,)?) => {
+        $(pub struct $name<'a>(pub(crate) EngineCallTransaction<'a>);
 
         impl<'a> $name<'a> {
-            pub fn gas(mut self, gas: u64) -> $name<'a> {
+            pub fn gas(mut self, gas: u64) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
 
-            pub fn max_gas(mut self) -> $name<'a> {
+            pub fn max_gas(mut self) -> Self {
                 self.0 = self.0.max_gas();
                 self
             }
 
+            pub fn deposit(mut self, deposit: u128) -> Self {
+                self.0 = self.0.deposit(deposit);
+                self
+            }
+
             pub async fn transact(self) -> Result<$return> {
-                ExecutionSuccess::$fun(self.0.transact().await?)
+                ExecutionSuccess::$deser_fn(self.0.transact().await?)
             }
         })*
     }
@@ -49,12 +57,28 @@ impl_call_return![
     (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<String>, try_from_json),
+    (CallFtOnTransfer, ExecutionSuccess<U128>, try_from_json),
     (CallFtTransfer, ExecutionSuccess<()>, try_from),
-    (CallFtTransferCall, ExecutionSuccess<PromiseId>, try_from),
+    (
+        CallFtTransferCall,
+        ExecutionSuccess<PromiseOrValue<U128>>,
+        try_from
+    ),
     (CallStorageDeposit, ExecutionSuccess<()>, try_from),
     (CallStorageUnregister, ExecutionSuccess<()>, try_from),
-    (CallStorageWithdraw, ExecutionSuccess<()>, try_from)
+    (CallStorageWithdraw, ExecutionSuccess<()>, try_from),
+    (
+        CallSetEthConnectorContractData,
+        ExecutionSuccess<()>,
+        try_from_borsh
+    ),
+    (CallSetPausedFlags, ExecutionSuccess<()>, try_from_borsh),
+    (
+        CallFactoryUpdateAddressVersion,
+        ExecutionSuccess<u8>,
+        try_from_borsh
+    ),
+    (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
 ];
 
 #[cfg(feature = "deposit-withdraw")]
@@ -312,10 +336,10 @@ pub enum View {
     EthTotalSupply,
     FtMetadata,
     StorageBalanceOf,
-    PausedFlags,     // TODO
+    PausedFlags,
     AccountsCounter, // TODO
-    Erc20FromNep141, // TODO
-    Nep141FromErc20, // TODO
+    Erc20FromNep141,
+    Nep141FromErc20,
 }
 
 impl AsRef<str> for View {
@@ -391,12 +415,9 @@ impl AsRef<str> for OwnerCall {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SelfCall {
-    NewEthConnector,
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
-    FinishDeposit,
-    FtResolveTransfer,
     SetPausedFlags,
 }
 
@@ -404,12 +425,9 @@ impl AsRef<str> for SelfCall {
     fn as_ref(&self) -> &str {
         use SelfCall::*;
         match self {
-            NewEthConnector => "new_eth_connector",
             SetEthConnectorContractData => "set_eth_connector_contract_data",
             FactoryUpdateAddressVersion => "factory_update_address_version",
             RefundOnError => "refund_on_error",
-            FinishDeposit => "finish_deposit",
-            FtResolveTransfer => "resolve_transfer",
             SetPausedFlags => "set_paused_flags",
         }
     }
@@ -431,45 +449,46 @@ impl AsRef<str> for TestCallFunction {
     }
 }
 
-pub struct EvmCallTransaction<'a> {
+pub struct EngineCallTransaction<'a> {
     inner: CallTransaction<'a>,
 }
 
-impl<'a, 'b> EvmCallTransaction<'a> {
+impl<'a, 'b> EngineCallTransaction<'a> {
     pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
-        EvmCallTransaction { inner: transaction }
+        Self { inner: transaction }
     }
 
-    pub(crate) fn args(mut self, args: Vec<u8>) -> EvmCallTransaction<'a> {
+    pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
         self.inner = self.inner.args(args);
         self
     }
 
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> EvmCallTransaction<'a> {
+    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
         self.inner = self.inner.args_json(args);
         self
     }
 
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(
-        mut self,
-        args: B,
-    ) -> EvmCallTransaction<'a> {
+    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
         self.inner = self.inner.args_borsh(args);
         self
     }
 
-    pub fn gas(mut self, gas: u64) -> EvmCallTransaction<'a> {
+    pub fn gas(mut self, gas: u64) -> Self {
         self.inner = self.inner.gas(gas);
         self
     }
 
-    pub fn max_gas(mut self) -> EvmCallTransaction<'a> {
+    pub fn max_gas(mut self) -> Self {
         self.inner = self.inner.max_gas();
         self
     }
 
+    pub fn deposit(mut self, deposit: u128) -> Self {
+        self.inner = self.inner.deposit(deposit);
+        self
+    }
+
     pub async fn transact(self) -> Result<ExecutionFinalResult> {
-        // TODO: return EVM execution result.
         Ok(self.inner.transact().await?)
     }
 }

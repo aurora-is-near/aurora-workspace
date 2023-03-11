@@ -1,4 +1,3 @@
-use aurora_workspace::contract::EthProverConfig;
 use aurora_workspace::{types::AccountId, EvmContract, InitConfig};
 use std::str::FromStr;
 use workspaces::types::{KeyType, SecretKey};
@@ -18,13 +17,10 @@ pub async fn init_and_deploy_contract() -> anyhow::Result<EvmContract> {
         .create_tla(AccountId::from_str(AURORA_ACCOUNT_ID)?, sk)
         .await?
         .into_result()?;
-    let eth_prover_config = EthProverConfig::default();
     let init_config = InitConfig {
+        chain_id: AURORA_LOCAL_CHAIN_ID.into(),
         owner_id: AccountId::from_str(OWNER_ACCOUNT_ID)?,
         prover_id: AccountId::from_str(PROVER_ACCOUNT_ID)?,
-        eth_prover_config: Some(eth_prover_config),
-        // eth_prover_config: None,
-        chain_id: AURORA_LOCAL_CHAIN_ID.into(),
     };
     let wasm = std::fs::read(WASM_BIN_FILE_PATH)?;
     // create contract

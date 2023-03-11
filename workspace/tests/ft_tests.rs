@@ -1,12 +1,19 @@
+use aurora_workspace_types::AccountId;
+use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
+use std::str::FromStr;
+
 mod common;
 
 #[tokio::test]
 async fn test_ft_transfer() {
     let contract = common::init_and_deploy_contract().await.unwrap();
 
-    contract
+    let _res = contract
         .as_account()
         .ft_transfer("some_account.test", 10, Some("some message".to_string()))
+        .max_gas()
+        .deposit(1)
         .transact()
         .await
         .unwrap();
@@ -18,30 +25,41 @@ async fn test_ft_on_transfer() {
 
     let res = contract
         .as_account()
-        .ft_on_transfer("some_account.test", 100, String::new())
+        .ft_on_transfer(
+            AccountId::from_str("some_account.test").expect("Failed to make Account from str"),
+            U128::from(100),
+            String::new(),
+        )
+        .max_gas()
         .transact()
         .await
         .unwrap()
         .into_value();
-
-    assert_eq!(0u8.to_string(), res);
+    assert_eq!(U128::from(0), res);
 }
 
 #[tokio::test]
 async fn test_ft_transfer_call() {
     let contract = common::init_and_deploy_contract().await.unwrap();
 
-    let res = contract
+    let res: PromiseOrValue<U128> = contract
         .as_account()
         .ft_transfer_call(
             "receiver.test",
-            10_000_000,
+            U128::from(33),
             Some("some memo".to_string()),
-            "0x047e3eE8Da241acfF5d04fc77e138b50BAFf02f0".to_string(),
+            "some message".to_string(),
         )
+        .max_gas()
+        .deposit(1)
         .transact()
         .await
         .unwrap()
         .into_value();
-    assert_eq!(res, aurora_engine_sdk::promise::PromiseId::new(10000000));
+
+    let val = match res {
+        PromiseOrValue::Value(v) => v,
+        _ => panic!("failed parse"),
+    };
+    assert_eq!(U128::from(33), val);
 }

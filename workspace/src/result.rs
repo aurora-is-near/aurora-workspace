@@ -4,6 +4,8 @@ use crate::Result;
 use aurora_engine_sdk::promise::PromiseId;
 use borsh::BorshDeserialize;
 use ethereum_types::Address;
+use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use std::fmt::Debug;
@@ -24,6 +26,20 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseId> {
             PromiseId::new(u64::from_le_bytes(buf))
         };
         Ok(ExecutionSuccess { inner, value })
+    }
+}
+
+impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
+    type Error = Error;
+
+    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+        let inner = result.into_result()?;
+        let value: U128 = inner.json()?;
+
+        Ok(ExecutionSuccess {
+            inner,
+            value: PromiseOrValue::Value(value),
+        })
     }
 }
 
