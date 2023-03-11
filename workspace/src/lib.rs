@@ -4,7 +4,7 @@ pub mod operation;
 pub(crate) mod result;
 
 pub use contract::{EvmAccount, EvmContract, InitConfig};
-pub use operation::{EvmCallTransaction, ViewResultDetails};
+pub use operation::{EngineCallTransaction, ViewResultDetails};
 
 pub use crate::contract::ContractSource;
 
