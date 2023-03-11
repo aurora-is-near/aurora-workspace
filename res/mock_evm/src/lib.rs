@@ -64,4 +64,26 @@ impl MockEvmContract {
     pub fn register_relayer(&mut self, #[serializer(borsh)] input: Raw) {
         assert_eq!(input.0.len(), 20);
     }
+
+    //
+    // SELF CALL METHODS
+    //
+
+    pub fn set_eth_connector_contract_data(&mut self, #[serializer(borsh)] _input: Raw) {}
+
+    pub fn set_paused_flags(&mut self, #[serializer(borsh)] _input: Raw) {}
+
+    //
+    // CALLBACK HANDLER METHODS
+    //
+
+    #[result_serializer(borsh)]
+    pub fn factory_update_address_version(&mut self, #[serializer(borsh)] _input: Raw) -> u8 {
+        0
+    }
+
+    #[result_serializer(borsh)]
+    pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) -> u8 {
+        0
+    }
 }
