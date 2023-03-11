@@ -20,7 +20,7 @@ near-primitives = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
-workspaces = { version = "0.7.0", features = ["unstable"] }
+workspaces = "0.7.0"
 
 [dev-dependencies]
 anyhow = "1"
