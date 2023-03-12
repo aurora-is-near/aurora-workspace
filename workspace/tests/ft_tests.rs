@@ -6,23 +6,22 @@ use std::str::FromStr;
 mod common;
 
 #[tokio::test]
-async fn test_ft_transfer() -> anyhow::Result<()> {
-    let contract = common::init_and_deploy_contract().await?;
+async fn test_ft_transfer() {
+    let contract = common::init_and_deploy_contract().await.unwrap();
 
-    let res = contract
+    let _res = contract
         .as_account()
         .ft_transfer("some_account.test", 10, Some("some message".to_string()))
         .max_gas()
         .deposit(1)
         .transact()
-        .await?;
-
-    Ok(())
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
-async fn test_ft_on_transfer() -> anyhow::Result<()> {
-    let contract = common::init_and_deploy_contract().await?;
+async fn test_ft_on_transfer() {
+    let contract = common::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -33,16 +32,15 @@ async fn test_ft_on_transfer() -> anyhow::Result<()> {
         )
         .max_gas()
         .transact()
-        .await?
+        .await
+        .unwrap()
         .into_value();
     assert_eq!(U128::from(0), res);
-
-    Ok(())
 }
 
 #[tokio::test]
-async fn test_ft_transfer_call() -> anyhow::Result<()> {
-    let contract = common::init_and_deploy_contract().await?;
+async fn test_ft_transfer_call() {
+    let contract = common::init_and_deploy_contract().await.unwrap();
 
     let res: PromiseOrValue<U128> = contract
         .as_account()
@@ -55,14 +53,13 @@ async fn test_ft_transfer_call() -> anyhow::Result<()> {
         .max_gas()
         .deposit(1)
         .transact()
-        .await?
+        .await
+        .unwrap()
         .into_value();
 
     let val = match res {
         PromiseOrValue::Value(v) => v,
-        _ => panic!("Failed parse"),
+        _ => panic!("failed parse"),
     };
     assert_eq!(U128::from(33), val);
-
-    Ok(())
 }
