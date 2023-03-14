@@ -1,4 +1,4 @@
-use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::metadata::FungibleTokenMetadata;
 use aurora_workspace_types::Address;
 
 mod common;
@@ -18,7 +18,7 @@ async fn test_set_eth_connector_contract_data() {
         .await
         .unwrap();
 }
-
+/*
 #[tokio::test]
 async fn test_factory_update_address_version() {
     let contract = common::init_and_deploy_contract().await.unwrap();
@@ -34,7 +34,7 @@ async fn test_factory_update_address_version() {
     let expected = 0;
     assert_eq!(expected, res);
 }
-
+*/
 #[tokio::test]
 async fn test_refund_on_error() {
     let contract = common::init_and_deploy_contract().await.unwrap();

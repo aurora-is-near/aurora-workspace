@@ -7,14 +7,14 @@ readme = "README.md"
 description = "Aurora EVM contract for the Near workspaces library"
 
 [dependencies]
-aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "811608b316e1b8f081e78ae03a143b5b3eb35540",  features = ["impl-serde"] }
-aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "811608b316e1b8f081e78ae03a143b5b3eb35540" }
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "811608b316e1b8f081e78ae03a143b5b3eb35540",  features = ["impl-serde"] }
+aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "d9763085157188055f62752fd499ac4c7db8331e",  features = ["impl-serde"] }
+aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "d9763085157188055f62752fd499ac4c7db8331e" }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "d9763085157188055f62752fd499ac4c7db8331e",  features = ["impl-serde"] }
 aurora-workspace-types = { path = "../workspace-types" }
 borsh = { version = "0.9", default-features = false }
 ethabi = { version = "18", optional = true }
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
-near-sdk = "4.0"
+near-sdk = "4.1"
 near-contract-standards = "4.1"
 near-primitives = "0.15"
 serde = { version = "1", features = ["derive"] }

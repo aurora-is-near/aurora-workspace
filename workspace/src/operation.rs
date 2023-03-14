@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
 use crate::Result;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine::metadata::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
 use aurora_engine::parameters::{StorageBalance, TransactionStatus};
@@ -70,12 +71,6 @@ impl_call_return![
     (
         CallSetEthConnectorContractData,
         ExecutionSuccess<()>,
-        try_from_borsh
-    ),
-    (CallSetPausedFlags, ExecutionSuccess<()>, try_from_borsh),
-    (
-        CallFactoryUpdateAddressVersion,
-        ExecutionSuccess<u8>,
         try_from_borsh
     ),
     (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
@@ -418,7 +413,6 @@ pub enum SelfCall {
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
-    SetPausedFlags,
 }
 
 impl AsRef<str> for SelfCall {
@@ -428,7 +422,6 @@ impl AsRef<str> for SelfCall {
             SetEthConnectorContractData => "set_eth_connector_contract_data",
             FactoryUpdateAddressVersion => "factory_update_address_version",
             RefundOnError => "refund_on_error",
-            SetPausedFlags => "set_paused_flags",
         }
     }
 }
