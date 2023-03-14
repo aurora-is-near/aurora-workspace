@@ -1,14 +1,15 @@
+use aurora_engine::metadata::FungibleTokenMetadata;
 use aurora_workspace::EvmContract;
 use aurora_workspace_types::output::{Log, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256};
 use std::str::FromStr;
 use workspaces::types::{KeyType, SecretKey};
 
-mod common;
+mod utils;
 
 #[tokio::test]
 async fn test_deploy_code() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -30,7 +31,7 @@ async fn test_deploy_code() {
 
 #[tokio::test]
 async fn test_deploy_erc20() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -47,7 +48,7 @@ async fn test_deploy_erc20() {
 
 #[tokio::test]
 async fn test_call() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract
         .as_account()
         .call(Address::from([1u8; 20]), 10, vec![])
@@ -67,7 +68,7 @@ async fn test_call() {
 
 #[tokio::test]
 async fn test_submit() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -96,7 +97,7 @@ async fn test_from_secret_key() {
 
 #[tokio::test]
 async fn test_register_relayer() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     contract
         .as_account()
@@ -107,4 +108,52 @@ async fn test_register_relayer() {
         .into_value();
 
     // Nothing to expect here...
+}
+
+#[tokio::test]
+async fn test_set_eth_connector_contract_data() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+
+    contract
+        .as_account()
+        .set_eth_connector_contract_data(
+            "prover.test.near",
+            "custodian.test.near",
+            FungibleTokenMetadata::default(),
+        )
+        .transact()
+        .await
+        .unwrap();
+}
+/*
+#[tokio::test]
+async fn test_factory_update_address_version() {
+    let contract = common::init_and_deploy_contract().await.unwrap();
+
+    let res = contract
+        .as_account()
+        .factory_update_address_version(Address::default(), 0)
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+
+    let expected = 0;
+    assert_eq!(expected, res);
+}
+*/
+#[tokio::test]
+async fn test_refund_on_error() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+
+    let res = contract
+        .as_account()
+        .refund_on_error(Address::default(), Some(Address::default()), 0.into())
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+
+    let expected = 0;
+    assert_eq!(expected, res);
 }
