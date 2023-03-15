@@ -79,6 +79,12 @@ impl_call_return![
         try_from_borsh
     ),
     (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
+    (CallFactoryUpdate, ExecutionSuccess<()>, try_from),
+    (CallFactorySetWNearAddress, ExecutionSuccess<()>, try_from),
+    (CallDeployUpgrade, ExecutionSuccess<()>, try_from),
+    (CallResumePrecompiles, ExecutionSuccess<()>, try_from),
+    (CallStageUpgrade, ExecutionSuccess<()>, try_from),
+    (CallStateMigration, ExecutionSuccess<()>, try_from),
 ];
 
 #[cfg(feature = "deposit-withdraw")]
