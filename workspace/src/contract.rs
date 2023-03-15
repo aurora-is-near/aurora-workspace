@@ -1,10 +1,11 @@
 use crate::operation::{
-    Call, CallDeployCode, CallDeployErc20, CallDeployUpgrade, CallEvm, CallFactorySetWNearAddress,
-    CallFactoryUpdate, CallFactoryUpdateAddressVersion, CallFtOnTransfer, CallFtTransfer,
-    CallFtTransferCall, CallRefundOnError, CallRegisterRelayer, CallResumePrecompiles,
-    CallSetEthConnectorContractData, CallSetPausedFlags, CallStageUpgrade, CallStateMigration,
-    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, OwnerCall,
-    SelfCall, View, ViewResultDetails,
+    AuthorizedCall, Call, CallDeployCode, CallDeployErc20, CallDeployUpgrade, CallEvm,
+    CallFactorySetWNearAddress, CallFactoryUpdate, CallFactoryUpdateAddressVersion,
+    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallPausePrecompiles, CallRefundOnError,
+    CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData,
+    CallSetPausedFlags, CallStageUpgrade, CallStateMigration, CallStorageDeposit,
+    CallStorageUnregister, CallStorageWithdraw, CallSubmit, OwnerCall, SelfCall, View,
+    ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
@@ -416,6 +417,14 @@ impl<U: UserFunctions> EvmAccount<U> {
 
     pub fn deploy_upgrade(&self) -> CallDeployUpgrade<'_> {
         CallDeployUpgrade(self.near_call(&OwnerCall::DeployUpgrade))
+    }
+
+    pub fn pause_precompiles(&self, paused_mask: u32) -> CallPausePrecompiles<'_> {
+        let args = PausePrecompilesCallArgs { paused_mask };
+        CallPausePrecompiles(
+            self.near_call(&AuthorizedCall::PausePrecompiles)
+                .args_borsh(args),
+        )
     }
 
     pub fn resume_precompiles(&self, paused_mask: u32) -> CallResumePrecompiles<'_> {

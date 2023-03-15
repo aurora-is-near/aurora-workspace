@@ -75,14 +75,15 @@ impl_call_return![
     (CallSetPausedFlags, ExecutionSuccess<()>, try_from_borsh),
     (
         CallFactoryUpdateAddressVersion,
-        ExecutionSuccess<u8>,
-        try_from_borsh
+        ExecutionSuccess<()>,
+        try_from
     ),
-    (CallRefundOnError, ExecutionSuccess<u8>, try_from_borsh),
+    (CallRefundOnError, ExecutionSuccess<()>, try_from),
     (CallFactoryUpdate, ExecutionSuccess<()>, try_from),
     (CallFactorySetWNearAddress, ExecutionSuccess<()>, try_from),
     (CallDeployUpgrade, ExecutionSuccess<()>, try_from),
     (CallResumePrecompiles, ExecutionSuccess<()>, try_from),
+    (CallPausePrecompiles, ExecutionSuccess<()>, try_from),
     (CallStageUpgrade, ExecutionSuccess<()>, try_from),
     (CallStateMigration, ExecutionSuccess<()>, try_from),
 ];
@@ -435,22 +436,6 @@ impl AsRef<str> for SelfCall {
             FactoryUpdateAddressVersion => "factory_update_address_version",
             RefundOnError => "refund_on_error",
             SetPausedFlags => "set_paused_flags",
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum TestCallFunction {
-    MintAccount,
-    VerifyLogEntry,
-}
-
-impl AsRef<str> for TestCallFunction {
-    fn as_ref(&self) -> &str {
-        use TestCallFunction::*;
-        match self {
-            MintAccount => "mint_account",
-            VerifyLogEntry => "verify_log_entry",
         }
     }
 }
