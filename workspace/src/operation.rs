@@ -440,22 +440,6 @@ impl AsRef<str> for SelfCall {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum TestCall {
-    MintAccount,
-    VerifyLogEntry,
-}
-
-impl AsRef<str> for TestCall {
-    fn as_ref(&self) -> &str {
-        use TestCall::*;
-        match self {
-            MintAccount => "mint_account",
-            VerifyLogEntry => "verify_log_entry",
-        }
-    }
-}
-
 pub struct EngineCallTransaction<'a> {
     inner: CallTransaction<'a>,
 }
