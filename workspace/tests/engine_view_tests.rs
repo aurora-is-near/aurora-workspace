@@ -6,11 +6,11 @@ use aurora_workspace_types::H160;
 use ethereum_types::{H256, U256};
 use std::str::FromStr;
 
-mod common;
+mod utils;
 
 #[tokio::test]
 async fn test_version() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().version().await.unwrap();
     let expected = ViewResultDetails {
         result: r#""v1""#.to_string(),
@@ -21,7 +21,7 @@ async fn test_version() {
 
 #[tokio::test]
 async fn test_owner() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().owner().await.unwrap();
     let expected = ViewResultDetails {
         result: AccountId::from_str("owner.test.near").expect("Invalid account"),
@@ -32,7 +32,7 @@ async fn test_owner() {
 
 #[tokio::test]
 async fn test_chain_id() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().chain_id().await.unwrap();
     let expected = ViewResultDetails {
         result: r#""1313161556""#.to_string(),
@@ -43,7 +43,7 @@ async fn test_chain_id() {
 
 #[tokio::test]
 async fn test_bridge_prover() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().bridge_prover().await.unwrap();
     let expected = ViewResultDetails {
         result: AccountId::from_str("prover.test.near").expect("Invalid account"),
@@ -54,7 +54,7 @@ async fn test_bridge_prover() {
 
 #[tokio::test]
 async fn test_upgrade_index() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().upgrade_index().await.unwrap();
     let expected = ViewResultDetails {
         result: 1,
@@ -65,7 +65,7 @@ async fn test_upgrade_index() {
 
 #[tokio::test]
 async fn test_paused_precompiles() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().paused_precompiles().await.unwrap();
     let expected = ViewResultDetails {
         result: 0,
@@ -76,7 +76,7 @@ async fn test_paused_precompiles() {
 
 #[tokio::test]
 async fn test_block_hash() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().block_hash(0u64).await.unwrap();
     let expected = ViewResultDetails {
         result: H256::from([0u8; 32]),
@@ -87,7 +87,7 @@ async fn test_block_hash() {
 
 #[tokio::test]
 async fn test_balance() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().balance([0u8; 20]).await.unwrap();
     let expected = ViewResultDetails {
         result: 0u128,
@@ -98,7 +98,7 @@ async fn test_balance() {
 
 #[tokio::test]
 async fn test_nonce() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().nonce([0u8; 20]).await.unwrap();
     let expected = ViewResultDetails {
         result: 0u128,
@@ -109,7 +109,7 @@ async fn test_nonce() {
 
 #[tokio::test]
 async fn test_is_proof_used() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let proof = ProofInput::default();
     let res = contract.as_account().is_proof_used(proof).await.unwrap();
     let expected = ViewResultDetails {
@@ -121,7 +121,7 @@ async fn test_is_proof_used() {
 
 #[tokio::test]
 async fn test_ft_total_supply() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().ft_total_supply().await.unwrap();
     let expected = ViewResultDetails {
         result: 0u128,
@@ -132,7 +132,7 @@ async fn test_ft_total_supply() {
 
 #[tokio::test]
 async fn test_ft_balance_of() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract
         .as_account()
         .ft_balance_of("some_account.test")
@@ -147,7 +147,7 @@ async fn test_ft_balance_of() {
 
 #[tokio::test]
 async fn test_storage_balance_of() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let _res = contract
         .as_account()
         .storage_balance_of("account.test.near")
@@ -157,7 +157,7 @@ async fn test_storage_balance_of() {
 
 #[tokio::test]
 async fn test_eth_balance_of() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract
         .as_account()
         .eth_balance_of([0u8; 20])
@@ -172,7 +172,7 @@ async fn test_eth_balance_of() {
 
 #[tokio::test]
 async fn test_view() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -189,7 +189,7 @@ async fn test_view() {
 
 #[tokio::test]
 async fn test_eth_total_supply() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().eth_total_supply().await.unwrap();
     let expected = ViewResultDetails {
         result: U256::from(0),
@@ -202,7 +202,7 @@ async fn test_eth_total_supply() {
 #[cfg(not(feature = "ethabi"))]
 #[tokio::test]
 async fn test_code() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
     let res = contract.as_account().code(H160([0u8; 20])).await.unwrap();
     let expected = ViewResultDetails {
         result: hex::decode(b"00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000673706972616c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067175617361720000000000000000000000000000000000000000000000000000").unwrap(),
@@ -217,7 +217,7 @@ async fn test_code() {
 async fn test_code() {
     use ethabi::{ParamType, Token};
 
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -245,7 +245,7 @@ async fn test_code() {
 
 #[tokio::test]
 async fn test_storage() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -262,7 +262,7 @@ async fn test_storage() {
 
 #[tokio::test]
 async fn test_erc20_from_nep141() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -279,7 +279,7 @@ async fn test_erc20_from_nep141() {
 
 #[tokio::test]
 async fn test_nep141_from_erc20() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -296,7 +296,7 @@ async fn test_nep141_from_erc20() {
 
 #[tokio::test]
 async fn test_paused_flags() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract.as_account().paused_flags().await.unwrap();
 

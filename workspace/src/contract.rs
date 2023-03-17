@@ -2,23 +2,20 @@ use crate::operation::{
     AuthorizedCall, Call, CallDeployCode, CallDeployErc20, CallDeployUpgrade, CallEvm,
     CallFactorySetWNearAddress, CallFactoryUpdate, CallFactoryUpdateAddressVersion,
     CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallPausePrecompiles, CallRefundOnError,
-    CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData,
-    CallSetPausedFlags, CallStageUpgrade, CallStateMigration, CallStorageDeposit,
-    CallStorageUnregister, CallStorageWithdraw, CallSubmit, OwnerCall, SelfCall, View,
-    ViewResultDetails,
+    CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
+    CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
+    OwnerCall, SelfCall, View, ViewResultDetails,
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::{EngineCallTransaction, Result};
-use aurora_engine::{fungible_token::FungibleTokenMetadata, parameters::PausePrecompilesCallArgs};
-use aurora_engine::{
-    parameters::{
-        GetStorageAtArgs, PauseEthConnectorCallArgs, SetContractDataCallArgs, StorageBalance,
-        StorageDepositCallArgs, StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs,
-        ViewCallArgs,
-    },
-    xcc::AddressVersionUpdateArgs,
+use aurora_engine::metadata::FungibleTokenMetadata;
+use aurora_engine::parameters::PausePrecompilesCallArgs;
+use aurora_engine::parameters::{
+    GetStorageAtArgs, SetContractDataCallArgs, StorageBalance, StorageDepositCallArgs,
+    StorageWithdrawCallArgs, TransactionStatus, TransferCallArgs, ViewCallArgs,
 };
+use aurora_engine::xcc::AddressVersionUpdateArgs;
 use aurora_workspace_types::input::IsUsedProofCallArgs;
 use aurora_workspace_types::input::ProofInput;
 #[cfg(feature = "deposit-withdraw")]
@@ -215,11 +212,6 @@ impl<U: UserFunctions> EvmAccount<U> {
             self.near_call(&SelfCall::SetEthConnectorContractData)
                 .args_borsh(args),
         )
-    }
-
-    pub fn set_paused_flags(&self, paused_mask: u8) -> CallSetPausedFlags<'_> {
-        let args = PauseEthConnectorCallArgs { paused_mask };
-        CallSetPausedFlags(self.near_call(&SelfCall::SetPausedFlags).args_borsh(args))
     }
 
     pub fn factory_update_address_version(

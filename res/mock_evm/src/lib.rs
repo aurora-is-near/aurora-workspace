@@ -1,8 +1,6 @@
 use crate::out::SubmitResult;
+use aurora_workspace_types::input::{CallInput, DeployErc20Input, NewInput};
 use aurora_workspace_types::output::{Log, TransactionStatus};
-use aurora_workspace_types::{
-    input::{CallInput, DeployErc20Input, NewInput},
-};
 use aurora_workspace_types::{AccountId, Address, Raw, H256};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{near_bindgen, PanicOnDefault};
@@ -90,8 +88,6 @@ impl MockEvmContract {
     #[allow(unused_variables)]
     pub fn stage_upgrade(&mut self, #[serializer(borsh)] input: Raw) {}
 
-    pub fn state_migration(&mut self) {}
-
     //
     // AUTHORIZED CALL METHODS
     //
@@ -113,10 +109,8 @@ impl MockEvmContract {
     //
 
     #[result_serializer(borsh)]
-    pub fn factory_update_address_version(&mut self, #[serializer(borsh)] _input: Raw) {
-    }
+    pub fn factory_update_address_version(&mut self, #[serializer(borsh)] _input: Raw) {}
 
     #[result_serializer(borsh)]
-    pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) {
-    }
+    pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) {}
 }

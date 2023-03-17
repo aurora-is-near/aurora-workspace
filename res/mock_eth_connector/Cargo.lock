@@ -49,18 +49,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "aurora-engine-types"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=745b0cc5f85432a421ba12b699e5e1cc12e3a6bb#745b0cc5f85432a421ba12b699e5e1cc12e3a6bb"
-dependencies = [
- "borsh",
- "hex",
- "primitive-types 0.11.1",
- "serde",
-]
-
-[[package]]
-name = "aurora-engine-types"
-version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=811608b316e1b8f081e78ae03a143b5b3eb35540#811608b316e1b8f081e78ae03a143b5b3eb35540"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
 dependencies = [
  "borsh",
  "hex",
@@ -73,7 +62,7 @@ dependencies = [
 name = "aurora-workspace-types"
 version = "0.1.0"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=745b0cc5f85432a421ba12b699e5e1cc12e3a6bb)",
+ "aurora-engine-types",
  "ethereum-types",
  "near-account-id 0.15.0",
  "near-sdk",
@@ -477,7 +466,7 @@ dependencies = [
  "crunchy",
  "fixed-hash 0.8.0",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "tiny-keccak",
 ]
 
@@ -490,7 +479,7 @@ dependencies = [
  "ethbloom",
  "fixed-hash 0.8.0",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "primitive-types 0.12.1",
  "uint",
 ]
@@ -643,15 +632,6 @@ dependencies = [
 
 [[package]]
 name = "impl-serde"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "impl-serde"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc88fc67028ae3db0c853baa36269d398d5f45b6982f95549ff5def78c935cd"
@@ -750,10 +730,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 
 [[package]]
-name = "mock_evm"
+name = "mock_eth_connector"
 version = "0.1.0"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=811608b316e1b8f081e78ae03a143b5b3eb35540)",
  "aurora-workspace-types",
  "getrandom 0.2.8",
  "hex",
@@ -1113,19 +1092,6 @@ dependencies = [
 
 [[package]]
 name = "primitive-types"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
-dependencies = [
- "fixed-hash 0.7.0",
- "impl-codec 0.6.0",
- "impl-rlp",
- "impl-serde 0.3.2",
- "uint",
-]
-
-[[package]]
-name = "primitive-types"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f3486ccba82358b11a77516035647c34ba167dfa53312630de83b12bd4f3d66"
@@ -1133,7 +1099,7 @@ dependencies = [
  "fixed-hash 0.8.0",
  "impl-codec 0.6.0",
  "impl-rlp",
- "impl-serde 0.4.0",
+ "impl-serde",
  "uint",
 ]
 

@@ -1,0 +1,24 @@
+[package]
+name = "mock_engine"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aurora-workspace-types = { path = "../../workspace-types" }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "811608b316e1b8f081e78ae03a143b5b3eb35540",  features = ["impl-serde"] }
+hex = "0.4.3"
+near-sdk = "4.1"
+near-contract-standards = "4.1"
+serde = { version = "1", features = ["derive"] }
+getrandom = {version = "0.2", default-features = false, features = ["custom"]}
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

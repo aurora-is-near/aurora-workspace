@@ -3,11 +3,11 @@ use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
-mod common;
+mod utils;
 
 #[tokio::test]
 async fn test_ft_transfer() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     contract
         .as_account()
@@ -21,7 +21,7 @@ async fn test_ft_transfer() {
 
 #[tokio::test]
 async fn test_ft_on_transfer() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res = contract
         .as_account()
@@ -40,7 +40,7 @@ async fn test_ft_on_transfer() {
 
 #[tokio::test]
 async fn test_ft_transfer_call() {
-    let contract = common::init_and_deploy_contract().await.unwrap();
+    let contract = utils::init_and_deploy_contract().await.unwrap();
 
     let res: PromiseOrValue<U128> = contract
         .as_account()

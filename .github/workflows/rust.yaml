@@ -14,14 +14,9 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-      - name: Build smart contract
-        run: |
-          cd res/mock_evm
-          rustup target add wasm32-unknown-unknown
-          ./build.sh
-          cd ../..
+      - name: Add toolchain
+        run: rustup target add wasm32-unknown-unknown        
       - name: Run checks
-        run: |
-          cargo fmt --all --check
-          cargo clippy --all -- -D warnings
-          cargo test --all
+        run: make check
+      - name: Run tests
+        run: make test
