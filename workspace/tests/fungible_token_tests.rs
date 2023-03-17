@@ -9,7 +9,7 @@ mod utils;
 async fn test_ft_transfer() {
     let contract = utils::init_and_deploy_contract().await.unwrap();
 
-    let _res = contract
+    contract
         .as_account()
         .ft_transfer("some_account.test", 10, Some("some message".to_string()))
         .max_gas()

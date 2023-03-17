@@ -56,6 +56,13 @@ impl MockEngineContract {
     }
 
     //
+    // AUTHORIZED CALL METHODS
+    //
+
+    #[allow(unused_variables)]
+    pub fn pause_precompiles(&mut self, #[serializer(borsh)] paused_mask: u32) {}
+
+    //
     // SELF CALL METHODS
     //
 
@@ -73,9 +80,7 @@ impl MockEngineContract {
     }
 
     #[result_serializer(borsh)]
-    pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) -> u8 {
-        0
-    }
+    pub fn refund_on_error(&mut self, #[serializer(borsh)] _input: Raw) {}
 
     pub fn get_version(&self) -> String {
         "v1".to_string()
@@ -150,4 +155,23 @@ impl MockEngineContract {
     pub fn get_nonce(&self, #[serializer(borsh)] _address: [u8; 20]) -> [u64; 4] {
         [0u64; 4]
     }
+
+    //
+    // OWNER CALL METHODS
+    //
+
+    #[allow(unused_variables)]
+    pub fn factory_update(&mut self, #[serializer(borsh)] bytes: Raw) {}
+
+    #[allow(unused_variables)]
+    pub fn factory_set_wnear_address(
+        &mut self,
+        #[serializer(borsh)] input: aurora_engine_types::types::Address,
+    ) {
+    }
+
+    #[allow(unused_variables)]
+    pub fn deploy_upgrade(&mut self) {}
+
+    pub fn state_migration(&mut self) {}
 }
