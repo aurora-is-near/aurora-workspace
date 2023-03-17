@@ -7,9 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-eth-connector = { version = "0.3.0", git = "https://github.com/aurora-is-near/aurora-eth-connector.git" }
 near-sdk = "4.1"
 near-contract-standards = "4.1"
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde"] }
 
 [profile.release]
 codegen-units = 1
