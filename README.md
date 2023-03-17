@@ -1,6 +1,6 @@
 # aurora-workspace
 
-Aurora Workspace library for the Aurora Engine contract based on NEAR Protocol.
+Aurora Workspace is a library for the Aurora Engine and Eth connector and EVM contracts based on NEAR Protocol.
 
 Easy to use as workspace utility to interact and tests
 Aurora Engine compatible NEAR contracts.
