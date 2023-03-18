@@ -7,12 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-workspace-types = { path = "../../workspace-types" }
-hex = "0.4.3"
+aurora-eth-connector = { version = "0.3.0", git = "https://github.com/aurora-is-near/aurora-eth-connector.git" }
 near-sdk = "4.1"
 near-contract-standards = "4.1"
-serde = { version = "1", features = ["derive"] }
-getrandom = {version = "0.2", default-features = false, features = ["custom"]}
 
 [profile.release]
 codegen-units = 1
