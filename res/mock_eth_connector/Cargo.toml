@@ -7,12 +7,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-workspace-types = { path = "../../workspace-types" }
-hex = "0.4.3"
 near-sdk = "4.1"
 near-contract-standards = "4.1"
-serde = { version = "1", features = ["derive"] }
-getrandom = {version = "0.2", default-features = false, features = ["custom"]}
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde"] }
 
 [profile.release]
 codegen-units = 1

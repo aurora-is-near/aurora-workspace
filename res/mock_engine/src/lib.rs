@@ -172,4 +172,10 @@ impl MockEngineContract {
     pub fn deploy_upgrade(&mut self) {}
 
     pub fn state_migration(&mut self) {}
+
+    #[allow(unused_variables)]
+    pub fn resume_precompiles(&mut self, #[serializer(borsh)] paused_mask: u32) {}
+
+    #[allow(unused_variables)]
+    pub fn stage_upgrade(&mut self, #[serializer(borsh)] input: Raw) {}
 }
