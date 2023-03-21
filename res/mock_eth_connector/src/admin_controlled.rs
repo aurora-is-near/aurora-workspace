@@ -3,7 +3,7 @@ use near_sdk::AccountId;
 
 pub type PausedMask = u8;
 
-/// Admin control flow flag indicates that all control flow unpause (unblocked).
+/// Admin control flow flag indicates that all control flow is unpaused (unblocked).
 pub const UNPAUSE_ALL: PausedMask = 0;
 /// Admin control flow flag indicates that the deposit is paused.
 pub const PAUSE_DEPOSIT: PausedMask = 1 << 0;
