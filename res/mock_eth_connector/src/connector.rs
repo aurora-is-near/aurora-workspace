@@ -58,7 +58,7 @@ pub trait FungibleTokeStatistic {
     fn get_accounts_counter(&self) -> U64;
 }
 
-/// Engin compatible methods for NEP-141
+/// Engine compatible methods for NEP-141
 #[ext_contract(ext_enine_ft)]
 pub trait EngineFungibleToken {
     fn engine_ft_transfer(
@@ -79,7 +79,7 @@ pub trait EngineFungibleToken {
     ) -> PromiseOrValue<U128>;
 }
 
-/// Engin compatible methods for NEP-141
+/// Engine compatible methods for NEP-141
 #[ext_contract(ext_enine_storage)]
 pub trait EngineStorageManagement {
     fn engine_storage_deposit(

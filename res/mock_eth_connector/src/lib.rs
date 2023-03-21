@@ -199,7 +199,7 @@ impl AdminControlled for EthConnectorContract {
     fn set_access_right(&mut self, account: &AccountId) {}
 
     fn get_access_right(&self) -> AccountId {
-        AccountId::from_str("contract.roo").unwrap()
+        AccountId::from_str("contract.root").unwrap()
     }
 
     fn is_owner(&self) -> bool {
@@ -228,7 +228,7 @@ impl ConnectorWithdraw for EthConnectorContract {
 #[near_bindgen]
 impl ConnectorDeposit for EthConnectorContract {
     fn deposit(&mut self, #[serializer(borsh)] raw_proof: Proof) -> Promise {
-        Promise::new(AccountId::from_str("contract.roo").unwrap())
+        Promise::new(AccountId::from_str("contract.root").unwrap())
     }
 }
 
