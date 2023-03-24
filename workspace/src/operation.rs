@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-
 use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;

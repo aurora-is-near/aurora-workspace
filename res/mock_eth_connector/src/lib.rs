@@ -69,7 +69,7 @@ impl FungibleTokenCore for EthConnectorContract {
         msg: String,
     ) -> PromiseOrValue<U128> {
         assert_one_yocto();
-        PromiseOrValue::Value(U128::from(100))
+        PromiseOrValue::Value(amount)
     }
 
     fn ft_total_supply(&self) -> U128 {

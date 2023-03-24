@@ -2,6 +2,7 @@
 members = [
     "workspace",
     "workspace-types",
+    "workspace-eth-connector"
 ]
 exclude = [
     "res/mock_engine",
