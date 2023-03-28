@@ -100,6 +100,16 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Accoun
     }
 }
 
+impl ViewResultDetails<U128> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: U128 = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
+            logs: view.logs,
+        })
+    }
+}
+
 impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u64> {
     fn from(view: workspaces::result::ViewResultDetails) -> Self {
         let mut buf = [0u8; 8];

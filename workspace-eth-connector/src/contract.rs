@@ -1,7 +1,10 @@
-use crate::operation::{Call, CallFtTransfer, CallFtTransferCall, EthConnectorCallTransaction};
+use crate::operation::{
+    Call, CallFtTransfer, CallFtTransferCall, EthConnectorCallTransaction, View, ViewResultDetails,
+};
 use crate::Result;
 use aurora_workspace_types::AccountId;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_sdk::borsh::BorshSerialize;
 use near_sdk::json_types::U128;
 use serde_json::json;
 use workspaces::{Account, Contract};
@@ -36,6 +39,10 @@ impl EthConnectorAccount {
         self.account.view(function, args).await
     }
 
+    pub fn id(&self) -> &AccountId {
+        self.account.id()
+    }
+
     pub fn ft_transfer(
         &self,
         receiver_id: AccountId,
@@ -62,46 +69,46 @@ impl EthConnectorAccount {
             "msg": msg,
         })))
     }
+
+    pub async fn ft_total_supply(&self) -> Result<ViewResultDetails<U128>> {
+        ViewResultDetails::try_from_json(self.near_view(&View::FtTotalSupply, vec![]).await?)
+    }
+
+    pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<ViewResultDetails<U128>> {
+        let args = json!((account_id,));
+        let args = args.to_string().as_bytes().to_vec();
+        ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
+    }
+
     /*
-    pub fn storage_deposit<A: AsRef<str>>(
-        &self,
-        account_id: Option<A>,
-        registration_only: Option<bool>,
-    ) -> CallStorageDeposit<'_> {
-        let args = json!({ "receiver_id": "" });
-        CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
-    }
+        pub fn storage_deposit<A: AsRef<str>>(
+            &self,
+            account_id: Option<A>,
+            registration_only: Option<bool>,
+        ) -> CallStorageDeposit<'_> {
+            let args = json!({ "receiver_id": "" });
+            CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
+        }
 
-    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
-        let val = serde_json::json!({ "force": force });
-        CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
-    }
+        pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
+            let val = serde_json::json!({ "force": force });
+            CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
+        }
 
-    pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw<'_> {
-        let args = json!({ "receiver_id": "" });
-        CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
-    }
+        pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw<'_> {
+            let args = json!({ "receiver_id": "" });
+            CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
+        }
 
-    pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
-        let args = IsUsedProofCallArgs { proof };
-        ViewResultDetails::try_from(
-            self.near_view(&View::IsProofUsed, args.try_to_vec()?)
-                .await?,
-        )
-    }
+        pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
+            let args = IsUsedProofCallArgs { proof };
+            ViewResultDetails::try_from(
+                self.near_view(&View::IsProofUsed, args.try_to_vec()?)
+                    .await?,
+            )
+        }
 
-    pub async fn ft_total_supply(&self) -> Result<ViewResultDetails<u128>> {
-        ViewResultDetails::try_from(self.near_view(&View::FtTotalSupply, vec![]).await?)
-    }
-
-    pub async fn ft_balance_of<A: AsRef<str>>(
-        &self,
-        account_id: A,
-    ) -> Result<ViewResultDetails<u128>> {
-        let account = AccountId::from_str(account_id.as_ref()).unwrap();
-        let args = borsh::to_vec(&account).unwrap();
-        ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
-    }*/
+    */
 }
 
 #[derive(Debug, Clone)]

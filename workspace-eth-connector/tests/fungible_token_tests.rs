@@ -1,3 +1,4 @@
+use aurora_workspace_eth_connector::operation::ViewResultDetails;
 use aurora_workspace_types::AccountId;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
@@ -45,4 +46,27 @@ async fn test_ft_transfer_call() {
         _ => panic!("failed parse"),
     };
     assert_eq!(U128::from(10), val);
+}
+
+#[tokio::test]
+async fn test_ft_total_supply() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let res = contract.as_account().ft_total_supply().await.unwrap();
+    let expected = ViewResultDetails {
+        result: U128::from(100),
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+}
+
+#[tokio::test]
+async fn test_ft_balance_of() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let account = contract.as_account().id().clone();
+    let res = contract.as_account().ft_balance_of(account).await.unwrap();
+    let expected = ViewResultDetails {
+        result: U128::from(200),
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
 }
