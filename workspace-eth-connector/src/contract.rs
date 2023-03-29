@@ -360,13 +360,11 @@ impl EthConnectorAccount {
     }
 
     pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags<'_> {
-        let args = borsh::to_vec(&paused).unwrap();
-        CallSetPausedFlags(self.near_call(&Call::SetPausedFlags).args_borsh(args))
+        CallSetPausedFlags(self.near_call(&Call::SetPausedFlags).args_borsh(paused))
     }
 
     pub fn set_access_right(&self, account: AccountId) -> CallSetAccessRight<'_> {
-        let args = borsh::to_vec(&account).unwrap();
-        CallSetAccessRight(self.near_call(&Call::SetAccessRight).args_borsh(args))
+        CallSetAccessRight(self.near_call(&Call::SetAccessRight).args_json((account,)))
     }
 
     pub fn withdraw(
@@ -375,30 +373,19 @@ impl EthConnectorAccount {
         recipient_address: Address,
         amount: Balance,
     ) -> CallWithdraw<'_> {
-        #[derive(BorshSerialize)]
-        struct WithdrawArgs {
-            sender_id: AccountId,
-            recipient_address: Address,
-            amount: Balance,
-        }
-        let args = WithdrawArgs {
+        CallWithdraw(self.near_call(&Call::Withdraw).args_borsh((
             sender_id,
             recipient_address,
             amount,
-        }
-        .try_to_vec()
-        .unwrap();
-        CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
+        )))
     }
 
     pub fn deposit(&self, raw_proof: Proof) -> CallDeposit<'_> {
-        let args = borsh::to_vec(&raw_proof).unwrap();
-        CallDeposit(self.near_call(&Call::Deposit).args_borsh(args))
+        CallDeposit(self.near_call(&Call::Deposit).args_borsh(raw_proof))
     }
 
     pub fn migrate(&self, data: MigrationInputData) -> CallMigrate<'_> {
-        let args = data.try_to_vec().unwrap();
-        CallMigrate(self.near_call(&Call::Migrate).args_borsh(args))
+        CallMigrate(self.near_call(&Call::Migrate).args_borsh(data))
     }
 
     pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {

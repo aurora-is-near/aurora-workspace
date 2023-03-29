@@ -1,3 +1,5 @@
+use crate::utils::CUSTODIAN_ADDRESS;
+use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::operation::ViewResultDetails;
 use aurora_workspace_eth_connector::types::{
     MigrationCheckResult, MigrationInputData, Proof, UNPAUSE_ALL,
@@ -76,13 +78,41 @@ async fn test_ft_balance_of() {
 }
 
 #[tokio::test]
-async fn test_set_engine_account() {}
+async fn test_set_engine_account() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let engine_account = AccountId::from_str("test.near").unwrap();
+    contract
+        .as_account()
+        .set_engine_account(engine_account)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
-async fn test_remove_engine_account() {}
+async fn test_remove_engine_account() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let engine_account = AccountId::from_str("test.near").unwrap();
+    contract
+        .as_account()
+        .remove_engine_account(engine_account)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
-async fn test_get_engine_accounts() {}
+async fn test_get_engine_accounts() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let res = contract.as_account().get_engine_accounts().await.unwrap();
+    let expected = ViewResultDetails {
+        result: vec![AccountId::from_str("test.root").unwrap()],
+        logs: vec![],
+    };
+    assert_eq!(res, expected);
+}
 
 #[tokio::test]
 async fn test_storage_deposit() {}
@@ -106,25 +136,94 @@ async fn test_engine_storage_unregister() {}
 async fn test_storage_balance_of() {}
 
 #[tokio::test]
-async fn test_ft_resolve_transfer() {}
-
-#[tokio::test]
 async fn test_storage_balance_bounds() {}
 
 #[tokio::test]
-async fn test_set_paused_flags() {}
+async fn test_ft_resolve_transfer() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let sender_id = AccountId::from_str("test.near").unwrap();
+    let receiver_id = AccountId::from_str("test.near").unwrap();
+    let amount = U128::from(10);
+    contract
+        .as_account()
+        .ft_resolve_transfer(sender_id, receiver_id, amount)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
-async fn test_set_access_right() {}
+async fn test_set_paused_flags() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    contract
+        .as_account()
+        .set_paused_flags(UNPAUSE_ALL)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
-async fn test_withdraw() {}
+async fn test_set_access_right() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let account = AccountId::from_str("test.near").unwrap();
+    contract
+        .as_account()
+        .set_access_right(account)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
-async fn test_deposit() {}
+async fn test_withdraw() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let sender_id = AccountId::from_str("test.near").unwrap();
+    let recipient_address = Address::zero();
+    let res = contract
+        .as_account()
+        .withdraw(sender_id, recipient_address, 10)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.recipient_id, recipient_address);
+    assert_eq!(res.amount, 10);
+    assert_eq!(
+        res.eth_custodian_address,
+        Address::decode(CUSTODIAN_ADDRESS).unwrap()
+    );
+}
 
 #[tokio::test]
-async fn test_migrate() {}
+async fn test_deposit() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let proof = Proof::default();
+    contract
+        .as_account()
+        .deposit(proof)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_migrate() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let data = MigrationInputData::default();
+    contract
+        .as_account()
+        .migrate(data)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
 
 #[tokio::test]
 async fn test_ft_metadata() {

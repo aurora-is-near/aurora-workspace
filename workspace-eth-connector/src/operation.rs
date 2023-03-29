@@ -110,7 +110,7 @@ impl AsRef<str> for Call {
             EngineStorageDeposit => "engine_storage_deposit",
             EngineStorageUnregister => "engine_storage_unregister",
             EngineStorageWithdraw => "engine_storage_withdraw",
-            FtResolveTransfer => "ftz_resolve_transfer",
+            FtResolveTransfer => "ft_resolve_transfer",
             SetPausedFlags => "set_paused_flags",
             SetAccessRight => "set_access_right",
             Migrate => "migrate",
