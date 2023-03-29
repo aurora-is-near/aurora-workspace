@@ -1,10 +1,12 @@
 use crate::operation::{
-    Call, CallFtTransfer, CallFtTransferCall, EthConnectorCallTransaction, View, ViewResultDetails,
+    Call, CallFtTransfer, CallFtTransferCall, CallRemoveEngineAccount, CallSetEngineAccount,
+    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, EthConnectorCallTransaction,
+    View, ViewResultDetails,
 };
 use crate::Result;
 use aurora_workspace_types::AccountId;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_sdk::borsh::BorshSerialize;
+use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
 use near_sdk::json_types::U128;
 use serde_json::json;
 use workspaces::{Account, Contract};
@@ -71,44 +73,103 @@ impl EthConnectorAccount {
     }
 
     pub async fn ft_total_supply(&self) -> Result<ViewResultDetails<U128>> {
-        ViewResultDetails::try_from_json(self.near_view(&View::FtTotalSupply, vec![]).await?)
+        ViewResultDetails::<U128>::try_from_json(
+            self.near_view(&View::FtTotalSupply, vec![]).await?,
+        )
     }
 
     pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<ViewResultDetails<U128>> {
-        let args = json!((account_id,));
-        let args = args.to_string().as_bytes().to_vec();
-        ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
+        let args = json!((account_id,)).to_string().as_bytes().to_vec();
+        ViewResultDetails::<U128>::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
-    /*
-        pub fn storage_deposit<A: AsRef<str>>(
-            &self,
-            account_id: Option<A>,
-            registration_only: Option<bool>,
-        ) -> CallStorageDeposit<'_> {
-            let args = json!({ "receiver_id": "" });
-            CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
-        }
+    pub fn engine_ft_transfer(
+        &self,
+        sender_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+    ) -> CallFtTransfer<'_> {
+        CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(json!({
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "amount": amount,
+            "memo": memo
+        })))
+    }
 
-        pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
-            let val = serde_json::json!({ "force": force });
-            CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
-        }
+    pub fn engine_ft_transfer_call(
+        &self,
+        sender_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+        msg: String,
+    ) -> CallFtTransferCall<'_> {
+        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "amount": amount,
+            "memo": memo,
+            "msg": msg,
+        })))
+    }
 
-        pub fn storage_withdraw(&self, amount: Option<u128>) -> CallStorageWithdraw<'_> {
-            let args = json!({ "receiver_id": "" });
-            CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
-        }
+    pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount<'_> {
+        CallSetEngineAccount(self.near_call(&Call::SetEngineAccount).args_json(json!({
+            "engine_account": engine_account,
+        })))
+    }
 
-        pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
-            let args = IsUsedProofCallArgs { proof };
-            ViewResultDetails::try_from(
-                self.near_view(&View::IsProofUsed, args.try_to_vec()?)
-                    .await?,
-            )
-        }
+    pub fn remove_engine_account(&self, engine_account: AccountId) -> CallRemoveEngineAccount<'_> {
+        CallRemoveEngineAccount(self.near_call(&Call::SetEngineAccount).args_json(json!({
+            "engine_account": engine_account,
+        })))
+    }
 
-    */
+    pub async fn get_engine_accounts(&self) -> Result<ViewResultDetails<Vec<AccountId>>> {
+        ViewResultDetails::<Vec<AccountId>>::try_from_json(
+            self.near_view(&View::GetEngineAccounts, vec![]).await?,
+        )
+    }
+
+    pub fn storage_deposit(
+        &self,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> CallStorageDeposit<'_> {
+        let args = json!({ "account_id": account_id, "registration_only": registration_only});
+        CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
+    }
+
+    pub fn storage_unregister(&self, force: bool) -> CallStorageUnregister<'_> {
+        let val = serde_json::json!({ "force": force });
+        CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
+    }
+
+    pub fn storage_withdraw(&self, amount: Option<U128>) -> CallStorageWithdraw<'_> {
+        let args = json!({ "amount": amount });
+        CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
+    }
+
+    pub async fn storage_balance_of(
+        &self,
+        account_id: AccountId,
+    ) -> Result<ViewResultDetails<Option<StorageBalance>>> {
+        let args = json!({ "account_id": account_id })
+            .to_string()
+            .as_bytes()
+            .to_vec();
+        ViewResultDetails::<Option<StorageBalance>>::try_from_json(
+            self.near_view(&View::StorageBalanceOf, args).await?,
+        )
+    }
+
+    pub async fn storage_balance_bounds(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
+        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
+            self.near_view(&View::StorageBalanceBounds, vec![]).await?,
+        )
+    }
 }
 
 #[derive(Debug, Clone)]

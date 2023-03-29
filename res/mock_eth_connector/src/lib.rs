@@ -103,7 +103,7 @@ impl EngineFungibleToken for EthConnectorContract {
         msg: String,
     ) -> PromiseOrValue<U128> {
         assert_one_yocto();
-        PromiseOrValue::Value(U128::from(100))
+        PromiseOrValue::Value(amount)
     }
 }
 
@@ -120,7 +120,6 @@ impl KnownEngineAccountsManagement for EthConnectorContract {
 
 #[near_bindgen]
 impl EngineStorageManagement for EthConnectorContract {
-    #[allow(unused_variables)]
     #[payable]
     fn engine_storage_deposit(
         &mut self,
@@ -151,6 +150,7 @@ impl EngineStorageManagement for EthConnectorContract {
         true
     }
 }
+
 #[near_bindgen]
 impl FungibleTokenResolver for EthConnectorContract {
     #[private]

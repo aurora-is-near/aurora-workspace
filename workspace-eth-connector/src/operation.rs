@@ -5,6 +5,7 @@ use crate::Result;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use workspaces::operations::CallTransaction;
@@ -44,6 +45,11 @@ impl_call_return![
         ExecutionSuccess<PromiseOrValue<U128>>,
         try_from
     ),
+    (CallSetEngineAccount, ExecutionSuccess<()>, try_from),
+    (CallRemoveEngineAccount, ExecutionSuccess<()>, try_from),
+    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
+    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
+    (CallStorageWithdraw, ExecutionSuccess<()>, try_from),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -52,6 +58,10 @@ pub(crate) enum Call {
     Deposit,
     FtTransfer,
     FtTransferCall,
+    EngineFtTransfer,
+    EngineFtTransferCall,
+    SetEngineAccount,
+    RemoveEngineAccount,
     StorageDeposit,
     StorageUnregister,
     StorageWithdraw,
@@ -65,6 +75,10 @@ impl AsRef<str> for Call {
             Deposit => "deposit",
             FtTransfer => "ft_transfer",
             FtTransferCall => "ft_transfer_call",
+            SetEngineAccount => "set_engine_account",
+            RemoveEngineAccount => "remove_engine_account",
+            EngineFtTransfer => "engine_ft_transfer",
+            EngineFtTransferCall => "engine_ft_transfer_call",
             StorageDeposit => "storage_deposit",
             StorageUnregister => "storage_unregister",
             StorageWithdraw => "storage_withdraw",
@@ -100,6 +114,46 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Accoun
     }
 }
 
+impl ViewResultDetails<StorageBalanceBounds> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: StorageBalanceBounds = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResultDetails<Option<StorageBalance>> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: Option<StorageBalance> = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResultDetails<Vec<AccountId>> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: Vec<AccountId> = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResultDetails<FungibleTokenMetadata> {
+    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        let result: FungibleTokenMetadata = serde_json::from_slice(view.result.as_slice())?;
+        Ok(Self {
+            result,
+            logs: view.logs,
+        })
+    }
+}
+
 impl ViewResultDetails<U128> {
     pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         let result: U128 = serde_json::from_slice(view.result.as_slice())?;
@@ -110,105 +164,28 @@ impl ViewResultDetails<U128> {
     }
 }
 
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u64> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 8];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: u64::from_le_bytes(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u32> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 4];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: u32::from_le_bytes(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u8> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 1];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: buf[0],
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<Vec<u8>> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        Self {
-            result: view.result,
-            logs: view.logs,
-        }
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: bool = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: u128 = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: FungibleTokenMetadata =
-            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum View {
-    IsProofUsed,
     FtTotalSupply,
     FtBalanceOf,
     FtMetadata,
     StorageBalanceOf,
+    StorageBalanceBounds,
     AccountsCounter,
+    GetEngineAccounts,
 }
 
 impl AsRef<str> for View {
     fn as_ref(&self) -> &str {
         use View::*;
         match self {
-            IsProofUsed => "is_used_proof",
             FtTotalSupply => "ft_total_supply",
             FtBalanceOf => "ft_balance_of",
             FtMetadata => "ft_metadata",
             StorageBalanceOf => "storage_balance_of",
+            StorageBalanceBounds => "storage_balance_bounds",
             AccountsCounter => "get_accounts_counter",
+            GetEngineAccounts => "get_engine_accounts",
         }
     }
 }
