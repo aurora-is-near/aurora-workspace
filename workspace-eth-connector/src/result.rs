@@ -1,15 +1,34 @@
 use crate::error::Error;
 use crate::Result;
-use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
+use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::types::Gas;
 
 pub type ExecutionSuccess<T> = ExecutionResult<T>;
+
+impl<T: DeserializeOwned> ExecutionSuccess<T> {
+    pub(crate) fn try_from_json(result: ExecutionFinalResult) -> Result<Self> {
+        let success = result.into_result()?;
+        let value: T = success.json()?;
+        Ok(ExecutionSuccess {
+            inner: success,
+            value,
+        })
+    }
+}
+
+impl<T: BorshDeserialize> ExecutionSuccess<T> {
+    pub(crate) fn try_from_borsh(result: ExecutionFinalResult) -> Result<Self> {
+        let inner = result.into_result()?;
+        let value: T = T::try_from_slice(&inner.raw_bytes()?)?;
+        Ok(ExecutionSuccess { inner, value })
+    }
+}
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
     type Error = Error;
@@ -31,16 +50,6 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<()> {
     fn try_from(result: ExecutionFinalResult) -> Result<Self> {
         let inner = result.into_result()?;
         Ok(ExecutionSuccess { inner, value: () })
-    }
-}
-
-impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<AccountId> {
-    type Error = Error;
-
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
-        let inner = result.into_result()?;
-        let value: AccountId = AccountId::try_from_slice(&inner.raw_bytes()?)?;
-        Ok(ExecutionSuccess { inner, value })
     }
 }
 

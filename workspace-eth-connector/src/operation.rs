@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-use crate::error::Error;
 use crate::result::ExecutionSuccess;
+use crate::types::MigrationCheckResult;
 use crate::Result;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
@@ -47,9 +47,25 @@ impl_call_return![
     ),
     (CallSetEngineAccount, ExecutionSuccess<()>, try_from),
     (CallRemoveEngineAccount, ExecutionSuccess<()>, try_from),
-    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
-    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
-    (CallStorageWithdraw, ExecutionSuccess<()>, try_from),
+    (
+        CallStorageDeposit,
+        ExecutionSuccess<StorageBalance>,
+        try_from_json
+    ),
+    (CallStorageUnregister, ExecutionSuccess<bool>, try_from_json),
+    (
+        CallStorageWithdraw,
+        ExecutionSuccess<StorageBalance>,
+        try_from_json
+    ),
+    (
+        CallWithdraw,
+        ExecutionSuccess<StorageBalance>,
+        try_from_borsh
+    ),
+    (CallFtResolveTransfer, ExecutionSuccess<U128>, try_from_json),
+    (CallSetPausedFlags, ExecutionSuccess<()>, try_from),
+    (CallSetAccessRight, ExecutionSuccess<()>, try_from),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -65,6 +81,14 @@ pub(crate) enum Call {
     StorageDeposit,
     StorageUnregister,
     StorageWithdraw,
+    EngineStorageDeposit,
+    EngineStorageUnregister,
+    EngineStorageWithdraw,
+    FtResolveTransfer,
+    SetPausedFlags,
+    SetAccessRight,
+    FinishDeposit,
+    Migrate,
 }
 
 impl AsRef<str> for Call {
@@ -82,6 +106,14 @@ impl AsRef<str> for Call {
             StorageDeposit => "storage_deposit",
             StorageUnregister => "storage_unregister",
             StorageWithdraw => "storage_withdraw",
+            EngineStorageDeposit => "engine_storage_deposit",
+            EngineStorageUnregister => "engine_storage_unregister",
+            EngineStorageWithdraw => "engine_storage_withdraw",
+            FtResolveTransfer => "ftz_resolve_transfer",
+            SetPausedFlags => "set_paused_flags",
+            SetAccessRight => "set_access_right",
+            FinishDeposit => "finish_deposit",
+            Migrate => "migrate",
         }
     }
 }
@@ -90,28 +122,6 @@ impl AsRef<str> for Call {
 pub struct ViewResultDetails<T> {
     pub result: T,
     pub logs: Vec<String>,
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        Ok(Self {
-            result: String::from_utf8(view.result)?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<AccountId> {
-    type Error = Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        Ok(Self {
-            result: AccountId::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
 }
 
 impl ViewResultDetails<StorageBalanceBounds> {
@@ -164,6 +174,33 @@ impl ViewResultDetails<U128> {
     }
 }
 
+impl ViewResultDetails<MigrationCheckResult> {
+    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        Ok(Self {
+            result: MigrationCheckResult::try_from_slice(view.result.as_slice())?,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResultDetails<AccountId> {
+    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        Ok(Self {
+            result: AccountId::try_from_slice(view.result.as_slice())?,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResultDetails<bool> {
+    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+        Ok(Self {
+            result: bool::try_from_slice(view.result.as_slice())?,
+            logs: view.logs,
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum View {
     FtTotalSupply,
@@ -173,6 +210,13 @@ pub enum View {
     StorageBalanceBounds,
     AccountsCounter,
     GetEngineAccounts,
+    GetAccountsCounter,
+    GetPausedFlags,
+    GetAccessRight,
+    IsOwner,
+    CheckMigrationCorrectness,
+    IsUsedProof,
+    GetBridgeProver,
 }
 
 impl AsRef<str> for View {
@@ -186,6 +230,13 @@ impl AsRef<str> for View {
             StorageBalanceBounds => "storage_balance_bounds",
             AccountsCounter => "get_accounts_counter",
             GetEngineAccounts => "get_engine_accounts",
+            GetAccountsCounter => "get_accounts_counter",
+            GetPausedFlags => "get_paused_flags",
+            GetAccessRight => "get_access_right",
+            IsOwner => "is_owner",
+            CheckMigrationCorrectness => "check_migration_correctness",
+            IsUsedProof => "is_used_proof",
+            GetBridgeProver => "get_bridge_prover",
         }
     }
 }
