@@ -423,9 +423,11 @@ impl EthConnectorAccount {
 
     pub async fn check_migration_correctness(
         &self,
+        data: MigrationInputData,
     ) -> Result<ViewResultDetails<MigrationCheckResult>> {
+        let args = data.try_to_vec().unwrap();
         ViewResultDetails::<MigrationCheckResult>::try_from_borsh(
-            self.near_view(&View::CheckMigrationCorrectness, vec![])
+            self.near_view(&View::CheckMigrationCorrectness, args)
                 .await?,
         )
     }
@@ -438,8 +440,6 @@ impl EthConnectorAccount {
     }
 
     pub async fn get_bridge_prover(&self) -> Result<ViewResultDetails<AccountId>> {
-        ViewResultDetails::<AccountId>::try_from_borsh(
-            self.near_view(&View::GetBridgeProver, vec![]).await?,
-        )
+        ViewResultDetails::try_from_json(self.near_view(&View::GetBridgeProver, vec![]).await?)
     }
 }

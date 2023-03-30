@@ -3,7 +3,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{AccountId, Balance, StorageUsage};
 use std::collections::HashMap;
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct MigrationInputData {
     pub accounts: HashMap<AccountId, Balance>,
     pub total_supply: Option<Balance>,
