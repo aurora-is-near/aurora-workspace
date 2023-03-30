@@ -9,7 +9,7 @@ use aurora_workspace_types::AccountId;
 use borsh::BorshSerialize;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{U128, U64};
 use serde_json::json;
 use workspaces::{Account, Contract};
 
@@ -218,7 +218,7 @@ impl EthConnectorAccount {
 
     pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<ViewResultDetails<U128>> {
         let args = json!((account_id,)).to_string().as_bytes().to_vec();
-        ViewResultDetails::<U128>::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
+        ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
     pub fn engine_ft_transfer(
@@ -445,34 +445,24 @@ impl EthConnectorAccount {
         })))
     }
 
-    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-            self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-        )
+    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
+        ViewResultDetails::try_from_json(self.near_view(&View::FtMetadata, vec![]).await?)
     }
 
-    pub async fn get_accounts_counter(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-            self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-        )
+    pub async fn get_accounts_counter(&self) -> Result<ViewResultDetails<U64>> {
+        ViewResultDetails::try_from_borsh(self.near_view(&View::GetAccountsCounter, vec![]).await?)
     }
 
     pub async fn get_paused_flags(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-            self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-        )
+        ViewResultDetails::try_from_json(self.near_view(&View::StorageBalanceBounds, vec![]).await?)
     }
 
     pub async fn get_access_right(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-            self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-        )
+        ViewResultDetails::try_from_json(self.near_view(&View::StorageBalanceBounds, vec![]).await?)
     }
 
     pub async fn is_owner(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-            self.near_view(&View::IsOwner, vec![]).await?,
-        )
+        ViewResultDetails::try_from_json(self.near_view(&View::IsOwner, vec![]).await?)
     }
 
     pub async fn check_migration_correctness(
@@ -498,7 +488,6 @@ impl EthConnectorAccount {
     }
 
     //ft_resolve_transfer
-    //ft_metadata
     //get_accounts_counter
     //get_paused_flags
     //set_paused_flags

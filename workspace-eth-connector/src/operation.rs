@@ -1,13 +1,9 @@
 #![allow(dead_code)]
-use crate::result::ExecutionSuccess;
-use crate::types::MigrationCheckResult;
-use crate::Result;
-use aurora_workspace_types::AccountId;
+use crate::{result::ExecutionSuccess, Result};
 use borsh::BorshDeserialize;
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
-use near_sdk::json_types::U128;
-use near_sdk::PromiseOrValue;
+use near_contract_standards::storage_management::StorageBalance;
+use near_sdk::{json_types::U128, PromiseOrValue};
+use serde::de::DeserializeOwned;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
@@ -124,78 +120,19 @@ pub struct ViewResultDetails<T> {
     pub logs: Vec<String>,
 }
 
-impl ViewResultDetails<StorageBalanceBounds> {
+impl<T: DeserializeOwned> ViewResultDetails<T> {
     pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: StorageBalanceBounds = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
-            result,
+            result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }
 }
 
-impl ViewResultDetails<Option<StorageBalance>> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: Option<StorageBalance> = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<Vec<AccountId>> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: Vec<AccountId> = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<FungibleTokenMetadata> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: FungibleTokenMetadata = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<U128> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        let result: U128 = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<MigrationCheckResult> {
+impl<T: BorshDeserialize> ViewResultDetails<T> {
     pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
         Ok(Self {
-            result: MigrationCheckResult::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<AccountId> {
-    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        Ok(Self {
-            result: AccountId::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<bool> {
-    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
-        Ok(Self {
-            result: bool::try_from_slice(view.result.as_slice())?,
+            result: T::try_from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }
