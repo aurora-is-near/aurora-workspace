@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-use crate::{result::ExecutionSuccess, Result};
+use crate::{result::ExecutionSuccess, types::WithdrawResult, Result};
 use borsh::BorshDeserialize;
 use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::{json_types::U128, PromiseOrValue};
@@ -56,12 +55,19 @@ impl_call_return![
     ),
     (
         CallWithdraw,
-        ExecutionSuccess<StorageBalance>,
+        ExecutionSuccess<WithdrawResult>,
         try_from_borsh
+    ),
+    (CallDeposit, ExecutionSuccess<()>, try_from),
+    (
+        CallFinishDeposit,
+        ExecutionSuccess<PromiseOrValue<Option<U128>>>,
+        try_from
     ),
     (CallFtResolveTransfer, ExecutionSuccess<U128>, try_from_json),
     (CallSetPausedFlags, ExecutionSuccess<()>, try_from),
     (CallSetAccessRight, ExecutionSuccess<()>, try_from),
+    (CallMigrate, ExecutionSuccess<()>, try_from),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -83,7 +89,6 @@ pub(crate) enum Call {
     FtResolveTransfer,
     SetPausedFlags,
     SetAccessRight,
-    FinishDeposit,
     Migrate,
 }
 
@@ -108,7 +113,6 @@ impl AsRef<str> for Call {
             FtResolveTransfer => "ftz_resolve_transfer",
             SetPausedFlags => "set_paused_flags",
             SetAccessRight => "set_access_right",
-            FinishDeposit => "finish_deposit",
             Migrate => "migrate",
         }
     }
@@ -185,11 +189,6 @@ pub struct EthConnectorCallTransaction<'a> {
 impl<'a, 'b> EthConnectorCallTransaction<'a> {
     pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
         Self { inner: transaction }
-    }
-
-    pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
-        self.inner = self.inner.args(args);
-        self
     }
 
     pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {

@@ -1,15 +1,18 @@
 use crate::operation::{
-    Call, CallFtTransfer, CallFtTransferCall, CallRemoveEngineAccount, CallSetEngineAccount,
-    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, EthConnectorCallTransaction,
-    View, ViewResultDetails,
+    Call, CallDeposit, CallFtResolveTransfer, CallFtTransfer, CallFtTransferCall, CallMigrate,
+    CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount, CallSetPausedFlags,
+    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallWithdraw,
+    EthConnectorCallTransaction, View, ViewResultDetails,
 };
-use crate::types::{MigrationCheckResult, Proof};
+use crate::types::{MigrationCheckResult, MigrationInputData, PausedMask, Proof};
 use crate::Result;
+use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
 use borsh::BorshSerialize;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
 use near_sdk::json_types::{U128, U64};
+use near_sdk::Balance;
 use serde_json::json;
 use workspaces::{Account, Contract};
 
@@ -228,7 +231,7 @@ impl EthConnectorAccount {
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer<'_> {
-        CallFtTransfer(self.near_call(&Call::FtTransfer).args_json(json!({
+        CallFtTransfer(self.near_call(&Call::EngineFtTransfer).args_json(json!({
             "sender_id": sender_id,
             "receiver_id": receiver_id,
             "amount": amount,
@@ -244,13 +247,16 @@ impl EthConnectorAccount {
         memo: Option<String>,
         msg: String,
     ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "sender_id": sender_id,
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+        CallFtTransferCall(
+            self.near_call(&Call::EngineFtTransferCall)
+                .args_json(json!({
+                    "sender_id": sender_id,
+                    "receiver_id": receiver_id,
+                    "amount": amount,
+                    "memo": memo,
+                    "msg": msg,
+                })),
+        )
     }
 
     pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount<'_> {
@@ -260,7 +266,7 @@ impl EthConnectorAccount {
     }
 
     pub fn remove_engine_account(&self, engine_account: AccountId) -> CallRemoveEngineAccount<'_> {
-        CallRemoveEngineAccount(self.near_call(&Call::SetEngineAccount).args_json(json!({
+        CallRemoveEngineAccount(self.near_call(&Call::RemoveEngineAccount).args_json(json!({
             "engine_account": engine_account,
         })))
     }
@@ -342,107 +348,57 @@ impl EthConnectorAccount {
 
     pub fn ft_resolve_transfer(
         &self,
+        sender_id: AccountId,
         receiver_id: AccountId,
         amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
+    ) -> CallFtResolveTransfer<'_> {
+        CallFtResolveTransfer(self.near_call(&Call::FtResolveTransfer).args_json(json!({
+            "sender_id": sender_id,
             "receiver_id": receiver_id,
             "amount": amount,
-            "memo": memo,
-            "msg": msg,
         })))
     }
 
-    pub fn set_paused_flags(
-        &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+    pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags<'_> {
+        let args = borsh::to_vec(&paused).unwrap();
+        CallSetPausedFlags(self.near_call(&Call::SetPausedFlags).args_borsh(args))
     }
 
-    pub fn set_access_right(
-        &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+    pub fn set_access_right(&self, account: AccountId) -> CallSetAccessRight<'_> {
+        let args = borsh::to_vec(&account).unwrap();
+        CallSetAccessRight(self.near_call(&Call::SetAccessRight).args_borsh(args))
     }
 
     pub fn withdraw(
         &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+        sender_id: AccountId,
+        recipient_address: Address,
+        amount: Balance,
+    ) -> CallWithdraw<'_> {
+        #[derive(BorshSerialize)]
+        struct WithdrawArgs {
+            sender_id: AccountId,
+            recipient_address: Address,
+            amount: Balance,
+        }
+        let args = WithdrawArgs {
+            sender_id,
+            recipient_address,
+            amount,
+        }
+        .try_to_vec()
+        .unwrap();
+        CallWithdraw(self.near_call(&Call::Withdraw).args_borsh(args))
     }
 
-    pub fn deposit(
-        &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+    pub fn deposit(&self, raw_proof: Proof) -> CallDeposit<'_> {
+        let args = borsh::to_vec(&raw_proof).unwrap();
+        CallDeposit(self.near_call(&Call::Deposit).args_borsh(args))
     }
 
-    pub fn finish_deposit(
-        &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
-    }
-
-    pub fn migrate(
-        &self,
-        receiver_id: AccountId,
-        amount: U128,
-        memo: Option<String>,
-        msg: String,
-    ) -> CallFtTransferCall<'_> {
-        CallFtTransferCall(self.near_call(&Call::FtTransferCall).args_json(json!({
-            "receiver_id": receiver_id,
-            "amount": amount,
-            "memo": memo,
-            "msg": msg,
-        })))
+    pub fn migrate(&self, data: MigrationInputData) -> CallMigrate<'_> {
+        let args = data.try_to_vec().unwrap();
+        CallMigrate(self.near_call(&Call::Migrate).args_borsh(args))
     }
 
     pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
@@ -453,15 +409,15 @@ impl EthConnectorAccount {
         ViewResultDetails::try_from_borsh(self.near_view(&View::GetAccountsCounter, vec![]).await?)
     }
 
-    pub async fn get_paused_flags(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::try_from_json(self.near_view(&View::StorageBalanceBounds, vec![]).await?)
+    pub async fn get_paused_flags(&self) -> Result<ViewResultDetails<PausedMask>> {
+        ViewResultDetails::try_from_borsh(self.near_view(&View::GetPausedFlags, vec![]).await?)
     }
 
-    pub async fn get_access_right(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
-        ViewResultDetails::try_from_json(self.near_view(&View::StorageBalanceBounds, vec![]).await?)
+    pub async fn get_access_right(&self) -> Result<ViewResultDetails<AccountId>> {
+        ViewResultDetails::try_from_json(self.near_view(&View::GetAccessRight, vec![]).await?)
     }
 
-    pub async fn is_owner(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
+    pub async fn is_owner(&self) -> Result<ViewResultDetails<bool>> {
         ViewResultDetails::try_from_json(self.near_view(&View::IsOwner, vec![]).await?)
     }
 
@@ -486,16 +442,4 @@ impl EthConnectorAccount {
             self.near_view(&View::GetBridgeProver, vec![]).await?,
         )
     }
-
-    //ft_resolve_transfer
-    //get_accounts_counter
-    //get_paused_flags
-    //set_paused_flags
-    //set_access_right
-    //get_access_right
-    //is_owner
-    //withdraw
-    //deposit
-    //finish_deposit
-    //migrate
 }

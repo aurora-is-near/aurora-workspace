@@ -30,6 +30,20 @@ impl<T: BorshDeserialize> ExecutionSuccess<T> {
     }
 }
 
+impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<Option<U128>>> {
+    type Error = Error;
+
+    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+        let inner = result.into_result()?;
+        let value: Option<U128> = inner.json()?;
+
+        Ok(ExecutionSuccess {
+            inner,
+            value: PromiseOrValue::Value(value),
+        })
+    }
+}
+
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
     type Error = Error;
 
