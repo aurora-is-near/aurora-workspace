@@ -283,7 +283,7 @@ impl StorageManagement for EthConnectorContract {
     fn storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
         Some(StorageBalance {
             total: U128::from(10),
-            available: U128::from(10),
+            available: U128::from(20),
         })
     }
 }

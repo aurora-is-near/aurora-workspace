@@ -115,28 +115,127 @@ async fn test_get_engine_accounts() {
 }
 
 #[tokio::test]
-async fn test_storage_deposit() {}
+async fn test_storage_deposit() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let account_id = AccountId::from_str("test.near").unwrap();
+    let res = contract
+        .as_account()
+        .storage_deposit(Some(account_id), Some(true))
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.total, U128::from(100));
+    assert_eq!(res.available, U128::from(200));
+}
 
 #[tokio::test]
-async fn test_storage_withdraw() {}
+async fn test_storage_withdraw() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let amount = Some(U128::from(100));
+    let res = contract
+        .as_account()
+        .storage_withdraw(amount)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.total, U128::from(100));
+    assert_eq!(res.available, U128::from(200));
+}
 
 #[tokio::test]
-async fn test_storage_unregister() {}
+async fn test_storage_unregister() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let force = Some(true);
+    let res = contract
+        .as_account()
+        .storage_unregister(force)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert!(res);
+}
 
 #[tokio::test]
-async fn test_engine_storage_deposit() {}
+async fn test_engine_storage_deposit() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let sender_id = AccountId::from_str("test.near").unwrap();
+    let account_id = AccountId::from_str("test.near").unwrap();
+    let res = contract
+        .as_account()
+        .engine_storage_deposit(sender_id, Some(account_id), Some(true))
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.total, U128::from(100));
+    assert_eq!(res.available, U128::from(200));
+}
 
 #[tokio::test]
-async fn test_engine_storage_withdraw() {}
+async fn test_engine_storage_withdraw() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let sender_id = AccountId::from_str("test.near").unwrap();
+    let amount = Some(U128::from(100));
+    let res = contract
+        .as_account()
+        .engine_storage_withdraw(sender_id, amount)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.total, U128::from(100));
+    assert_eq!(res.available, U128::from(200));
+}
 
 #[tokio::test]
-async fn test_engine_storage_unregister() {}
+async fn test_engine_storage_unregister() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let sender_id = AccountId::from_str("test.near").unwrap();
+    let force = Some(true);
+    let res = contract
+        .as_account()
+        .engine_storage_unregister(sender_id, force)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert!(res);
+}
 
 #[tokio::test]
-async fn test_storage_balance_of() {}
+async fn test_storage_balance_of() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let account_id = AccountId::from_str("test.near").unwrap();
+    let res = contract
+        .as_account()
+        .storage_balance_of(account_id)
+        .await
+        .unwrap();
+    let result = res.result.unwrap();
+    assert_eq!(result.total, U128::from(10));
+    assert_eq!(result.available, U128::from(20));
+}
 
 #[tokio::test]
-async fn test_storage_balance_bounds() {}
+async fn test_storage_balance_bounds() {
+    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let res = contract
+        .as_account()
+        .storage_balance_bounds()
+        .await
+        .unwrap();
+    assert_eq!(res.result.min, U128::from(100));
+    assert_eq!(res.result.max, Some(U128::from(200)));
+}
 
 #[tokio::test]
 async fn test_ft_resolve_transfer() {
