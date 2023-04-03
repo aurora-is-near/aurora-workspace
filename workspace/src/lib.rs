@@ -1,5 +1,4 @@
 pub mod contract;
-pub mod error;
 pub mod operation;
 pub(crate) mod result;
 
@@ -7,8 +6,6 @@ pub use contract::{EvmAccount, EvmContract, InitConfig};
 pub use operation::{EngineCallTransaction, ViewResultDetails};
 
 pub use crate::contract::ContractSource;
-
-pub type Result<T, E = error::Error> = std::result::Result<T, E>;
 
 pub mod types {
     pub use aurora_engine::proof::Proof;

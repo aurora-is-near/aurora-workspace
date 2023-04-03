@@ -1,8 +1,6 @@
 #![allow(dead_code)]
-use crate::error::Error;
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
-use crate::Result;
 use aurora_engine::metadata::FungibleTokenMetadata;
 #[cfg(feature = "deposit-withdraw")]
 use aurora_engine::parameters::WithdrawResult;
@@ -40,7 +38,7 @@ macro_rules! impl_call_return  {
                 self
             }
 
-            pub async fn transact(self) -> Result<$return> {
+            pub async fn transact(self) -> anyhow::Result<$return> {
                 ExecutionSuccess::$deser_fn(self.0.transact().await?)
             }
         })*
@@ -142,9 +140,9 @@ pub struct ViewResultDetails<T> {
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: String::from_utf8(view.result)?,
             logs: view.logs,
@@ -153,9 +151,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<AccountId> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: AccountId::try_from_slice(view.result.as_slice())?,
             logs: view.logs,
@@ -231,7 +229,7 @@ impl ViewResultDetails<Vec<Token>> {
     pub fn decode(
         types: &[ParamType],
         view: workspaces::result::ViewResultDetails,
-    ) -> Result<Self> {
+    ) -> anyhow::Result<Self> {
         Ok(Self {
             result: ethabi::decode(types, &view.result)?,
             logs: view.logs,
@@ -252,9 +250,9 @@ impl ViewResultDetails<u128> {
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<TransactionStatus> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let result: TransactionStatus = TransactionStatus::try_from_slice(view.result.as_slice())?;
         Ok(Self {
             result,
@@ -264,9 +262,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Transa
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let result: bool = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result,
@@ -276,9 +274,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> 
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let result: u128 = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result,
@@ -288,7 +286,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> 
 }
 
 impl ViewResultDetails<U256> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    pub(crate) fn try_from_json(
+        view: workspaces::result::ViewResultDetails,
+    ) -> anyhow::Result<Self> {
         let result: Wei = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result: result.raw(),
@@ -298,9 +298,9 @@ impl ViewResultDetails<U256> {
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let result: FungibleTokenMetadata =
             FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
         Ok(Self {
@@ -311,9 +311,9 @@ impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<Fungib
 }
 
 impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<StorageBalance> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
@@ -476,7 +476,7 @@ impl<'a, 'b> EngineCallTransaction<'a> {
         self
     }
 
-    pub async fn transact(self) -> Result<ExecutionFinalResult> {
+    pub async fn transact(self) -> anyhow::Result<ExecutionFinalResult> {
         Ok(self.inner.transact().await?)
     }
 }

@@ -5,7 +5,6 @@ use crate::operation::{
     EthConnectorCallTransaction, View, ViewResultDetails,
 };
 use crate::types::{MigrationCheckResult, MigrationInputData, PausedMask, Proof};
-use crate::Result;
 use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
 use borsh::BorshSerialize;
@@ -43,7 +42,7 @@ impl AccountKind {
         &self,
         function: &F,
         args: Vec<u8>,
-    ) -> Result<workspaces::result::ViewResultDetails> {
+    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
         Ok(match self {
             AccountKind::Account { contract_id, inner } => {
                 inner
@@ -103,7 +102,7 @@ impl EthConnectorContract {
         account_with_access_right: &AccountId,
         owner_id: AccountId,
         wasm: Vec<u8>,
-    ) -> Result<Self> {
+    ) -> anyhow::Result<Self> {
         let contract = Self::deploy(account, wasm).await?;
         contract
             .init(
@@ -117,7 +116,7 @@ impl EthConnectorContract {
         Ok(contract)
     }
 
-    pub async fn deploy(account: Account, wasm: Vec<u8>) -> Result<EthConnectorContract> {
+    pub async fn deploy(account: Account, wasm: Vec<u8>) -> anyhow::Result<EthConnectorContract> {
         let contract = account.deploy(&wasm).await?.into_result()?;
         Ok(Self::new(contract))
     }
@@ -130,7 +129,7 @@ impl EthConnectorContract {
         metadata: FungibleTokenMetadata,
         account_with_access_right: &AccountId,
         owner_id: AccountId,
-    ) -> Result<()> {
+    ) -> anyhow::Result<()> {
         self.contract
             .near_call("new")
             .args_json(json!({
@@ -178,7 +177,7 @@ impl EthConnectorAccount {
         &self,
         function: &F,
         args: Vec<u8>,
-    ) -> Result<workspaces::result::ViewResultDetails> {
+    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
         self.account.view(function, args).await
     }
 
@@ -213,13 +212,16 @@ impl EthConnectorAccount {
         })))
     }
 
-    pub async fn ft_total_supply(&self) -> Result<ViewResultDetails<U128>> {
+    pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<U128>> {
         ViewResultDetails::<U128>::try_from_json(
             self.near_view(&View::FtTotalSupply, vec![]).await?,
         )
     }
 
-    pub async fn ft_balance_of(&self, account_id: AccountId) -> Result<ViewResultDetails<U128>> {
+    pub async fn ft_balance_of(
+        &self,
+        account_id: AccountId,
+    ) -> anyhow::Result<ViewResultDetails<U128>> {
         let args = json!((account_id,)).to_string().as_bytes().to_vec();
         ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
     }
@@ -271,7 +273,7 @@ impl EthConnectorAccount {
         })))
     }
 
-    pub async fn get_engine_accounts(&self) -> Result<ViewResultDetails<Vec<AccountId>>> {
+    pub async fn get_engine_accounts(&self) -> anyhow::Result<ViewResultDetails<Vec<AccountId>>> {
         ViewResultDetails::<Vec<AccountId>>::try_from_json(
             self.near_view(&View::GetEngineAccounts, vec![]).await?,
         )
@@ -330,7 +332,7 @@ impl EthConnectorAccount {
     pub async fn storage_balance_of(
         &self,
         account_id: AccountId,
-    ) -> Result<ViewResultDetails<Option<StorageBalance>>> {
+    ) -> anyhow::Result<ViewResultDetails<Option<StorageBalance>>> {
         let args = json!({ "account_id": account_id })
             .to_string()
             .as_bytes()
@@ -340,7 +342,9 @@ impl EthConnectorAccount {
         )
     }
 
-    pub async fn storage_balance_bounds(&self) -> Result<ViewResultDetails<StorageBalanceBounds>> {
+    pub async fn storage_balance_bounds(
+        &self,
+    ) -> anyhow::Result<ViewResultDetails<StorageBalanceBounds>> {
         ViewResultDetails::<StorageBalanceBounds>::try_from_json(
             self.near_view(&View::StorageBalanceBounds, vec![]).await?,
         )
@@ -388,30 +392,30 @@ impl EthConnectorAccount {
         CallMigrate(self.near_call(&Call::Migrate).args_borsh(data))
     }
 
-    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
+    pub async fn ft_metadata(&self) -> anyhow::Result<ViewResultDetails<FungibleTokenMetadata>> {
         ViewResultDetails::try_from_json(self.near_view(&View::FtMetadata, vec![]).await?)
     }
 
-    pub async fn get_accounts_counter(&self) -> Result<ViewResultDetails<U64>> {
+    pub async fn get_accounts_counter(&self) -> anyhow::Result<ViewResultDetails<U64>> {
         ViewResultDetails::try_from_borsh(self.near_view(&View::GetAccountsCounter, vec![]).await?)
     }
 
-    pub async fn get_paused_flags(&self) -> Result<ViewResultDetails<PausedMask>> {
+    pub async fn get_paused_flags(&self) -> anyhow::Result<ViewResultDetails<PausedMask>> {
         ViewResultDetails::try_from_borsh(self.near_view(&View::GetPausedFlags, vec![]).await?)
     }
 
-    pub async fn get_access_right(&self) -> Result<ViewResultDetails<AccountId>> {
+    pub async fn get_access_right(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from_json(self.near_view(&View::GetAccessRight, vec![]).await?)
     }
 
-    pub async fn is_owner(&self) -> Result<ViewResultDetails<bool>> {
+    pub async fn is_owner(&self) -> anyhow::Result<ViewResultDetails<bool>> {
         ViewResultDetails::try_from_json(self.near_view(&View::IsOwner, vec![]).await?)
     }
 
     pub async fn check_migration_correctness(
         &self,
         data: MigrationInputData,
-    ) -> Result<ViewResultDetails<MigrationCheckResult>> {
+    ) -> anyhow::Result<ViewResultDetails<MigrationCheckResult>> {
         let args = data.try_to_vec().unwrap();
         ViewResultDetails::<MigrationCheckResult>::try_from_borsh(
             self.near_view(&View::CheckMigrationCorrectness, args)
@@ -419,14 +423,14 @@ impl EthConnectorAccount {
         )
     }
 
-    pub async fn is_used_proof(&self, proof: Proof) -> Result<ViewResultDetails<bool>> {
+    pub async fn is_used_proof(&self, proof: Proof) -> anyhow::Result<ViewResultDetails<bool>> {
         ViewResultDetails::<bool>::try_from_borsh(
             self.near_view(&View::IsUsedProof, proof.try_to_vec()?)
                 .await?,
         )
     }
 
-    pub async fn get_bridge_prover(&self) -> Result<ViewResultDetails<AccountId>> {
+    pub async fn get_bridge_prover(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from_json(self.near_view(&View::GetBridgeProver, vec![]).await?)
     }
 }

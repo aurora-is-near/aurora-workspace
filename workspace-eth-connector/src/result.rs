@@ -1,5 +1,3 @@
-use crate::error::Error;
-use crate::Result;
 use borsh::BorshDeserialize;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
@@ -12,7 +10,7 @@ use workspaces::types::Gas;
 pub type ExecutionSuccess<T> = ExecutionResult<T>;
 
 impl<T: DeserializeOwned> ExecutionSuccess<T> {
-    pub(crate) fn try_from_json(result: ExecutionFinalResult) -> Result<Self> {
+    pub(crate) fn try_from_json(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.into_result()?;
         let value: T = success.json()?;
         Ok(ExecutionSuccess {
@@ -23,7 +21,7 @@ impl<T: DeserializeOwned> ExecutionSuccess<T> {
 }
 
 impl<T: BorshDeserialize> ExecutionSuccess<T> {
-    pub(crate) fn try_from_borsh(result: ExecutionFinalResult) -> Result<Self> {
+    pub(crate) fn try_from_borsh(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: T = T::try_from_slice(&inner.raw_bytes()?)?;
         Ok(ExecutionSuccess { inner, value })
@@ -31,9 +29,9 @@ impl<T: BorshDeserialize> ExecutionSuccess<T> {
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<Option<U128>>> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: Option<U128> = inner.json()?;
 
@@ -45,9 +43,9 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<Option<U1
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: U128 = inner.json()?;
 
@@ -59,9 +57,9 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<()> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         Ok(ExecutionSuccess { inner, value: () })
     }

@@ -1,4 +1,4 @@
-use crate::{result::ExecutionSuccess, types::WithdrawResult, Result};
+use crate::{result::ExecutionSuccess, types::WithdrawResult};
 use borsh::BorshDeserialize;
 use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::{json_types::U128, PromiseOrValue};
@@ -26,7 +26,7 @@ macro_rules! impl_call_return  {
                 self
             }
 
-            pub async fn transact(self) -> Result<$return> {
+            pub async fn transact(self) -> anyhow::Result<$return> {
                 ExecutionSuccess::$deser_fn(self.0.transact().await?)
             }
         })*
@@ -125,7 +125,9 @@ pub struct ViewResultDetails<T> {
 }
 
 impl<T: DeserializeOwned> ViewResultDetails<T> {
-    pub(crate) fn try_from_json(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    pub(crate) fn try_from_json(
+        view: workspaces::result::ViewResultDetails,
+    ) -> anyhow::Result<Self> {
         Ok(Self {
             result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
@@ -134,7 +136,9 @@ impl<T: DeserializeOwned> ViewResultDetails<T> {
 }
 
 impl<T: BorshDeserialize> ViewResultDetails<T> {
-    pub(crate) fn try_from_borsh(view: workspaces::result::ViewResultDetails) -> Result<Self> {
+    pub(crate) fn try_from_borsh(
+        view: workspaces::result::ViewResultDetails,
+    ) -> anyhow::Result<Self> {
         Ok(Self {
             result: T::try_from_slice(view.result.as_slice())?,
             logs: view.logs,
@@ -216,7 +220,7 @@ impl<'a, 'b> EthConnectorCallTransaction<'a> {
         self
     }
 
-    pub async fn transact(self) -> Result<ExecutionFinalResult> {
+    pub async fn transact(self) -> anyhow::Result<ExecutionFinalResult> {
         Ok(self.inner.transact().await?)
     }
 }
