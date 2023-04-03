@@ -1,10 +1,9 @@
 [package]
-name = "aurora-workspace"
+name = "aurora-workspace-eth-connector"
 version = "0.1.0"
 authors = [ "Aurora <hello@aurora.dev>" ]
 edition = "2021"
-readme = "README.md"
-description = "Aurora EVM contract for the Near workspaces library"
+description = "Aurora Workspace Eth Connector is a library for the Aurora Eth Connector based on NEAR Protocol."
 
 [dependencies]
 anyhow = "1"
@@ -28,7 +27,3 @@ lazy_static = "1.4"
 tokio = { version = "1" }
 
 [features]
-default = []
-eth-primitives = []
-full-serde = []
-deposit-withdraw = ["aurora-workspace-types/deposit-withdraw"]
