@@ -8,7 +8,7 @@ use crate::operation::{
 };
 #[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
-use crate::{EngineCallTransaction, Result};
+use crate::EngineCallTransaction;
 use aurora_engine::metadata::FungibleTokenMetadata;
 use aurora_engine::parameters::PausePrecompilesCallArgs;
 use aurora_engine::parameters::{
@@ -58,7 +58,7 @@ impl AccountKind {
         &self,
         function: &F,
         args: Vec<u8>,
-    ) -> Result<workspaces::result::ViewResultDetails> {
+    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
         Ok(match self {
             AccountKind::Account { contract_id, inner } => {
                 inner
@@ -186,7 +186,7 @@ impl<U: UserFunctions> EvmAccount<U> {
         &self,
         function: &F,
         args: Vec<u8>,
-    ) -> Result<workspaces::result::ViewResultDetails> {
+    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
         self.account.view(function, args).await
     }
 
@@ -431,35 +431,35 @@ impl<U: UserFunctions> EvmAccount<U> {
         CallStateMigration(self.near_call(&OwnerCall::StateMigration))
     }
 
-    pub async fn version(&self) -> Result<ViewResultDetails<String>> {
+    pub async fn version(&self) -> anyhow::Result<ViewResultDetails<String>> {
         ViewResultDetails::try_from(self.near_view(&View::Version, vec![]).await?)
     }
 
-    pub async fn owner(&self) -> Result<ViewResultDetails<AccountId>> {
+    pub async fn owner(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from(self.near_view(&View::Owner, vec![]).await?)
     }
 
-    pub async fn bridge_prover(&self) -> Result<ViewResultDetails<AccountId>> {
+    pub async fn bridge_prover(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from(self.near_view(&View::BridgeProver, vec![]).await?)
     }
 
-    pub async fn chain_id(&self) -> Result<ViewResultDetails<String>> {
+    pub async fn chain_id(&self) -> anyhow::Result<ViewResultDetails<String>> {
         ViewResultDetails::try_from(self.near_view(&View::ChainId, vec![]).await?)
     }
 
-    pub async fn upgrade_index(&self) -> Result<ViewResultDetails<u64>> {
+    pub async fn upgrade_index(&self) -> anyhow::Result<ViewResultDetails<u64>> {
         Ok(ViewResultDetails::from(
             self.near_view(&View::UpgradeIndex, vec![]).await?,
         ))
     }
 
-    pub async fn paused_precompiles(&self) -> Result<ViewResultDetails<u32>> {
+    pub async fn paused_precompiles(&self) -> anyhow::Result<ViewResultDetails<u32>> {
         Ok(ViewResultDetails::from(
             self.near_view(&View::PausedPrecompiles, vec![]).await?,
         ))
     }
 
-    pub async fn block_hash(&self, block_height: u64) -> Result<ViewResultDetails<H256>> {
+    pub async fn block_hash(&self, block_height: u64) -> anyhow::Result<ViewResultDetails<H256>> {
         let args = block_height.try_to_vec()?;
         Ok(ViewResultDetails::from(
             self.near_view(&View::BlockHash, args).await?,
@@ -467,7 +467,10 @@ impl<U: UserFunctions> EvmAccount<U> {
     }
 
     #[cfg(not(feature = "ethabi"))]
-    pub async fn code<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<Vec<u8>>> {
+    pub async fn code<A: Into<Address>>(
+        &self,
+        address: A,
+    ) -> anyhow::Result<ViewResultDetails<Vec<u8>>> {
         let address = address.into();
         Ok(ViewResultDetails::from(
             self.near_view(&View::Code, address.as_bytes().to_vec())
@@ -480,7 +483,7 @@ impl<U: UserFunctions> EvmAccount<U> {
         &self,
         types: &[ParamType],
         address: Address,
-    ) -> Result<ViewResultDetails<Vec<Token>>> {
+    ) -> anyhow::Result<ViewResultDetails<Vec<Token>>> {
         let address = aurora_engine_types::types::Address::new(address);
         ViewResultDetails::decode(
             types,
@@ -488,14 +491,20 @@ impl<U: UserFunctions> EvmAccount<U> {
         )
     }
 
-    pub async fn balance<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<u128>> {
+    pub async fn balance<A: Into<Address>>(
+        &self,
+        address: A,
+    ) -> anyhow::Result<ViewResultDetails<u128>> {
         Ok(ViewResultDetails::from_u256(
             self.near_view(&View::Balance, address.into().0.to_vec())
                 .await?,
         ))
     }
 
-    pub async fn nonce<A: Into<Address>>(&self, address: A) -> Result<ViewResultDetails<u128>> {
+    pub async fn nonce<A: Into<Address>>(
+        &self,
+        address: A,
+    ) -> anyhow::Result<ViewResultDetails<u128>> {
         Ok(ViewResultDetails::from_u256(
             self.near_view(&View::Nonce, address.into().0.to_vec())
                 .await?,
@@ -506,7 +515,7 @@ impl<U: UserFunctions> EvmAccount<U> {
         &self,
         address: A,
         key: K,
-    ) -> Result<ViewResultDetails<H256>> {
+    ) -> anyhow::Result<ViewResultDetails<H256>> {
         let args = GetStorageAtArgs {
             address: aurora_engine_types::types::Address::new(address.into()),
             key: key.into().0,
@@ -522,7 +531,7 @@ impl<U: UserFunctions> EvmAccount<U> {
         address: A,
         amount: V,
         input: Vec<u8>,
-    ) -> Result<ViewResultDetails<TransactionStatus>> {
+    ) -> anyhow::Result<ViewResultDetails<TransactionStatus>> {
         let mut buf = [0u8; 32];
         amount.into().to_big_endian(&mut buf);
         let args = ViewCallArgs {
@@ -534,7 +543,10 @@ impl<U: UserFunctions> EvmAccount<U> {
         ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
     }
 
-    pub async fn is_proof_used(&self, proof: ProofInput) -> Result<ViewResultDetails<bool>> {
+    pub async fn is_proof_used(
+        &self,
+        proof: ProofInput,
+    ) -> anyhow::Result<ViewResultDetails<bool>> {
         let args = IsUsedProofCallArgs { proof };
         ViewResultDetails::try_from(
             self.near_view(&View::IsProofUsed, args.try_to_vec()?)
@@ -542,41 +554,41 @@ impl<U: UserFunctions> EvmAccount<U> {
         )
     }
 
-    pub async fn ft_total_supply(&self) -> Result<ViewResultDetails<u128>> {
+    pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<u128>> {
         ViewResultDetails::try_from(self.near_view(&View::FtTotalSupply, vec![]).await?)
     }
 
     pub async fn ft_balance_of<A: AsRef<str>>(
         &self,
         account_id: A,
-    ) -> Result<ViewResultDetails<u128>> {
+    ) -> anyhow::Result<ViewResultDetails<u128>> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
         ViewResultDetails::try_from(self.near_view(&View::FtBalanceOf, args).await?)
     }
 
-    pub async fn ft_metadata(&self) -> Result<ViewResultDetails<FungibleTokenMetadata>> {
+    pub async fn ft_metadata(&self) -> anyhow::Result<ViewResultDetails<FungibleTokenMetadata>> {
         ViewResultDetails::try_from(self.near_view(&View::FtMetadata, vec![]).await?)
     }
 
     pub async fn eth_balance_of<A: Into<Address>>(
         &self,
         address: A,
-    ) -> Result<ViewResultDetails<U256>> {
+    ) -> anyhow::Result<ViewResultDetails<U256>> {
         Ok(ViewResultDetails::from(
             self.near_view(&View::BalanceOfEth, address.into().0.to_vec())
                 .await?,
         ))
     }
 
-    pub async fn eth_total_supply(&self) -> Result<ViewResultDetails<U256>> {
+    pub async fn eth_total_supply(&self) -> anyhow::Result<ViewResultDetails<U256>> {
         ViewResultDetails::try_from_json(self.near_view(&View::EthTotalSupply, vec![]).await?)
     }
 
     pub async fn storage_balance_of<A: AsRef<str>>(
         &self,
         account_id: A,
-    ) -> Result<ViewResultDetails<StorageBalance>> {
+    ) -> anyhow::Result<ViewResultDetails<StorageBalance>> {
         let account = AccountId::from_str(account_id.as_ref()).unwrap();
         let args = borsh::to_vec(&account).unwrap();
         ViewResultDetails::try_from(self.near_view(&View::StorageBalanceOf, args).await?)
@@ -585,7 +597,7 @@ impl<U: UserFunctions> EvmAccount<U> {
     pub async fn erc20_from_nep141(
         &self,
         nep141_account_id: AccountId,
-    ) -> Result<ViewResultDetails<AccountId>> {
+    ) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from(
             self.near_view(&View::Erc20FromNep141, nep141_account_id.try_to_vec()?)
                 .await?,
@@ -595,14 +607,14 @@ impl<U: UserFunctions> EvmAccount<U> {
     pub async fn nep141_from_erc20(
         &self,
         erc20_account_id: AccountId,
-    ) -> Result<ViewResultDetails<AccountId>> {
+    ) -> anyhow::Result<ViewResultDetails<AccountId>> {
         ViewResultDetails::try_from(
             self.near_view(&View::Nep141FromErc20, erc20_account_id.try_to_vec()?)
                 .await?,
         )
     }
 
-    pub async fn paused_flags(&self) -> Result<ViewResultDetails<u8>> {
+    pub async fn paused_flags(&self) -> anyhow::Result<ViewResultDetails<u8>> {
         Ok(ViewResultDetails::from(
             self.near_view(&View::PausedFlags, Vec::new()).await?,
         ))
@@ -725,20 +737,20 @@ impl EvmContract {
         account: Account,
         init_config: InitConfig,
         wasm: Vec<u8>,
-    ) -> Result<EvmContract> {
+    ) -> anyhow::Result<EvmContract> {
         let contract = Self::deploy(account, wasm).await?;
         contract.init(init_config).await?;
         Ok(contract)
     }
 
-    pub async fn deploy(account: Account, wasm: Vec<u8>) -> Result<EvmContract> {
+    pub async fn deploy(account: Account, wasm: Vec<u8>) -> anyhow::Result<EvmContract> {
         let contract = account.deploy(&wasm).await?.into_result()?;
         Ok(EvmContract {
             contract: EvmAccount::with_self(contract),
         })
     }
 
-    pub async fn init(&self, init_config: InitConfig) -> Result<()> {
+    pub async fn init(&self, init_config: InitConfig) -> anyhow::Result<()> {
         use crate::types::input::NewInput;
 
         let chain_id = {
@@ -767,7 +779,7 @@ impl EvmContract {
         id: D,
         sk: SecretKey,
         worker: &Worker<N>,
-    ) -> Result<EvmContract> {
+    ) -> anyhow::Result<EvmContract> {
         let account_id = AccountId::from_str(id.as_ref())?;
         let contract = Contract::from_secret_key(account_id, sk, worker);
         Ok(EvmContract {

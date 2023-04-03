@@ -1,6 +1,4 @@
-use crate::error::Error;
 use crate::types::AccountId;
-use crate::Result;
 use aurora_engine_sdk::promise::PromiseId;
 use borsh::BorshDeserialize;
 use ethereum_types::Address;
@@ -15,9 +13,9 @@ use workspaces::types::Gas;
 pub type ExecutionSuccess<T> = ExecutionResult<T>;
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseId> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value = {
             let bytes = inner.raw_bytes()?;
@@ -30,9 +28,9 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseId> {
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: U128 = inner.json()?;
 
@@ -44,18 +42,18 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<PromiseOrValue<U128>> {
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<()> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         Ok(ExecutionSuccess { inner, value: () })
     }
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<AccountId> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: AccountId = AccountId::try_from_slice(&inner.raw_bytes()?)?;
         Ok(ExecutionSuccess { inner, value })
@@ -63,9 +61,9 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<AccountId> {
 }
 
 impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<Address> {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(result: ExecutionFinalResult) -> Result<Self> {
+    fn try_from(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let inner = result.into_result()?;
         let value: Address = Address::from_slice(&inner.raw_bytes()?);
         Ok(ExecutionSuccess { inner, value })
@@ -75,7 +73,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionSuccess<Address> {
 // Must include this as different than `try_from` because they will conflict
 // with the above implementations.
 impl<T: BorshDeserialize> ExecutionSuccess<T> {
-    pub(crate) fn try_from_borsh(result: ExecutionFinalResult) -> Result<Self> {
+    pub(crate) fn try_from_borsh(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.into_result()?;
         let value: T = success.borsh()?;
         Ok(ExecutionSuccess {
@@ -88,7 +86,7 @@ impl<T: BorshDeserialize> ExecutionSuccess<T> {
 // Must include this as different than `try_from` because they will conflict
 // with the above implementations.
 impl<T: DeserializeOwned> ExecutionSuccess<T> {
-    pub(crate) fn try_from_json(result: ExecutionFinalResult) -> Result<Self> {
+    pub(crate) fn try_from_json(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.into_result()?;
         let value: T = success.json()?;
         Ok(ExecutionSuccess {
