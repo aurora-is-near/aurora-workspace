@@ -6,7 +6,8 @@ use workspaces::result::{
     ExecutionFailure, ExecutionFinalResult, ExecutionOutcome, ExecutionSuccess,
 };
 use workspaces::rpc::query::{Query, ViewFunction};
-use workspaces::types::Gas;
+use workspaces::types::{Gas, KeyType, SecretKey};
+use workspaces::Account;
 
 #[derive(Debug)]
 pub struct ExecutionResult<T> {
@@ -215,63 +216,82 @@ impl AsRef<str> for SelfCall {
 }
 
 impl EthConnector {
-    pub fn tst_fn(&self, _balance: u64) -> CallFtTransfer {
-        CallFtTransfer::call(&self.contract)
+    pub fn init(&self, balance: u64) -> CallNew {
+        CallNew::call(&self.contract).args_json((balance,))
+    }
+    pub fn tst_fn(&self, balance: u64) -> CallFtTransfer {
+        CallFtTransfer::call(&self.contract).args_borsh((balance, 33))
+    }
+
+    pub async fn deploy_and_init(account: Account) -> anyhow::Result<Self> {
+        let contract = Contract::deploy(account, vec![]).await?;
+        let eth_contract = Self { contract };
+        let res = eth_contract.init(1).transact().await?;
+        assert!(res.is_success());
+        Ok(eth_contract)
     }
 }
 
 macro_rules! impl_call_return  {
     ($(($name:ident => $return:ty, $fn_name:expr, $deser_fn:ident)),* $(,)?) => {
         $(pub struct $name<'a>(CallTransaction<'a>);
-
         impl<'a> $name<'a> {
             pub(crate) fn call(contract: &'a Contract) -> Self {
                 Self(contract.near_call(&$fn_name))
             }
-
-                        pub fn gas(mut self, gas: u64) -> Self {
+            pub(crate) fn gas(mut self, gas: u64) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
-
-            pub fn max_gas(mut self) -> Self {
-                self.0 = self.0.max_gas();
+            pub(crate) fn max_gas(mut self) -> Self {
+                self.set_tx(self.get_tx().max_gas());
                 self
             }
-
-            pub fn deposit(mut self, deposit: u128) -> Self {
-                self.0 = self.0.deposit(deposit);
+            pub(crate) fn deposit(mut self, deposit: u128) -> Self {
+                self.set_tx(self.get_tx().deposit(deposit));
                 self
             }
+            pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
+                self.0 = self.0.args_json(args);
+                self
 
-            pub async fn transact(self) -> anyhow::Result<ExecutionResult<$return>> {
+            }
+            pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
+                self.0 = self.0.args_borsh(args);
+                self
+            }
+            pub(crate) async fn transact(self) -> anyhow::Result<ExecutionResult<$return>> {
                 ExecutionResult::$deser_fn(self.0.transact().await?)
             }
         })*
     };
     ($(($name:ident, $fn_name:expr)),* $(,)?) => {
         $(pub struct $name<'a>(CallTransaction<'a>);
-
         impl<'a> $name<'a> {
             pub(crate) fn call(contract: &'a Contract) -> Self {
                 Self(contract.near_call(&$fn_name))
             }
-
-                        pub fn gas(mut self, gas: u64) -> Self {
+            pub fn gas(mut self, gas: u64) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
-
             pub fn max_gas(mut self) -> Self {
                 self.0 = self.0.max_gas();
                 self
             }
-
             pub fn deposit(mut self, deposit: u128) -> Self {
                 self.0 = self.0.deposit(deposit);
                 self
             }
+            pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
+                self.0 = self.0.args_json(args);
+                self
 
+            }
+            pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
+                self.0 = self.0.args_borsh(args);
+                self
+            }
             pub async fn transact(self) -> anyhow::Result<ExecutionResult<()>> {
                 Ok(ExecutionResult {
                     inner: self.0.transact().await?,
@@ -282,4 +302,21 @@ macro_rules! impl_call_return  {
     };
 }
 
-impl_call_return!((CallFtTransfer, SelfCall::SetEthConnectorContractData),);
+impl_call_return!(
+    (CallFtTransfer, SelfCall::SetEthConnectorContractData),
+    (CallNew, SelfCall::SetEthConnectorContractData),
+);
+
+pub async fn tstq() -> anyhow::Result<()> {
+    use std::str::FromStr;
+    let worker = workspaces::sandbox().await.unwrap();
+    let sk = SecretKey::from_random(KeyType::ED25519);
+    let account = worker
+        .create_tla(AccountId::from_str("tst.test.near").unwrap(), sk)
+        .await?
+        .into_result()?;
+
+    let contract = EthConnector::deploy_and_init(account).await?;
+    contract.tst_fn(1).transact().await?.into_value();
+    Ok(())
+}
