@@ -295,6 +295,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "aurora-workspace-utils"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aurora-workspace-types",
+ "borsh",
+ "near-account-id 0.15.0",
+ "near-sdk",
+ "serde",
+ "serde_json",
+ "workspaces",
+]
+
+[[package]]
 name = "auto_impl"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
