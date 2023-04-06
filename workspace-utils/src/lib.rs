@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
 use aurora_workspace_types::AccountId;
+use borsh::BorshDeserialize;
+use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use workspaces::result::{
     ExecutionFailure, ExecutionFinalResult, ExecutionOutcome, ExecutionSuccess,
@@ -8,6 +10,30 @@ use workspaces::result::{
 use workspaces::rpc::query::{Query, ViewFunction};
 use workspaces::types::{Gas, KeyType, SecretKey};
 use workspaces::Account;
+
+#[derive(Debug)]
+pub struct ViewResult<T> {
+    pub result: T,
+    pub logs: Vec<u8>,
+}
+
+impl<T: DeserializeOwned> ViewResult<T> {
+    pub(crate) fn json(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+        Ok(Self {
+            result: serde_json::from_slice(view.result.as_slice())?,
+            logs: view.logs,
+        })
+    }
+}
+
+impl<T: BorshDeserialize> ViewResult<T> {
+    pub(crate) fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+        Ok(Self {
+            result: T::try_from_slice(view.result.as_slice())?,
+            logs: view.logs,
+        })
+    }
+}
 
 #[derive(Debug)]
 pub struct ExecutionResult<T> {
@@ -82,6 +108,30 @@ impl<T> Borrow<T> for ExecutionResult<T> {
     }
 }
 
+pub struct ViewTransaction<'a> {
+    inner: Query<'a, ViewFunction>,
+}
+
+impl<'a> ViewTransaction<'a> {
+    pub(crate) fn new(view_tx: Query<'a, ViewFunction>) -> Self {
+        Self { inner: view_tx }
+    }
+
+    pub fn args_json<U: serde::Serialize>(mut self, args: U) -> Self {
+        self.inner = self.inner.args_json(args);
+        self
+    }
+
+    pub fn args_borsh<U: borsh::BorshSerialize>(mut self, args: U) -> Self {
+        self.inner = self.inner.args_borsh(args);
+        self
+    }
+
+    pub(crate) async fn transact(self) -> anyhow::Result<workspaces::result::ViewResultDetails> {
+        Ok(self.inner.await?)
+    }
+}
+
 pub struct CallTransaction<'a> {
     inner: workspaces::operations::CallTransaction<'a>,
 }
@@ -141,13 +191,14 @@ impl AccountKind {
         CallTransaction::new(transaction)
     }
 
-    fn view<F: AsRef<str>>(&self, function: &F) -> Query<'_, ViewFunction> {
-        match self {
+    fn view<F: AsRef<str>>(&self, function: &F) -> ViewTransaction {
+        let transaction = match self {
             AccountKind::Account { contract_id, inner } => {
                 inner.view(contract_id, function.as_ref())
             }
             AccountKind::Contract(con) => con.view(function.as_ref()),
-        }
+        };
+        ViewTransaction::new(transaction)
     }
 
     fn id(&self) -> &AccountId {
@@ -156,10 +207,6 @@ impl AccountKind {
             AccountKind::Contract(con) => con.id(),
         }
     }
-}
-
-pub trait WorkspaceContract {
-    fn contract(&mut self, contract: &Contract);
 }
 
 #[derive(Debug, Clone)]
@@ -176,7 +223,7 @@ impl Contract {
         self.account.call(function)
     }
 
-    pub fn near_view<F: AsRef<str>>(&self, function_name: &F) -> Query<'_, ViewFunction> {
+    pub fn near_view<F: AsRef<str>>(&self, function_name: &F) -> ViewTransaction {
         self.account.view(function_name)
     }
 
@@ -192,44 +239,26 @@ impl Contract {
     }
 }
 
-pub struct EthConnector {
-    contract: Contract,
-}
-
-impl WorkspaceContract for EthConnector {
-    fn contract(&mut self, contract: &Contract) {
-        self.contract = contract.clone()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SelfCall {
-    SetEthConnectorContractData,
-}
-
-impl AsRef<str> for SelfCall {
-    fn as_ref(&self) -> &str {
-        match self {
-            SelfCall::SetEthConnectorContractData => "set_eth_connector_contract_data",
-        }
-    }
-}
-
-impl EthConnector {
-    pub fn init(&self, balance: u64) -> CallNew {
-        CallNew::call(&self.contract).args_json((balance,))
-    }
-    pub fn tst_fn(&self, balance: u64) -> CallFtTransfer {
-        CallFtTransfer::call(&self.contract).args_borsh((balance, 33))
-    }
-
-    pub async fn deploy_and_init(account: Account) -> anyhow::Result<Self> {
-        let contract = Contract::deploy(account, vec![]).await?;
-        let eth_contract = Self { contract };
-        let res = eth_contract.init(1).transact().await?;
-        assert!(res.is_success());
-        Ok(eth_contract)
-    }
+macro_rules! impl_view_return  {
+    ($(($name:ident, $fn_name:expr, , $deser_fn:ident)),* $(,)?) => {
+        $(pub struct $name<'a>(ViewTransaction<'a>);
+        impl<'a> $name<'a> {
+            pub(crate) fn view(contract: &'a Contract) -> Self {
+                Self(contract.near_view(&$fn_name))
+            }
+            pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
+                self.0 = self.0.args_json(args);
+                self
+            }
+            pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
+                self.0 = self.0.args_borsh(args);
+                self
+            }
+            pub async fn transact(self)  -> anyhow::Result<ViewResult> {
+                Ok(ViewResult::$deser_fn(inner: self.0.transact().await?))
+            }
+        })*
+    };
 }
 
 macro_rules! impl_call_return  {
@@ -239,22 +268,21 @@ macro_rules! impl_call_return  {
             pub(crate) fn call(contract: &'a Contract) -> Self {
                 Self(contract.near_call(&$fn_name))
             }
-            pub(crate) fn gas(mut self, gas: u64) -> Self {
+            pub fn gas(mut self, gas: u64) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
-            pub(crate) fn max_gas(mut self) -> Self {
-                self.set_tx(self.get_tx().max_gas());
+            pub fn max_gas(mut self) -> Self {
+                self.0 = self.0.max_gas();
                 self
             }
-            pub(crate) fn deposit(mut self, deposit: u128) -> Self {
-                self.set_tx(self.get_tx().deposit(deposit));
+            pub fn deposit(mut self, deposit: u128) -> Self {
+                self.0 = self.0.deposit(deposit);
                 self
             }
             pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
                 self.0 = self.0.args_json(args);
                 self
-
             }
             pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
                 self.0 = self.0.args_borsh(args);
@@ -302,10 +330,49 @@ macro_rules! impl_call_return  {
     };
 }
 
+//=========================================
 impl_call_return!(
     (CallFtTransfer, SelfCall::SetEthConnectorContractData),
     (CallNew, SelfCall::SetEthConnectorContractData),
 );
+impl_view_return!((ViewFtTransfer, SelfCall::SetEthConnectorContractData, borsh),);
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SelfCall {
+    SetEthConnectorContractData,
+}
+
+impl AsRef<str> for SelfCall {
+    fn as_ref(&self) -> &str {
+        match self {
+            SelfCall::SetEthConnectorContractData => "set_eth_connector_contract_data",
+        }
+    }
+}
+
+pub struct EthConnector {
+    contract: Contract,
+}
+
+impl EthConnector {
+    pub fn init(&self, balance: u64) -> CallNew {
+        CallNew::call(&self.contract).args_json((balance,))
+    }
+    pub fn tst_fn(&self, balance: u64) -> CallFtTransfer {
+        CallFtTransfer::call(&self.contract).args_borsh((balance, 33))
+    }
+    pub fn tst_v_fn(&self, balance: u64) -> ViewFtTransfer {
+        ViewFtTransfer::view(&self.contract).args_borsh((balance, 33))
+    }
+
+    pub async fn deploy_and_init(account: Account) -> anyhow::Result<Self> {
+        let contract = Contract::deploy(account, vec![]).await?;
+        let eth_contract = Self { contract };
+        let res = eth_contract.init(1).transact().await?;
+        assert!(res.is_success());
+        Ok(eth_contract)
+    }
+}
 
 pub async fn tstq() -> anyhow::Result<()> {
     use std::str::FromStr;
@@ -317,6 +384,20 @@ pub async fn tstq() -> anyhow::Result<()> {
         .into_result()?;
 
     let contract = EthConnector::deploy_and_init(account).await?;
-    contract.tst_fn(1).transact().await?.into_value();
+    contract.tst_fn(1).transact().await?;
+    Ok(())
+}
+
+pub async fn tstw() -> anyhow::Result<()> {
+    use std::str::FromStr;
+    let worker = workspaces::sandbox().await.unwrap();
+    let sk = SecretKey::from_random(KeyType::ED25519);
+    let account = worker
+        .create_tla(AccountId::from_str("tst.test.near").unwrap(), sk)
+        .await?
+        .into_result()?;
+
+    let contract = EthConnector::deploy_and_init(account).await?;
+    let _res = contract.tst_v_fn(1).transact().await?;
     Ok(())
 }
