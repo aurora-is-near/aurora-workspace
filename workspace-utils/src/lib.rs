@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use aurora_workspace_types::AccountId;
-use borsh::BorshDeserialize;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use workspaces::result::{
@@ -14,7 +13,7 @@ use workspaces::Account;
 #[derive(Debug)]
 pub struct ViewResult<T> {
     pub result: T,
-    pub logs: Vec<u8>,
+    pub logs: Vec<String>,
 }
 
 impl<T: DeserializeOwned> ViewResult<T> {
@@ -26,7 +25,7 @@ impl<T: DeserializeOwned> ViewResult<T> {
     }
 }
 
-impl<T: BorshDeserialize> ViewResult<T> {
+impl<T: borsh::BorshDeserialize> ViewResult<T> {
     pub(crate) fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: T::try_from_slice(view.result.as_slice())?,
@@ -240,7 +239,7 @@ impl Contract {
 }
 
 macro_rules! impl_view_return  {
-    ($(($name:ident, $fn_name:expr, , $deser_fn:ident)),* $(,)?) => {
+    ($(($name:ident, $fn_name:expr, borsh)),* $(,)?) => {
         $(pub struct $name<'a>(ViewTransaction<'a>);
         impl<'a> $name<'a> {
             pub(crate) fn view(contract: &'a Contract) -> Self {
@@ -254,8 +253,8 @@ macro_rules! impl_view_return  {
                 self.0 = self.0.args_borsh(args);
                 self
             }
-            pub async fn transact(self)  -> anyhow::Result<ViewResult> {
-                Ok(ViewResult::$deser_fn(inner: self.0.transact().await?))
+            pub async fn transact<T: borsh::BorshDeserialize>(self)  -> anyhow::Result<ViewResult<T>> {
+                ViewResult::borsh(self.0.transact().await?)
             }
         })*
     };
@@ -398,6 +397,6 @@ pub async fn tstw() -> anyhow::Result<()> {
         .into_result()?;
 
     let contract = EthConnector::deploy_and_init(account).await?;
-    let _res = contract.tst_v_fn(1).transact().await?;
+    let _res: u8 = contract.tst_v_fn(1).transact().await?.result;
     Ok(())
 }
