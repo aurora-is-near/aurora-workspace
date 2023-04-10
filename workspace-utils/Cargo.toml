@@ -7,10 +7,8 @@ readme = "README.md"
 
 [dependencies]
 aurora-workspace-types = { path = "../workspace-types" }
-near-sdk = "4.1"
-near-account-id = "0.15"
+near-units = "0.2"
 workspaces = "0.7"
 anyhow = "1"
 borsh = { version = "0.9", default-features = false }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"

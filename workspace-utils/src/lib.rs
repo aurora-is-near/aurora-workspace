@@ -3,12 +3,13 @@
 use aurora_workspace_types::AccountId;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
+use workspaces::network::NetworkClient;
 use workspaces::result::{
     ExecutionFailure, ExecutionFinalResult, ExecutionOutcome, ExecutionSuccess,
 };
 use workspaces::rpc::query::{Query, ViewFunction};
 use workspaces::types::{Gas, KeyType, SecretKey};
-use workspaces::Account;
+use workspaces::{Account, Worker};
 
 #[derive(Debug)]
 pub struct ViewResult<T> {
@@ -19,7 +20,7 @@ pub struct ViewResult<T> {
 impl<T: DeserializeOwned> ViewResult<T> {
     pub(crate) fn json(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
-            result: serde_json::from_slice(view.result.as_slice())?,
+            result: view.json()?,
             logs: view.logs,
         })
     }
@@ -28,7 +29,7 @@ impl<T: DeserializeOwned> ViewResult<T> {
 impl<T: borsh::BorshDeserialize> ViewResult<T> {
     pub(crate) fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
-            result: T::try_from_slice(view.result.as_slice())?,
+            result: view.borsh()?,
             logs: view.logs,
         })
     }
@@ -236,10 +237,81 @@ impl Contract {
             account: AccountKind::Contract(contract),
         })
     }
+
+    pub async fn create_account_from_random_seed(
+        account_id: AccountId,
+    ) -> anyhow::Result<workspaces::Account> {
+        let worker = workspaces::sandbox()
+            .await
+            .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
+        let sk = SecretKey::from_random(KeyType::ED25519);
+        Ok(worker.create_tla(account_id, sk).await?.into_result()?)
+    }
+
+    pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<workspaces::Account> {
+        use workspaces::AccessKey;
+
+        let worker = workspaces::sandbox()
+            .await
+            .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
+        let testnet = workspaces::testnet()
+            .await
+            .map_err(|err| anyhow::anyhow!("Failed init testnet: {:?}", err))?;
+        let registrar: AccountId = "registrar".parse()?;
+        let registrar = worker
+            .import_contract(&registrar, &testnet)
+            .transact()
+            .await?;
+        Self::waiting_account_creation(&worker, registrar.id()).await?;
+        let sk = SecretKey::from_seed(KeyType::ED25519, "registrar");
+        let root: AccountId = root_acc_name.parse()?;
+        registrar
+            .as_account()
+            .batch(&root)
+            .create_account()
+            .add_key(sk.public_key(), AccessKey::full_access())
+            .transfer(near_units::parse_near!("200 N"))
+            .transact()
+            .await?
+            .into_result()?;
+
+        Ok(Account::from_secret_key(root, sk, &worker))
+    }
+
+    pub async fn create_sub_account(root_account: Account, name: &str) -> anyhow::Result<Account> {
+        Ok(root_account
+            .create_subaccount(name)
+            .initial_balance(near_units::parse_near!("15 N"))
+            .transact()
+            .await?
+            .into_result()?)
+    }
+
+    /// Waiting for the account creation
+    async fn waiting_account_creation<T: NetworkClient + ?Sized>(
+        worker: &Worker<T>,
+        account_id: &AccountId,
+    ) -> anyhow::Result<()> {
+        let timer = std::time::Instant::now();
+        // Try to get account within 30 secs
+        for _ in 0..60 {
+            if worker.view_account(account_id).await.is_err() {
+                //tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            } else {
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!(
+            "Account `{}` was not created in {:?} sec",
+            account_id,
+            timer.elapsed()
+        )
+    }
 }
 
 macro_rules! impl_view_return  {
-    ($(($name:ident, $fn_name:expr, borsh)),* $(,)?) => {
+    ($(($name:ident => $return:ty, $fn_name:expr, $deser_fn:ident)),* $(,)?) => {
         $(pub struct $name<'a>(ViewTransaction<'a>);
         impl<'a> $name<'a> {
             pub(crate) fn view(contract: &'a Contract) -> Self {
@@ -253,8 +325,8 @@ macro_rules! impl_view_return  {
                 self.0 = self.0.args_borsh(args);
                 self
             }
-            pub async fn transact<T: borsh::BorshDeserialize>(self)  -> anyhow::Result<ViewResult<T>> {
-                ViewResult::borsh(self.0.transact().await?)
+            pub async fn transact(self)  -> anyhow::Result<ViewResult<$return>> {
+                ViewResult::$deser_fn(self.0.transact().await?)
             }
         })*
     };
@@ -334,7 +406,7 @@ impl_call_return!(
     (CallFtTransfer, SelfCall::SetEthConnectorContractData),
     (CallNew, SelfCall::SetEthConnectorContractData),
 );
-impl_view_return!((ViewFtTransfer, SelfCall::SetEthConnectorContractData, borsh),);
+impl_view_return!((ViewFtTransfer => u64, SelfCall::SetEthConnectorContractData, borsh),);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SelfCall {
@@ -397,6 +469,6 @@ pub async fn tstw() -> anyhow::Result<()> {
         .into_result()?;
 
     let contract = EthConnector::deploy_and_init(account).await?;
-    let _res: u8 = contract.tst_v_fn(1).transact().await?.result;
+    let _res: u64 = contract.tst_v_fn(1).transact().await?.result;
     Ok(())
 }
