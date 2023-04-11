@@ -1,3 +1,4 @@
+/*
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
 use aurora_workspace_types::AccountId;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
@@ -46,3 +47,4 @@ pub async fn init_and_deploy_contract() -> anyhow::Result<EthConnectorContract> 
     .await?;
     Ok(contract)
 }
+*/

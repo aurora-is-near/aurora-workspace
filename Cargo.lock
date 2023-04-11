@@ -262,17 +262,13 @@ name = "aurora-workspace-eth-connector"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aurora-engine",
- "aurora-engine-sdk",
  "aurora-engine-types",
  "aurora-workspace-types",
+ "aurora-workspace-utils",
  "borsh",
- "ethabi",
- "ethereum-types",
  "hex 0.4.3",
  "lazy_static",
  "near-contract-standards",
- "near-primitives 0.15.0",
  "near-sdk",
  "serde",
  "serde_json",

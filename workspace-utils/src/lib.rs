@@ -4,9 +4,7 @@ use aurora_workspace_types::AccountId;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use workspaces::network::NetworkClient;
-use workspaces::result::{
-    ExecutionFailure, ExecutionFinalResult, ExecutionOutcome, ExecutionSuccess,
-};
+use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::rpc::query::{Query, ViewFunction};
 use workspaces::types::{Gas, KeyType, SecretKey};
 use workspaces::{Account, Worker};
@@ -37,22 +35,44 @@ impl<T: borsh::BorshDeserialize> ViewResult<T> {
 
 #[derive(Debug)]
 pub struct ExecutionResult<T> {
-    inner: workspaces::result::ExecutionFinalResult,
-    pub(crate) value: T,
+    inner: workspaces::result::ExecutionSuccess,
+    value: T,
+    success: bool,
+}
+
+impl<T: DeserializeOwned> ExecutionResult<T> {
+    pub(crate) fn json(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+        let success = result.is_success();
+        let inner = result.into_result()?;
+        let value = inner.json()?;
+        Ok(Self::new(inner, value, success))
+    }
+}
+
+impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
+    pub(crate) fn borsh(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+        let success = result.is_success();
+        let inner = result.into_result()?;
+        let value = inner.borsh()?;
+        Ok(Self::new(inner, value, success))
+    }
 }
 
 impl<T> ExecutionResult<T> {
+    pub fn new(inner: workspaces::result::ExecutionSuccess, value: T, success: bool) -> Self {
+        Self {
+            inner,
+            value,
+            success,
+        }
+    }
+
     pub fn value(&self) -> &T {
         &self.value
     }
 
     pub fn into_value(self) -> T {
         self.value
-    }
-
-    #[allow(clippy::result_large_err)]
-    pub fn into_result(self) -> Result<ExecutionSuccess, ExecutionFailure> {
-        self.inner.into_result()
     }
 
     pub fn total_gas_burnt(&self) -> Gas {
@@ -84,15 +104,11 @@ impl<T> ExecutionResult<T> {
     }
 
     pub fn is_success(&self) -> bool {
-        self.inner.is_success()
+        self.success
     }
 
     pub fn is_failure(&self) -> bool {
-        self.inner.is_failure()
-    }
-
-    pub fn inner(self) -> ExecutionFinalResult {
-        self.inner
+        !self.success
     }
 }
 
@@ -141,12 +157,12 @@ impl<'a> CallTransaction<'a> {
         Self { inner: call_tx }
     }
 
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
+    pub fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
         self.inner = self.inner.args_json(args);
         self
     }
 
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
+    pub fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
         self.inner = self.inner.args_borsh(args);
         self
     }
@@ -310,6 +326,7 @@ impl Contract {
     }
 }
 
+#[macro_export]
 macro_rules! impl_view_return  {
     ($(($name:ident => $return:ty, $fn_name:expr, $deser_fn:ident)),* $(,)?) => {
         $(pub struct $name<'a>(ViewTransaction<'a>);
@@ -332,6 +349,7 @@ macro_rules! impl_view_return  {
     };
 }
 
+#[macro_export]
 macro_rules! impl_call_return  {
     ($(($name:ident => $return:ty, $fn_name:expr, $deser_fn:ident)),* $(,)?) => {
         $(pub struct $name<'a>(CallTransaction<'a>);
@@ -392,10 +410,10 @@ macro_rules! impl_call_return  {
                 self
             }
             pub async fn transact(self) -> anyhow::Result<ExecutionResult<()>> {
-                Ok(ExecutionResult {
-                    inner: self.0.transact().await?,
-                    value: (),
-                })
+                let result = self.0.transact().await?;
+                let success = result.is_success();
+                let inner = result.into_result()?;
+                Ok(ExecutionResult::new(inner, (), success))
             }
         })*
     };
@@ -405,6 +423,9 @@ macro_rules! impl_call_return  {
 impl_call_return!(
     (CallFtTransfer, SelfCall::SetEthConnectorContractData),
     (CallNew, SelfCall::SetEthConnectorContractData),
+);
+impl_call_return!(
+    (CallFtTransfer1 => u8, SelfCall::SetEthConnectorContractData, borsh),
 );
 impl_view_return!((ViewFtTransfer => u64, SelfCall::SetEthConnectorContractData, borsh),);
 

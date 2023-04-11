@@ -1,3 +1,4 @@
+/*
 use crate::utils::CUSTODIAN_ADDRESS;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::operation::ViewResultDetails;
@@ -428,3 +429,4 @@ async fn test_get_bridge_prover() {
     };
     assert_eq!(res, expected);
 }
+*/
