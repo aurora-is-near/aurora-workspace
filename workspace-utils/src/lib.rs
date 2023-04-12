@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-
 use aurora_workspace_types::AccountId;
+use near_sdk::{json_types::U128, PromiseOrValue};
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
 use workspaces::network::NetworkClient;
@@ -41,7 +41,7 @@ pub struct ExecutionResult<T> {
 }
 
 impl<T: DeserializeOwned> ExecutionResult<T> {
-    pub(crate) fn json(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+    pub fn json(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.json()?;
@@ -49,8 +49,20 @@ impl<T: DeserializeOwned> ExecutionResult<T> {
     }
 }
 
+impl TryFrom<workspaces::result::ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
+    type Error = anyhow::Error;
+
+    fn try_from(result: ExecutionFinalResult) -> Result<Self, Self::Error> {
+        let success = result.is_success();
+        let inner = result.into_result()?;
+        let res: U128 = inner.json()?;
+        let value = PromiseOrValue::Value(res);
+        Ok(Self::new(inner, value, success))
+    }
+}
+
 impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
-    pub(crate) fn borsh(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+    pub fn borsh(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.borsh()?;

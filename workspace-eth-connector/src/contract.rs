@@ -1,5 +1,7 @@
 #![allow(unused_imports)]
-use crate::operation::CallFtTransfer;
+use crate::operation::{
+    CallEngineFtTransfer, CallEngineFtTransferCall, CallFtTransfer, CallFtTransferCall,
+};
 use crate::types::{MigrationCheckResult, MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
@@ -34,8 +36,8 @@ impl EthConnectorContract {
         amount: U128,
         memo: Option<String>,
         msg: String,
-    ) -> CallFtTransfer {
-        CallFtTransfer::call(&self.contract).args_json(json!({
+    ) -> CallFtTransferCall {
+        CallFtTransferCall::call(&self.contract).args_json(json!({
            "receiver_id": receiver_id,
            "amount": amount,
            "memo": memo,
@@ -43,55 +45,52 @@ impl EthConnectorContract {
         }))
     }
     /*
-       pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<U128>> {
-           ViewResultDetails::<U128>::try_from_json(
-               self.near_view(&View::FtTotalSupply, vec![]).await?,
-           )
-       }
+           pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<U128>> {
+               ViewResultDetails::<U128>::try_from_json(
+                   self.near_view(&View::FtTotalSupply, vec![]).await?,
+               )
+           }
 
-       pub async fn ft_balance_of(
-           &self,
-           account_id: AccountId,
-       ) -> anyhow::Result<ViewResultDetails<U128>> {
-           let args = json!((account_id,)).to_string().as_bytes().to_vec();
-           ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
-       }
+           pub async fn ft_balance_of(
+               &self,
+               account_id: AccountId,
+           ) -> anyhow::Result<ViewResultDetails<U128>> {
+               let args = json!((account_id,)).to_string().as_bytes().to_vec();
+               ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
+           }
+    */
+    pub fn engine_ft_transfer(
+        &self,
+        sender_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+    ) -> CallEngineFtTransfer {
+        CallEngineFtTransfer::call(&self.contract).args_json(json!({
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "amount": amount,
+            "memo": memo
+        }))
+    }
 
-       pub fn engine_ft_transfer(
-           &self,
-           sender_id: AccountId,
-           receiver_id: AccountId,
-           amount: U128,
-           memo: Option<String>,
-       ) -> CallFtTransfer<'_> {
-           CallFtTransfer(self.near_call(&Call::EngineFtTransfer).args_json(json!({
-               "sender_id": sender_id,
-               "receiver_id": receiver_id,
-               "amount": amount,
-               "memo": memo
-           })))
-       }
-
-       pub fn engine_ft_transfer_call(
-           &self,
-           sender_id: AccountId,
-           receiver_id: AccountId,
-           amount: U128,
-           memo: Option<String>,
-           msg: String,
-       ) -> CallFtTransferCall<'_> {
-           CallFtTransferCall(
-               self.near_call(&Call::EngineFtTransferCall)
-                   .args_json(json!({
-                       "sender_id": sender_id,
-                       "receiver_id": receiver_id,
-                       "amount": amount,
-                       "memo": memo,
-                       "msg": msg,
-                   })),
-           )
-       }
-
+    pub fn engine_ft_transfer_call(
+        &self,
+        sender_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+        msg: String,
+    ) -> CallEngineFtTransferCall {
+        CallEngineFtTransferCall::call(&self.contract).args_json(json!({
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "amount": amount,
+            "memo": memo,
+            "msg": msg,
+        }))
+    }
+    /*
        pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount<'_> {
            CallSetEngineAccount(self.near_call(&Call::SetEngineAccount).args_json(json!({
                "engine_account": engine_account,

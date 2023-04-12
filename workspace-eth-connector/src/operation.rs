@@ -1,9 +1,28 @@
 #![allow(dead_code)]
+use crate::types::WithdrawResult;
+use aurora_workspace_types::input::StorageBalance;
 use aurora_workspace_utils::{impl_call_return, CallTransaction, Contract, ExecutionResult};
+use near_sdk::{json_types::U128, PromiseOrValue};
 
 impl_call_return![
     (CallFtTransfer, Call::FtTransfer),
+    (CallEngineFtTransfer, Call::EngineFtTransfer),
     (CallSetEngineAccount, Call::SetEngineAccount),
+    (CallRemoveEngineAccount, Call::RemoveEngineAccount),
+    (CallDeposit, Call::Deposit),
+    (CallSetPausedFlags, Call::SetPausedFlags),
+    (CallSetAccessRight, Call::SetAccessRight),
+    (CallMigrate, Call::Migrate),
+];
+
+impl_call_return![
+    (CallFtTransferCall => PromiseOrValue<U128>, Call::FtTransferCall, try_from),
+    (CallEngineFtTransferCall => PromiseOrValue<U128>, Call::EngineFtTransferCall, try_from),
+    (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
+    (CallStorageUnregister => bool, Call::StorageUnregister, json),
+    (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
+    (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+    (CallFtResolveTransfer => U128, Call::FtResolveTransfer, json),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
