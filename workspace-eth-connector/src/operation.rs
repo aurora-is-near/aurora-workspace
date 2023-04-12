@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 use crate::types::WithdrawResult;
 use aurora_workspace_types::input::StorageBalance;
-use aurora_workspace_utils::{impl_call_return, CallTransaction, Contract, ExecutionResult};
+use aurora_workspace_utils::{
+    impl_call_return, impl_view_return, CallTransaction, Contract, ExecutionResult, ViewResult,
+    ViewTransaction,
+};
 use near_sdk::{json_types::U128, PromiseOrValue};
 
 impl_call_return![
@@ -21,8 +24,14 @@ impl_call_return![
     (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
     (CallStorageUnregister => bool, Call::StorageUnregister, json),
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
+    (CallEngineStorageDeposit => StorageBalance, Call::StorageDeposit, json),
+    (CallEngineStorageUnregister => bool, Call::StorageUnregister, json),
+    (CallEngineStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
-    (CallFtResolveTransfer => U128, Call::FtResolveTransfer, json),
+];
+
+impl_view_return![
+    (ViewFtTotalSupply => U128, View::FtTotalSupply, json),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -41,7 +50,6 @@ pub(crate) enum Call {
     EngineStorageDeposit,
     EngineStorageUnregister,
     EngineStorageWithdraw,
-    FtResolveTransfer,
     SetPausedFlags,
     SetAccessRight,
     Migrate,
@@ -65,7 +73,6 @@ impl AsRef<str> for Call {
             EngineStorageDeposit => "engine_storage_deposit",
             EngineStorageUnregister => "engine_storage_unregister",
             EngineStorageWithdraw => "engine_storage_withdraw",
-            FtResolveTransfer => "ft_resolve_transfer",
             SetPausedFlags => "set_paused_flags",
             SetAccessRight => "set_access_right",
             Migrate => "migrate",

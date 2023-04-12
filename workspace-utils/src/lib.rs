@@ -16,7 +16,7 @@ pub struct ViewResult<T> {
 }
 
 impl<T: DeserializeOwned> ViewResult<T> {
-    pub(crate) fn json(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn json(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.json()?,
             logs: view.logs,
@@ -25,7 +25,7 @@ impl<T: DeserializeOwned> ViewResult<T> {
 }
 
 impl<T: borsh::BorshDeserialize> ViewResult<T> {
-    pub(crate) fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.borsh()?,
             logs: view.logs,
@@ -155,7 +155,7 @@ impl<'a> ViewTransaction<'a> {
         self
     }
 
-    pub(crate) async fn transact(self) -> anyhow::Result<workspaces::result::ViewResultDetails> {
+    pub async fn transact(self) -> anyhow::Result<workspaces::result::ViewResultDetails> {
         Ok(self.inner.await?)
     }
 }
@@ -429,79 +429,4 @@ macro_rules! impl_call_return  {
             }
         })*
     };
-}
-
-//=========================================
-impl_call_return!(
-    (CallFtTransfer, SelfCall::SetEthConnectorContractData),
-    (CallNew, SelfCall::SetEthConnectorContractData),
-);
-impl_call_return!(
-    (CallFtTransfer1 => u8, SelfCall::SetEthConnectorContractData, borsh),
-);
-impl_view_return!((ViewFtTransfer => u64, SelfCall::SetEthConnectorContractData, borsh),);
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SelfCall {
-    SetEthConnectorContractData,
-}
-
-impl AsRef<str> for SelfCall {
-    fn as_ref(&self) -> &str {
-        match self {
-            SelfCall::SetEthConnectorContractData => "set_eth_connector_contract_data",
-        }
-    }
-}
-
-pub struct EthConnector {
-    contract: Contract,
-}
-
-impl EthConnector {
-    pub fn init(&self, balance: u64) -> CallNew {
-        CallNew::call(&self.contract).args_json((balance,))
-    }
-    pub fn tst_fn(&self, balance: u64) -> CallFtTransfer {
-        CallFtTransfer::call(&self.contract).args_borsh((balance, 33))
-    }
-    pub fn tst_v_fn(&self, balance: u64) -> ViewFtTransfer {
-        ViewFtTransfer::view(&self.contract).args_borsh((balance, 33))
-    }
-
-    pub async fn deploy_and_init(account: Account) -> anyhow::Result<Self> {
-        let contract = Contract::deploy(account, vec![]).await?;
-        let eth_contract = Self { contract };
-        let res = eth_contract.init(1).transact().await?;
-        assert!(res.is_success());
-        Ok(eth_contract)
-    }
-}
-
-pub async fn tstq() -> anyhow::Result<()> {
-    use std::str::FromStr;
-    let worker = workspaces::sandbox().await.unwrap();
-    let sk = SecretKey::from_random(KeyType::ED25519);
-    let account = worker
-        .create_tla(AccountId::from_str("tst.test.near").unwrap(), sk)
-        .await?
-        .into_result()?;
-
-    let contract = EthConnector::deploy_and_init(account).await?;
-    contract.tst_fn(1).transact().await?;
-    Ok(())
-}
-
-pub async fn tstw() -> anyhow::Result<()> {
-    use std::str::FromStr;
-    let worker = workspaces::sandbox().await.unwrap();
-    let sk = SecretKey::from_random(KeyType::ED25519);
-    let account = worker
-        .create_tla(AccountId::from_str("tst.test.near").unwrap(), sk)
-        .await?
-        .into_result()?;
-
-    let contract = EthConnector::deploy_and_init(account).await?;
-    let _res: u64 = contract.tst_v_fn(1).transact().await?.result;
-    Ok(())
 }

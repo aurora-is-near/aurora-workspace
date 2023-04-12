@@ -1,6 +1,10 @@
 #![allow(unused_imports)]
 use crate::operation::{
-    CallEngineFtTransfer, CallEngineFtTransferCall, CallFtTransfer, CallFtTransferCall,
+    CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
+    CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate,
+    CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount, CallSetPausedFlags,
+    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallWithdraw,
+    ViewFtTotalSupply,
 };
 use crate::types::{MigrationCheckResult, MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
@@ -44,13 +48,12 @@ impl EthConnectorContract {
            "msg": msg,
         }))
     }
-    /*
-           pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<U128>> {
-               ViewResultDetails::<U128>::try_from_json(
-                   self.near_view(&View::FtTotalSupply, vec![]).await?,
-               )
-           }
 
+    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
+        ViewFtTotalSupply::view(&self.contract)
+    }
+
+    /*
            pub async fn ft_balance_of(
                &self,
                account_id: AccountId,
@@ -90,138 +93,119 @@ impl EthConnectorContract {
             "msg": msg,
         }))
     }
+
+    pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount {
+        CallSetEngineAccount::call(&self.contract).args_json(json!({
+            "engine_account": engine_account,
+        }))
+    }
+
+    pub fn remove_engine_account(&self, engine_account: AccountId) -> CallRemoveEngineAccount {
+        CallRemoveEngineAccount::call(&self.contract).args_json(json!({
+            "engine_account": engine_account,
+        }))
+    }
     /*
-       pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount<'_> {
-           CallSetEngineAccount(self.near_call(&Call::SetEngineAccount).args_json(json!({
-               "engine_account": engine_account,
-           })))
-       }
+      pub async fn get_engine_accounts(&self) -> anyhow::Result<ViewResultDetails<Vec<AccountId>>> {
+          ViewResultDetails::<Vec<AccountId>>::try_from_json(
+              self.near_view(&View::GetEngineAccounts, vec![]).await?,
+          )
+      }
 
-       pub fn remove_engine_account(&self, engine_account: AccountId) -> CallRemoveEngineAccount<'_> {
-           CallRemoveEngineAccount(self.near_call(&Call::RemoveEngineAccount).args_json(json!({
-               "engine_account": engine_account,
-           })))
-       }
+    */
 
-       pub async fn get_engine_accounts(&self) -> anyhow::Result<ViewResultDetails<Vec<AccountId>>> {
-           ViewResultDetails::<Vec<AccountId>>::try_from_json(
-               self.near_view(&View::GetEngineAccounts, vec![]).await?,
-           )
-       }
+    pub fn storage_deposit(
+        &self,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> CallStorageDeposit {
+        CallStorageDeposit::call(&self.contract)
+            .args_json(json!({ "account_id": account_id, "registration_only": registration_only}))
+    }
 
-       pub fn storage_deposit(
-           &self,
-           account_id: Option<AccountId>,
-           registration_only: Option<bool>,
-       ) -> CallStorageDeposit<'_> {
-           let args = json!({ "account_id": account_id, "registration_only": registration_only});
-           CallStorageDeposit(self.near_call(&Call::StorageDeposit).args_json(args))
-       }
+    pub fn storage_withdraw(&self, amount: Option<U128>) -> CallStorageWithdraw {
+        CallStorageWithdraw::call(&self.contract).args_json(json!({ "amount": amount }))
+    }
 
-       pub fn storage_withdraw(&self, amount: Option<U128>) -> CallStorageWithdraw<'_> {
-           let args = json!({ "amount": amount });
-           CallStorageWithdraw(self.near_call(&Call::StorageWithdraw).args_json(args))
-       }
+    pub fn storage_unregister(&self, force: Option<bool>) -> CallStorageUnregister {
+        CallStorageUnregister::call(&self.contract).args_json(serde_json::json!({ "force": force }))
+    }
 
-       pub fn storage_unregister(&self, force: Option<bool>) -> CallStorageUnregister<'_> {
-           let val = serde_json::json!({ "force": force });
-           CallStorageUnregister(self.near_call(&Call::StorageUnregister).args_json(val))
-       }
+    pub fn engine_storage_deposit(
+        &self,
+        sender_id: AccountId,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> CallEngineStorageDeposit {
+        CallEngineStorageDeposit::call(&self.contract)
+            .args_json(json!({ "sender_id":  sender_id, "account_id": account_id, "registration_only": registration_only}))
+    }
 
-       pub fn engine_storage_deposit(
-           &self,
-           sender_id: AccountId,
-           account_id: Option<AccountId>,
-           registration_only: Option<bool>,
-       ) -> CallStorageDeposit<'_> {
-           let args = json!({ "sender_id":  sender_id, "account_id": account_id, "registration_only": registration_only});
-           CallStorageDeposit(self.near_call(&Call::EngineStorageDeposit).args_json(args))
-       }
+    pub fn engine_storage_withdraw(
+        &self,
+        sender_id: AccountId,
+        amount: Option<U128>,
+    ) -> CallEngineStorageWithdraw {
+        CallEngineStorageWithdraw::call(&self.contract)
+            .args_json(json!({ "sender_id":  sender_id, "amount": amount }))
+    }
 
-       pub fn engine_storage_withdraw(
-           &self,
-           sender_id: AccountId,
-           amount: Option<U128>,
-       ) -> CallStorageWithdraw<'_> {
-           let args = json!({ "sender_id":  sender_id, "amount": amount });
-           CallStorageWithdraw(self.near_call(&Call::EngineStorageWithdraw).args_json(args))
-       }
+    pub fn engine_storage_unregister(
+        &self,
+        sender_id: AccountId,
+        force: Option<bool>,
+    ) -> CallEngineStorageDeposit {
+        CallEngineStorageDeposit::call(&self.contract)
+            .args_json(serde_json::json!({ "sender_id":  sender_id, "force": force }))
+    }
+    /*
+           pub async fn storage_balance_of(
+               &self,
+               account_id: AccountId,
+           ) -> anyhow::Result<ViewResultDetails<Option<StorageBalance>>> {
+               let args = json!({ "account_id": account_id })
+                   .to_string()
+                   .as_bytes()
+                   .to_vec();
+               ViewResultDetails::<Option<StorageBalance>>::try_from_json(
+                   self.near_view(&View::StorageBalanceOf, args).await?,
+               )
+           }
 
-       pub fn engine_storage_unregister(
-           &self,
-           sender_id: AccountId,
-           force: Option<bool>,
-       ) -> CallStorageUnregister<'_> {
-           let val = serde_json::json!({ "sender_id":  sender_id, "force": force });
-           CallStorageUnregister(
-               self.near_call(&Call::EngineStorageUnregister)
-                   .args_json(val),
-           )
-       }
+           pub async fn storage_balance_bounds(
+               &self,
+           ) -> anyhow::Result<ViewResultDetails<StorageBalanceBounds>> {
+               ViewResultDetails::<StorageBalanceBounds>::try_from_json(
+                   self.near_view(&View::StorageBalanceBounds, vec![]).await?,
+               )
+           }
+    */
 
-       pub async fn storage_balance_of(
-           &self,
-           account_id: AccountId,
-       ) -> anyhow::Result<ViewResultDetails<Option<StorageBalance>>> {
-           let args = json!({ "account_id": account_id })
-               .to_string()
-               .as_bytes()
-               .to_vec();
-           ViewResultDetails::<Option<StorageBalance>>::try_from_json(
-               self.near_view(&View::StorageBalanceOf, args).await?,
-           )
-       }
+    pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags {
+        CallSetPausedFlags::call(&self.contract).args_borsh(paused)
+    }
 
-       pub async fn storage_balance_bounds(
-           &self,
-       ) -> anyhow::Result<ViewResultDetails<StorageBalanceBounds>> {
-           ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-               self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-           )
-       }
+    pub fn set_access_right(&self, account: AccountId) -> CallSetAccessRight {
+        CallSetAccessRight::call(&self.contract).args_json((account,))
+    }
 
-       pub fn ft_resolve_transfer(
-           &self,
-           sender_id: AccountId,
-           receiver_id: AccountId,
-           amount: U128,
-       ) -> CallFtResolveTransfer<'_> {
-           CallFtResolveTransfer(self.near_call(&Call::FtResolveTransfer).args_json(json!({
-               "sender_id": sender_id,
-               "receiver_id": receiver_id,
-               "amount": amount,
-           })))
-       }
+    pub fn withdraw(
+        &self,
+        sender_id: AccountId,
+        recipient_address: Address,
+        amount: Balance,
+    ) -> CallWithdraw {
+        CallWithdraw::call(&self.contract).args_borsh((sender_id, recipient_address, amount))
+    }
 
-       pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags<'_> {
-           CallSetPausedFlags(self.near_call(&Call::SetPausedFlags).args_borsh(paused))
-       }
+    pub fn deposit(&self, raw_proof: Proof) -> CallDeposit {
+        CallDeposit::call(&self.contract).args_borsh(raw_proof)
+    }
 
-       pub fn set_access_right(&self, account: AccountId) -> CallSetAccessRight<'_> {
-           CallSetAccessRight(self.near_call(&Call::SetAccessRight).args_json((account,)))
-       }
-
-       pub fn withdraw(
-           &self,
-           sender_id: AccountId,
-           recipient_address: Address,
-           amount: Balance,
-       ) -> CallWithdraw<'_> {
-           CallWithdraw(self.near_call(&Call::Withdraw).args_borsh((
-               sender_id,
-               recipient_address,
-               amount,
-           )))
-       }
-
-       pub fn deposit(&self, raw_proof: Proof) -> CallDeposit<'_> {
-           CallDeposit(self.near_call(&Call::Deposit).args_borsh(raw_proof))
-       }
-
-       pub fn migrate(&self, data: MigrationInputData) -> CallMigrate<'_> {
-           CallMigrate(self.near_call(&Call::Migrate).args_borsh(data))
-       }
-
+    pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
+        CallMigrate::call(&self.contract).args_borsh(data)
+    }
+    /*
        pub async fn ft_metadata(&self) -> anyhow::Result<ViewResultDetails<FungibleTokenMetadata>> {
            ViewResultDetails::try_from_json(self.near_view(&View::FtMetadata, vec![]).await?)
        }
