@@ -1,22 +1,18 @@
-#![allow(unused_imports)]
 use crate::operation::{
     CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
-    CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate,
-    CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount, CallSetPausedFlags,
-    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallWithdraw,
-    ViewFtTotalSupply,
+    CallEngineStorageUnregister, CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall,
+    CallMigrate, CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount,
+    CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw,
+    CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtTotalSupply,
+    ViewGetEngineAccounts, ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
-use crate::types::{MigrationCheckResult, MigrationInputData, PausedMask, Proof};
+use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::Contract;
-use borsh::BorshSerialize;
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_contract_standards::storage_management::{StorageBalance, StorageBalanceBounds};
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::Balance;
 use serde_json::json;
-use workspaces::Account;
 
 #[derive(Debug, Clone)]
 pub struct EthConnectorContract {
@@ -53,15 +49,11 @@ impl EthConnectorContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    /*
-           pub async fn ft_balance_of(
-               &self,
-               account_id: AccountId,
-           ) -> anyhow::Result<ViewResultDetails<U128>> {
-               let args = json!((account_id,)).to_string().as_bytes().to_vec();
-               ViewResultDetails::try_from_json(self.near_view(&View::FtBalanceOf, args).await?)
-           }
-    */
+    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract)
+            .args_json(json!((account_id,)).to_string().as_bytes().to_vec())
+    }
+
     pub fn engine_ft_transfer(
         &self,
         sender_id: AccountId,
@@ -105,14 +97,10 @@ impl EthConnectorContract {
             "engine_account": engine_account,
         }))
     }
-    /*
-      pub async fn get_engine_accounts(&self) -> anyhow::Result<ViewResultDetails<Vec<AccountId>>> {
-          ViewResultDetails::<Vec<AccountId>>::try_from_json(
-              self.near_view(&View::GetEngineAccounts, vec![]).await?,
-          )
-      }
 
-    */
+    pub async fn get_engine_accounts(&self) -> ViewGetEngineAccounts {
+        ViewGetEngineAccounts::view(&self.contract)
+    }
 
     pub fn storage_deposit(
         &self,
@@ -154,32 +142,23 @@ impl EthConnectorContract {
         &self,
         sender_id: AccountId,
         force: Option<bool>,
-    ) -> CallEngineStorageDeposit {
-        CallEngineStorageDeposit::call(&self.contract)
+    ) -> CallEngineStorageUnregister {
+        CallEngineStorageUnregister::call(&self.contract)
             .args_json(serde_json::json!({ "sender_id":  sender_id, "force": force }))
     }
-    /*
-           pub async fn storage_balance_of(
-               &self,
-               account_id: AccountId,
-           ) -> anyhow::Result<ViewResultDetails<Option<StorageBalance>>> {
-               let args = json!({ "account_id": account_id })
-                   .to_string()
-                   .as_bytes()
-                   .to_vec();
-               ViewResultDetails::<Option<StorageBalance>>::try_from_json(
-                   self.near_view(&View::StorageBalanceOf, args).await?,
-               )
-           }
 
-           pub async fn storage_balance_bounds(
-               &self,
-           ) -> anyhow::Result<ViewResultDetails<StorageBalanceBounds>> {
-               ViewResultDetails::<StorageBalanceBounds>::try_from_json(
-                   self.near_view(&View::StorageBalanceBounds, vec![]).await?,
-               )
-           }
-    */
+    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+        ViewStorageBalanceOf::view(&self.contract).args_json(
+            json!({ "account_id": account_id })
+                .to_string()
+                .as_bytes()
+                .to_vec(),
+        )
+    }
+
+    pub async fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
+        ViewStorageBalanceBounds::view(&self.contract)
+    }
 
     pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags {
         CallSetPausedFlags::call(&self.contract).args_borsh(paused)
@@ -226,16 +205,6 @@ impl EthConnectorContract {
            ViewResultDetails::try_from_json(self.near_view(&View::IsOwner, vec![]).await?)
        }
 
-       pub async fn check_migration_correctness(
-           &self,
-           data: MigrationInputData,
-       ) -> anyhow::Result<ViewResultDetails<MigrationCheckResult>> {
-           let args = data.try_to_vec().unwrap();
-           ViewResultDetails::<MigrationCheckResult>::try_from_borsh(
-               self.near_view(&View::CheckMigrationCorrectness, args)
-                   .await?,
-           )
-       }
 
        pub async fn is_used_proof(&self, proof: Proof) -> anyhow::Result<ViewResultDetails<bool>> {
            ViewResultDetails::<bool>::try_from_borsh(
@@ -248,4 +217,10 @@ impl EthConnectorContract {
            ViewResultDetails::try_from_json(self.near_view(&View::GetBridgeProver, vec![]).await?)
        }
     */
+    pub async fn check_migration_correctness(
+        &self,
+        data: MigrationInputData,
+    ) -> ViewCheckMigrationCorrectness {
+        ViewCheckMigrationCorrectness::view(&self.contract).args_borsh(data)
+    }
 }

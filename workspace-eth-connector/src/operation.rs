@@ -1,10 +1,9 @@
-#![allow(dead_code)]
-use crate::types::WithdrawResult;
-use aurora_workspace_types::input::StorageBalance;
-use aurora_workspace_utils::{
-    impl_call_return, impl_view_return, CallTransaction, Contract, ExecutionResult, ViewResult,
-    ViewTransaction,
-};
+use crate::types::{MigrationCheckResult, WithdrawResult};
+use aurora_workspace_types::AccountId;
+use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
+use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
+use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
+use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::{json_types::U128, PromiseOrValue};
 
 impl_call_return![
@@ -24,14 +23,19 @@ impl_call_return![
     (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
     (CallStorageUnregister => bool, Call::StorageUnregister, json),
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
-    (CallEngineStorageDeposit => StorageBalance, Call::StorageDeposit, json),
-    (CallEngineStorageUnregister => bool, Call::StorageUnregister, json),
-    (CallEngineStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
+    (CallEngineStorageDeposit => StorageBalance, Call::EngineStorageDeposit, json),
+    (CallEngineStorageUnregister => bool, Call::EngineStorageUnregister, json),
+    (CallEngineStorageWithdraw => StorageBalance, Call::EngineStorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
 ];
 
 impl_view_return![
     (ViewFtTotalSupply => U128, View::FtTotalSupply, json),
+    (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
+    (ViewGetEngineAccounts => Vec<AccountId>, View::GetEngineAccounts, json),
+    (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
+    (ViewStorageBalanceBounds => StorageBalance, View::StorageBalanceBounds, json),
+    (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
