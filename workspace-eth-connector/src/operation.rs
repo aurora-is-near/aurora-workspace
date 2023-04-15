@@ -1,10 +1,15 @@
-use crate::types::{MigrationCheckResult, WithdrawResult};
+use crate::types::{MigrationCheckResult, PausedMask, WithdrawResult};
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
-use near_contract_standards::storage_management::StorageBalance;
-use near_sdk::{json_types::U128, PromiseOrValue};
+use near_contract_standards::{
+    fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
+};
+use near_sdk::{
+    json_types::{U128, U64},
+    PromiseOrValue,
+};
 
 impl_call_return![
     (CallFtTransfer, Call::FtTransfer),
@@ -36,6 +41,13 @@ impl_view_return![
     (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
     (ViewStorageBalanceBounds => StorageBalance, View::StorageBalanceBounds, json),
     (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
+    (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
+    (ViewGetAccountsCounter => U64, View::GetAccountsCounter, borsh),
+    (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
+    (ViewGetAccessRight => AccountId, View::GetAccessRight, json),
+    (ViewIsOwner => bool, View::IsOwner, json),
+    (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
+    (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -3,8 +3,10 @@ use crate::operation::{
     CallEngineStorageUnregister, CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall,
     CallMigrate, CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount,
     CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw,
-    CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtTotalSupply,
-    ViewGetEngineAccounts, ViewStorageBalanceBounds, ViewStorageBalanceOf,
+    CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtMetadata,
+    ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter, ViewGetBridgeProver,
+    ViewGetEngineAccounts, ViewGetPausedFlags, ViewIsOwner, ViewIsUsedProof,
+    ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
@@ -184,39 +186,35 @@ impl EthConnectorContract {
     pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
         CallMigrate::call(&self.contract).args_borsh(data)
     }
-    /*
-       pub async fn ft_metadata(&self) -> anyhow::Result<ViewResultDetails<FungibleTokenMetadata>> {
-           ViewResultDetails::try_from_json(self.near_view(&View::FtMetadata, vec![]).await?)
-       }
 
-       pub async fn get_accounts_counter(&self) -> anyhow::Result<ViewResultDetails<U64>> {
-           ViewResultDetails::try_from_borsh(self.near_view(&View::GetAccountsCounter, vec![]).await?)
-       }
+    pub async fn ft_metadata(&self) -> ViewFtMetadata {
+        ViewFtMetadata::view(&self.contract)
+    }
 
-       pub async fn get_paused_flags(&self) -> anyhow::Result<ViewResultDetails<PausedMask>> {
-           ViewResultDetails::try_from_borsh(self.near_view(&View::GetPausedFlags, vec![]).await?)
-       }
+    pub async fn get_accounts_counter(&self) -> ViewGetAccountsCounter {
+        ViewGetAccountsCounter::view(&self.contract)
+    }
 
-       pub async fn get_access_right(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
-           ViewResultDetails::try_from_json(self.near_view(&View::GetAccessRight, vec![]).await?)
-       }
+    pub async fn get_paused_flags(&self) -> ViewGetPausedFlags {
+        ViewGetPausedFlags::view(&self.contract)
+    }
 
-       pub async fn is_owner(&self) -> anyhow::Result<ViewResultDetails<bool>> {
-           ViewResultDetails::try_from_json(self.near_view(&View::IsOwner, vec![]).await?)
-       }
+    pub async fn get_access_right(&self) -> ViewGetAccessRight {
+        ViewGetAccessRight::view(&self.contract)
+    }
 
+    pub async fn is_owner(&self) -> ViewIsOwner {
+        ViewIsOwner::view(&self.contract)
+    }
 
-       pub async fn is_used_proof(&self, proof: Proof) -> anyhow::Result<ViewResultDetails<bool>> {
-           ViewResultDetails::<bool>::try_from_borsh(
-               self.near_view(&View::IsUsedProof, proof.try_to_vec()?)
-                   .await?,
-           )
-       }
+    pub async fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
+        ViewIsUsedProof::view(&self.contract).args_borsh(proof)
+    }
 
-       pub async fn get_bridge_prover(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
-           ViewResultDetails::try_from_json(self.near_view(&View::GetBridgeProver, vec![]).await?)
-       }
-    */
+    pub async fn get_bridge_prover(&self) -> ViewGetBridgeProver {
+        ViewGetBridgeProver::view(&self.contract)
+    }
+
     pub async fn check_migration_correctness(
         &self,
         data: MigrationInputData,
