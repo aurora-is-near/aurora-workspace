@@ -49,7 +49,7 @@ macro_rules! impl_call_return  {
                 self.0 = self.0.args_borsh(args);
                 self
             }
-            pub(crate) async fn transact(self) -> anyhow::Result<ExecutionResult<$return>> {
+            pub async fn transact(self) -> anyhow::Result<ExecutionResult<$return>> {
                 ExecutionResult::$deser_fn(self.0.transact().await?)
             }
         })*

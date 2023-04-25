@@ -1,7 +1,7 @@
 use crate::operation::{
     CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
     CallEngineStorageUnregister, CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall,
-    CallMigrate, CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount,
+    CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount,
     CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw,
     CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtMetadata,
     ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter, ViewGetBridgeProver,
@@ -12,6 +12,7 @@ use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::Contract;
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use near_sdk::Balance;
 use serde_json::json;
@@ -22,6 +23,27 @@ pub struct EthConnectorContract {
 }
 
 impl EthConnectorContract {
+    pub fn new(contract: Contract) -> Self {
+        Self { contract }
+    }
+
+    pub fn init(
+        &self,
+        prover_account: AccountId,
+        eth_custodian_address: String,
+        metadata: FungibleTokenMetadata,
+        account_with_access_right: &AccountId,
+        owner_id: AccountId,
+    ) -> CallNew {
+        CallNew::call(&self.contract).args_json(json!({
+            "prover_account": prover_account,
+            "account_with_access_right": account_with_access_right,
+            "owner_id": owner_id,
+            "eth_custodian_address": eth_custodian_address,
+            "metadata": metadata,
+        }))
+    }
+
     pub fn ft_transfer(
         &self,
         receiver_id: AccountId,

@@ -1,27 +1,60 @@
-/*
-use crate::utils::CUSTODIAN_ADDRESS;
-use aurora_engine_types::types::Address;
-use aurora_workspace_eth_connector::operation::ViewResultDetails;
-use aurora_workspace_eth_connector::types::{
-    MigrationCheckResult, MigrationInputData, Proof, UNPAUSE_ALL,
-};
+use aurora_workspace_eth_connector::contract::EthConnectorContract;
+use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData};
 use aurora_workspace_types::AccountId;
-use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
-use near_sdk::json_types::{U128, U64};
+use aurora_workspace_utils::results::ViewResult;
+use aurora_workspace_utils::Contract;
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
-mod utils;
+pub const CONTRACT_ACCOUNT_ID: &str = "eth_connector.test.near";
+pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
+pub const OWNER_ID: &str = "aurora.test.near";
+pub const PROVER_ID: &str = "prover.test.near";
+const WASM_BIN_FILE_PATH: &str = "../bin/mock_eth_connector.wasm";
+
+async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
+    let contract_account = CONTRACT_ACCOUNT_ID.parse()?;
+    let account = Contract::create_account_from_random_seed(contract_account).await?;
+    let wasm = std::fs::read(WASM_BIN_FILE_PATH)
+        .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
+    let contract = Contract::deploy(account.clone(), wasm).await?;
+    let eth_contract = EthConnectorContract::new(contract);
+
+    let prover_account = AccountId::from_str(PROVER_ID)?;
+    let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
+    let metadata = FungibleTokenMetadata {
+        spec: String::from("1.0.0"),
+        symbol: String::default(),
+        name: String::default(),
+        icon: None,
+        reference: None,
+        reference_hash: None,
+        decimals: 0,
+    };
+    let owner_id = AccountId::from_str(OWNER_ID)?;
+    eth_contract
+        .init(
+            prover_account,
+            eth_custodian_address,
+            metadata,
+            account.id(),
+            owner_id,
+        )
+        .transact()
+        .await?;
+    Ok(eth_contract)
+}
 
 #[tokio::test]
 async fn test_ft_transfer() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let some_acc = AccountId::from_str("some_account.test.near").unwrap();
     let amount: U128 = 10.into();
     let memo = Some(String::from("some message"));
 
     contract
-        .as_account()
         .ft_transfer(some_acc, amount, memo)
         .max_gas()
         .deposit(1)
@@ -32,14 +65,13 @@ async fn test_ft_transfer() {
 
 #[tokio::test]
 async fn test_ft_transfer_call() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let some_acc = AccountId::from_str("some_account.test.near").unwrap();
     let amount: U128 = 10.into();
     let memo = Some(String::from("some message"));
     let msg = String::from("some msg");
 
     let res: PromiseOrValue<U128> = contract
-        .as_account()
         .ft_transfer_call(some_acc, amount, memo, msg)
         .max_gas()
         .deposit(1)
@@ -57,9 +89,9 @@ async fn test_ft_transfer_call() {
 
 #[tokio::test]
 async fn test_ft_total_supply() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().ft_total_supply().await.unwrap();
-    let expected = ViewResultDetails {
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.ft_total_supply().await.transact().await.unwrap();
+    let expected = ViewResult {
         result: U128::from(100),
         logs: vec![],
     };
@@ -68,10 +100,15 @@ async fn test_ft_total_supply() {
 
 #[tokio::test]
 async fn test_ft_balance_of() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let account = contract.as_account().id().clone();
-    let res = contract.as_account().ft_balance_of(account).await.unwrap();
-    let expected = ViewResultDetails {
+    let contract = deploy_and_init().await.unwrap();
+    let account = contract.id().clone();
+    let res = contract
+        .ft_balance_of(account)
+        .await
+        .transact()
+        .await
+        .unwrap();
+    let expected = ViewResult {
         result: U128::from(200),
         logs: vec![],
     };
@@ -80,10 +117,9 @@ async fn test_ft_balance_of() {
 
 #[tokio::test]
 async fn test_set_engine_account() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .as_account()
         .set_engine_account(engine_account)
         .max_gas()
         .transact()
@@ -93,10 +129,9 @@ async fn test_set_engine_account() {
 
 #[tokio::test]
 async fn test_remove_engine_account() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .as_account()
         .remove_engine_account(engine_account)
         .max_gas()
         .transact()
@@ -106,9 +141,14 @@ async fn test_remove_engine_account() {
 
 #[tokio::test]
 async fn test_get_engine_accounts() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().get_engine_accounts().await.unwrap();
-    let expected = ViewResultDetails {
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract
+        .get_engine_accounts()
+        .await
+        .transact()
+        .await
+        .unwrap();
+    let expected = ViewResult {
         result: vec![AccountId::from_str("test.root").unwrap()],
         logs: vec![],
     };
@@ -117,10 +157,9 @@ async fn test_get_engine_accounts() {
 
 #[tokio::test]
 async fn test_storage_deposit() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
     let res = contract
-        .as_account()
         .storage_deposit(Some(account_id), Some(true))
         .max_gas()
         .transact()
@@ -133,10 +172,9 @@ async fn test_storage_deposit() {
 
 #[tokio::test]
 async fn test_storage_withdraw() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let amount = Some(U128::from(100));
     let res = contract
-        .as_account()
         .storage_withdraw(amount)
         .max_gas()
         .transact()
@@ -149,10 +187,9 @@ async fn test_storage_withdraw() {
 
 #[tokio::test]
 async fn test_storage_unregister() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let force = Some(true);
     let res = contract
-        .as_account()
         .storage_unregister(force)
         .max_gas()
         .transact()
@@ -164,11 +201,10 @@ async fn test_storage_unregister() {
 
 #[tokio::test]
 async fn test_engine_storage_deposit() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let sender_id = AccountId::from_str("test.near").unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
     let res = contract
-        .as_account()
         .engine_storage_deposit(sender_id, Some(account_id), Some(true))
         .max_gas()
         .transact()
@@ -181,11 +217,10 @@ async fn test_engine_storage_deposit() {
 
 #[tokio::test]
 async fn test_engine_storage_withdraw() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let sender_id = AccountId::from_str("test.near").unwrap();
     let amount = Some(U128::from(100));
     let res = contract
-        .as_account()
         .engine_storage_withdraw(sender_id, amount)
         .max_gas()
         .transact()
@@ -198,11 +233,10 @@ async fn test_engine_storage_withdraw() {
 
 #[tokio::test]
 async fn test_engine_storage_unregister() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let sender_id = AccountId::from_str("test.near").unwrap();
     let force = Some(true);
     let res = contract
-        .as_account()
         .engine_storage_unregister(sender_id, force)
         .max_gas()
         .transact()
@@ -214,11 +248,12 @@ async fn test_engine_storage_unregister() {
 
 #[tokio::test]
 async fn test_storage_balance_of() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
     let res = contract
-        .as_account()
         .storage_balance_of(account_id)
+        .await
+        .transact()
         .await
         .unwrap();
     let result = res.result.unwrap();
@@ -228,10 +263,11 @@ async fn test_storage_balance_of() {
 
 #[tokio::test]
 async fn test_storage_balance_bounds() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let res = contract
-        .as_account()
         .storage_balance_bounds()
+        .await
+        .transact()
         .await
         .unwrap();
     assert_eq!(res.result.min, U128::from(100));
@@ -239,25 +275,9 @@ async fn test_storage_balance_bounds() {
 }
 
 #[tokio::test]
-async fn test_ft_resolve_transfer() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let sender_id = AccountId::from_str("test.near").unwrap();
-    let receiver_id = AccountId::from_str("test.near").unwrap();
-    let amount = U128::from(10);
-    contract
-        .as_account()
-        .ft_resolve_transfer(sender_id, receiver_id, amount)
-        .max_gas()
-        .transact()
-        .await
-        .unwrap();
-}
-
-#[tokio::test]
 async fn test_set_paused_flags() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     contract
-        .as_account()
         .set_paused_flags(UNPAUSE_ALL)
         .max_gas()
         .transact()
@@ -267,10 +287,9 @@ async fn test_set_paused_flags() {
 
 #[tokio::test]
 async fn test_set_access_right() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let account = AccountId::from_str("test.near").unwrap();
     contract
-        .as_account()
         .set_access_right(account)
         .max_gas()
         .transact()
@@ -280,11 +299,10 @@ async fn test_set_access_right() {
 
 #[tokio::test]
 async fn test_withdraw() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let sender_id = AccountId::from_str("test.near").unwrap();
     let recipient_address = Address::zero();
     let res = contract
-        .as_account()
         .withdraw(sender_id, recipient_address, 10)
         .max_gas()
         .transact()
@@ -301,34 +319,22 @@ async fn test_withdraw() {
 
 #[tokio::test]
 async fn test_deposit() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let proof = Proof::default();
-    contract
-        .as_account()
-        .deposit(proof)
-        .max_gas()
-        .transact()
-        .await
-        .unwrap();
+    contract.deposit(proof).max_gas().transact().await.unwrap();
 }
 
 #[tokio::test]
 async fn test_migrate() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let data = MigrationInputData::default();
-    contract
-        .as_account()
-        .migrate(data)
-        .max_gas()
-        .transact()
-        .await
-        .unwrap();
+    contract.migrate(data).max_gas().transact().await.unwrap();
 }
 
 #[tokio::test]
 async fn test_ft_metadata() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().ft_metadata().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.ft_metadata().await.transact().await.unwrap();
     let expected =  FungibleTokenMetadata {
             spec: FT_METADATA_SPEC.to_string(),
             name: "Ether".to_string(),
@@ -349,8 +355,13 @@ async fn test_ft_metadata() {
 
 #[tokio::test]
 async fn test_get_accounts_counter() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().get_accounts_counter().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract
+        .get_accounts_counter()
+        .await
+        .transact()
+        .await
+        .unwrap();
     let expected = ViewResultDetails {
         result: U64::from(10),
         logs: vec![],
@@ -360,8 +371,8 @@ async fn test_get_accounts_counter() {
 
 #[tokio::test]
 async fn test_get_access_right() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().get_access_right().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.get_access_right().await.transact().await.unwrap();
     let expected = ViewResultDetails {
         result: AccountId::from_str("contract.root").unwrap(),
         logs: vec![],
@@ -371,8 +382,8 @@ async fn test_get_access_right() {
 
 #[tokio::test]
 async fn test_get_paused_flags() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().get_paused_flags().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.get_paused_flags().await.transact().await.unwrap();
     let expected = ViewResultDetails {
         result: UNPAUSE_ALL,
         logs: vec![],
@@ -382,8 +393,8 @@ async fn test_get_paused_flags() {
 
 #[tokio::test]
 async fn test_is_owner() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().is_owner().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.is_owner().await.transact().await.unwrap();
     let expected = ViewResultDetails {
         result: true,
         logs: vec![],
@@ -393,14 +404,10 @@ async fn test_is_owner() {
 
 #[tokio::test]
 async fn test_check_migration_correctness() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let data = MigrationInputData::default();
-    let res = contract
-        .as_account()
-        .check_migration_correctness(data)
-        .await
-        .unwrap();
-    let expected = ViewResultDetails {
+    let res = contract.check_migration_correctness(data).await;
+    let expected = ViewResult {
         result: MigrationCheckResult::Success,
         logs: vec![],
     };
@@ -409,10 +416,15 @@ async fn test_check_migration_correctness() {
 
 #[tokio::test]
 async fn test_is_used_proof() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
+    let contract = deploy_and_init().await.unwrap();
     let proof = Proof::default();
-    let res = contract.as_account().is_used_proof(proof).await.unwrap();
-    let expected = ViewResultDetails {
+    let res = contract
+        .is_used_proof(proof)
+        .await
+        .transact()
+        .await
+        .unwrap();
+    let expected = ViewResult {
         result: true,
         logs: vec![],
     };
@@ -421,12 +433,11 @@ async fn test_is_used_proof() {
 
 #[tokio::test]
 async fn test_get_bridge_prover() {
-    let contract = utils::init_and_deploy_contract().await.unwrap();
-    let res = contract.as_account().get_bridge_prover().await.unwrap();
-    let expected = ViewResultDetails {
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract.get_bridge_prover().await.transact().await.unwrap();
+    let expected = ViewResult {
         result: AccountId::from_str("bridge_prover.root").unwrap(),
         logs: vec![],
     };
     assert_eq!(res, expected);
 }
-*/

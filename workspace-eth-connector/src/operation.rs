@@ -12,6 +12,7 @@ use near_sdk::{
 };
 
 impl_call_return![
+    (CallNew, Call::New),
     (CallFtTransfer, Call::FtTransfer),
     (CallEngineFtTransfer, Call::EngineFtTransfer),
     (CallSetEngineAccount, Call::SetEngineAccount),
@@ -52,6 +53,7 @@ impl_view_return![
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Call {
+    New,
     Withdraw,
     Deposit,
     FtTransfer,
@@ -75,6 +77,7 @@ impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
         use Call::*;
         match self {
+            New => "new",
             Withdraw => "withdraw",
             Deposit => "deposit",
             FtTransfer => "ft_transfer",

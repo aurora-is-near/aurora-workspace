@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use workspaces::types::Gas;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialOrd, PartialEq)]
 pub struct ViewResult<T> {
     pub result: T,
     pub logs: Vec<String>,
