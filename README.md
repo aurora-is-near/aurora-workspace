@@ -1,6 +1,6 @@
 <p>&nbsp;</p>
 <p align="center">
-<img src="https://raw.githubusercontent.com/aurora-is-near/aurora-workspace/feat/mrLSD/logo/res/aurora-workspace-logo.svg">
+<img src="https://raw.githubusercontent.com/aurora-is-near/aurora-workspace/main/res/aurora-workspace-logo.svg">
 </p>
 
 # aurora-workspace
