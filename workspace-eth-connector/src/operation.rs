@@ -1,77 +1,60 @@
-use crate::{result::ExecutionSuccess, types::WithdrawResult};
-use borsh::BorshDeserialize;
-use near_contract_standards::storage_management::StorageBalance;
-use near_sdk::{json_types::U128, PromiseOrValue};
-use serde::de::DeserializeOwned;
-use workspaces::operations::CallTransaction;
-use workspaces::result::ExecutionFinalResult;
-
-macro_rules! impl_call_return  {
-    ($(($name:ident, $return:ty, $deser_fn:ident)),* $(,)?) => {
-        $(pub struct $name<'a>(pub(crate) EthConnectorCallTransaction<'a>);
-
-        impl<'a> $name<'a> {
-            pub fn gas(mut self, gas: u64) -> Self {
-                self.0 = self.0.gas(gas);
-                self
-            }
-
-            pub fn max_gas(mut self) -> Self {
-                self.0 = self.0.max_gas();
-                self
-            }
-
-            pub fn deposit(mut self, deposit: u128) -> Self {
-                self.0 = self.0.deposit(deposit);
-                self
-            }
-
-            pub async fn transact(self) -> anyhow::Result<$return> {
-                ExecutionSuccess::$deser_fn(self.0.transact().await?)
-            }
-        })*
-    }
-}
+use crate::types::{MigrationCheckResult, PausedMask, WithdrawResult};
+use aurora_workspace_types::AccountId;
+use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
+use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
+use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
+use near_contract_standards::storage_management::StorageBalanceBounds;
+use near_contract_standards::{
+    fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
+};
+use near_sdk::{
+    json_types::{U128, U64},
+    PromiseOrValue,
+};
 
 impl_call_return![
-    (CallFtTransfer, ExecutionSuccess<()>, try_from),
-    (
-        CallFtTransferCall,
-        ExecutionSuccess<PromiseOrValue<U128>>,
-        try_from
-    ),
-    (CallSetEngineAccount, ExecutionSuccess<()>, try_from),
-    (CallRemoveEngineAccount, ExecutionSuccess<()>, try_from),
-    (
-        CallStorageDeposit,
-        ExecutionSuccess<StorageBalance>,
-        try_from_json
-    ),
-    (CallStorageUnregister, ExecutionSuccess<bool>, try_from_json),
-    (
-        CallStorageWithdraw,
-        ExecutionSuccess<StorageBalance>,
-        try_from_json
-    ),
-    (
-        CallWithdraw,
-        ExecutionSuccess<WithdrawResult>,
-        try_from_borsh
-    ),
-    (CallDeposit, ExecutionSuccess<()>, try_from),
-    (
-        CallFinishDeposit,
-        ExecutionSuccess<PromiseOrValue<Option<U128>>>,
-        try_from
-    ),
-    (CallFtResolveTransfer, ExecutionSuccess<U128>, try_from_json),
-    (CallSetPausedFlags, ExecutionSuccess<()>, try_from),
-    (CallSetAccessRight, ExecutionSuccess<()>, try_from),
-    (CallMigrate, ExecutionSuccess<()>, try_from),
+    (CallNew, Call::New),
+    (CallFtTransfer, Call::FtTransfer),
+    (CallEngineFtTransfer, Call::EngineFtTransfer),
+    (CallSetEngineAccount, Call::SetEngineAccount),
+    (CallRemoveEngineAccount, Call::RemoveEngineAccount),
+    (CallDeposit, Call::Deposit),
+    (CallSetPausedFlags, Call::SetPausedFlags),
+    (CallSetAccessRight, Call::SetAccessRight),
+    (CallMigrate, Call::Migrate),
+];
+
+impl_call_return![
+    (CallFtTransferCall => PromiseOrValue<U128>, Call::FtTransferCall, try_from),
+    (CallEngineFtTransferCall => PromiseOrValue<U128>, Call::EngineFtTransferCall, try_from),
+    (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
+    (CallStorageUnregister => bool, Call::StorageUnregister, json),
+    (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
+    (CallEngineStorageDeposit => StorageBalance, Call::EngineStorageDeposit, json),
+    (CallEngineStorageUnregister => bool, Call::EngineStorageUnregister, json),
+    (CallEngineStorageWithdraw => StorageBalance, Call::EngineStorageWithdraw, json),
+    (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+];
+
+impl_view_return![
+    (ViewFtTotalSupply => U128, View::FtTotalSupply, json),
+    (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
+    (ViewGetEngineAccounts => Vec<AccountId>, View::GetEngineAccounts, json),
+    (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
+    (ViewStorageBalanceBounds => StorageBalanceBounds, View::StorageBalanceBounds, json),
+    (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
+    (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
+    (ViewGetAccountsCounter => U64, View::GetAccountsCounter, borsh),
+    (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
+    (ViewGetAccessRight => AccountId, View::GetAccessRight, json),
+    (ViewIsOwner => bool, View::IsOwner, json),
+    (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
+    (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Call {
+    New,
     Withdraw,
     Deposit,
     FtTransfer,
@@ -86,7 +69,6 @@ pub(crate) enum Call {
     EngineStorageDeposit,
     EngineStorageUnregister,
     EngineStorageWithdraw,
-    FtResolveTransfer,
     SetPausedFlags,
     SetAccessRight,
     Migrate,
@@ -96,6 +78,7 @@ impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
         use Call::*;
         match self {
+            New => "new",
             Withdraw => "withdraw",
             Deposit => "deposit",
             FtTransfer => "ft_transfer",
@@ -110,39 +93,10 @@ impl AsRef<str> for Call {
             EngineStorageDeposit => "engine_storage_deposit",
             EngineStorageUnregister => "engine_storage_unregister",
             EngineStorageWithdraw => "engine_storage_withdraw",
-            FtResolveTransfer => "ft_resolve_transfer",
             SetPausedFlags => "set_paused_flags",
             SetAccessRight => "set_access_right",
             Migrate => "migrate",
         }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ViewResultDetails<T> {
-    pub result: T,
-    pub logs: Vec<String>,
-}
-
-impl<T: DeserializeOwned> ViewResultDetails<T> {
-    pub(crate) fn try_from_json(
-        view: workspaces::result::ViewResultDetails,
-    ) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: serde_json::from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl<T: BorshDeserialize> ViewResultDetails<T> {
-    pub(crate) fn try_from_borsh(
-        view: workspaces::result::ViewResultDetails,
-    ) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: T::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
     }
 }
 
@@ -183,44 +137,5 @@ impl AsRef<str> for View {
             IsUsedProof => "is_used_proof",
             GetBridgeProver => "get_bridge_prover",
         }
-    }
-}
-
-pub struct EthConnectorCallTransaction<'a> {
-    inner: CallTransaction<'a>,
-}
-
-impl<'a, 'b> EthConnectorCallTransaction<'a> {
-    pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
-        Self { inner: transaction }
-    }
-
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
-        self.inner = self.inner.args_json(args);
-        self
-    }
-
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
-        self.inner = self.inner.args_borsh(args);
-        self
-    }
-
-    pub fn gas(mut self, gas: u64) -> Self {
-        self.inner = self.inner.gas(gas);
-        self
-    }
-
-    pub fn max_gas(mut self) -> Self {
-        self.inner = self.inner.max_gas();
-        self
-    }
-
-    pub fn deposit(mut self, deposit: u128) -> Self {
-        self.inner = self.inner.deposit(deposit);
-        self
-    }
-
-    pub async fn transact(self) -> anyhow::Result<ExecutionFinalResult> {
-        Ok(self.inner.transact().await?)
     }
 }
