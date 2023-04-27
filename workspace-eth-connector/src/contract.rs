@@ -27,6 +27,10 @@ impl EthConnectorContract {
         Self { contract }
     }
 
+    pub fn as_conract(self) -> Contract {
+        self.contract
+    }
+
     pub fn init(
         &self,
         prover_account: AccountId,
@@ -74,8 +78,7 @@ impl EthConnectorContract {
     }
 
     pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract)
-            .args_json(json!((account_id,)).to_string().as_bytes().to_vec())
+        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
     }
 
     pub fn engine_ft_transfer(
@@ -168,16 +171,11 @@ impl EthConnectorContract {
         force: Option<bool>,
     ) -> CallEngineStorageUnregister {
         CallEngineStorageUnregister::call(&self.contract)
-            .args_json(serde_json::json!({ "sender_id":  sender_id, "force": force }))
+            .args_json(json!({ "sender_id":  sender_id, "force": force }))
     }
 
     pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
-        ViewStorageBalanceOf::view(&self.contract).args_json(
-            json!({ "account_id": account_id })
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-        )
+        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
     pub async fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {

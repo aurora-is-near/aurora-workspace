@@ -3,6 +3,7 @@ use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
+use near_contract_standards::storage_management::StorageBalanceBounds;
 use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
@@ -40,7 +41,7 @@ impl_view_return![
     (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
     (ViewGetEngineAccounts => Vec<AccountId>, View::GetEngineAccounts, json),
     (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
-    (ViewStorageBalanceBounds => StorageBalance, View::StorageBalanceBounds, json),
+    (ViewStorageBalanceBounds => StorageBalanceBounds, View::StorageBalanceBounds, json),
     (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
     (ViewGetAccountsCounter => U64, View::GetAccountsCounter, borsh),
