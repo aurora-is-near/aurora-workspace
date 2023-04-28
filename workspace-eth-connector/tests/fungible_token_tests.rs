@@ -370,12 +370,12 @@ async fn test_get_accounts_counter() {
     };
     assert_eq!(res, expected);
 }
-/*
+
 #[tokio::test]
 async fn test_get_access_right() {
     let contract = deploy_and_init().await.unwrap();
     let res = contract.get_access_right().await.transact().await.unwrap();
-    let expected = ViewResultDetails {
+    let expected = ViewResult {
         result: AccountId::from_str("contract.root").unwrap(),
         logs: vec![],
     };
@@ -386,7 +386,7 @@ async fn test_get_access_right() {
 async fn test_get_paused_flags() {
     let contract = deploy_and_init().await.unwrap();
     let res = contract.get_paused_flags().await.transact().await.unwrap();
-    let expected = ViewResultDetails {
+    let expected = ViewResult {
         result: UNPAUSE_ALL,
         logs: vec![],
     };
@@ -397,7 +397,7 @@ async fn test_get_paused_flags() {
 async fn test_is_owner() {
     let contract = deploy_and_init().await.unwrap();
     let res = contract.is_owner().await.transact().await.unwrap();
-    let expected = ViewResultDetails {
+    let expected = ViewResult {
         result: true,
         logs: vec![],
     };
@@ -408,12 +408,13 @@ async fn test_is_owner() {
 async fn test_check_migration_correctness() {
     let contract = deploy_and_init().await.unwrap();
     let data = MigrationInputData::default();
-    let res = contract.check_migration_correctness(data).await;
-    let expected = ViewResult {
-        result: MigrationCheckResult::Success,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
+    let res = contract
+        .check_migration_correctness(data)
+        .await
+        .transact()
+        .await
+        .unwrap();
+    assert_eq!(res.result, MigrationCheckResult::Success);
 }
 
 #[tokio::test]
@@ -443,4 +444,3 @@ async fn test_get_bridge_prover() {
     };
     assert_eq!(res, expected);
 }
-*/
