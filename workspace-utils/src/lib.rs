@@ -12,7 +12,7 @@ pub mod transactions;
 pub enum AccountKind {
     Account {
         contract_id: AccountId,
-        inner: workspaces::Account,
+        inner: Account,
     },
     Contract(workspaces::Contract),
 }
@@ -68,16 +68,14 @@ impl Contract {
         self.account.id()
     }
 
-    pub async fn deploy(account: workspaces::Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
+    pub async fn deploy(account: Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
         let contract = account.deploy(&wasm).await?.into_result()?;
         Ok(Self {
             account: AccountKind::Contract(contract),
         })
     }
 
-    pub async fn create_account_from_random_seed(
-        account_id: AccountId,
-    ) -> anyhow::Result<workspaces::Account> {
+    pub async fn create_account_from_random_seed(account_id: AccountId) -> anyhow::Result<Account> {
         let worker = workspaces::sandbox()
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
@@ -85,7 +83,7 @@ impl Contract {
         Ok(worker.create_tla(account_id, sk).await?.into_result()?)
     }
 
-    pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<workspaces::Account> {
+    pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<Account> {
         use workspaces::AccessKey;
 
         let worker = workspaces::sandbox()
@@ -133,7 +131,7 @@ impl Contract {
         // Try to get account within 30 secs
         for _ in 0..60 {
             if worker.view_account(account_id).await.is_err() {
-                //tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
             } else {
                 return Ok(());
             }

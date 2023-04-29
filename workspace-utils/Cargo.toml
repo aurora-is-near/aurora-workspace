@@ -13,3 +13,4 @@ workspaces = "0.7"
 anyhow = "1"
 borsh = { version = "0.9", default-features = false }
 serde = { version = "1", features = ["derive"] }
+tokio = "1.27"
