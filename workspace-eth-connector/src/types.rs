@@ -1,6 +1,7 @@
 use aurora_engine_types::types::Address;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{AccountId, Balance, StorageUsage};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
@@ -23,7 +24,7 @@ pub enum MigrationCheckResult {
     Proof(Vec<String>),
 }
 
-#[derive(Debug, Default, BorshDeserialize, BorshSerialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
 pub struct Proof {
     pub log_index: u64,
     pub log_entry_data: Vec<u8>,
