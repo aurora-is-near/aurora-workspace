@@ -103,7 +103,7 @@ async fn test_ft_total_supply() {
 #[tokio::test]
 async fn test_ft_balance_of() {
     let contract = deploy_and_init().await.unwrap();
-    let account = contract.clone().as_conract();
+    let account = contract.as_contract();
     let res = contract
         .ft_balance_of(account.id().clone())
         .await
