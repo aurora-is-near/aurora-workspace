@@ -27,10 +27,16 @@ impl EthConnectorContract {
         Self { contract }
     }
 
-    pub fn as_conract(self) -> Contract {
-        self.contract
+    pub fn as_contract(&self) -> &Contract {
+        &self.contract
     }
 
+    pub fn id(&self) -> &AccountId {
+        self.contract.id()
+    }
+}
+
+impl EthConnectorContract {
     pub fn init(
         &self,
         prover_account: AccountId,

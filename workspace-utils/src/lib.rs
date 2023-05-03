@@ -52,6 +52,15 @@ pub struct Contract {
 }
 
 impl Contract {
+    pub fn new(contract_id: AccountId, account: Account) -> Self {
+        Self {
+            account: AccountKind::Account {
+                contract_id,
+                inner: account,
+            },
+        }
+    }
+
     pub fn as_account(&self) -> &AccountKind {
         &self.account
     }
