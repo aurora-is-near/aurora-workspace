@@ -40,7 +40,7 @@ pub const UNPAUSE_ALL: PausedMask = 0;
 pub const PAUSE_DEPOSIT: PausedMask = 1 << 0;
 pub const PAUSE_WITHDRAW: PausedMask = 1 << 1;
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct WithdrawResult {
     pub amount: Balance,
     pub recipient_id: Address,
