@@ -19,7 +19,7 @@ pub struct FinishDepositCallArgs {
     pub msg: Option<Vec<u8>>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct WithdrawResult {
     pub amount: Balance,
     pub recipient_id: Address,
