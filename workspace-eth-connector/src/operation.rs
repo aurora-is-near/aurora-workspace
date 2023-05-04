@@ -34,6 +34,7 @@ impl_call_return![
     (CallEngineStorageUnregister => bool, Call::EngineStorageUnregister, json),
     (CallEngineStorageWithdraw => StorageBalance, Call::EngineStorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+    (CallEngineWithdraw => WithdrawResult, Call::EngineWithdraw, borsh),
 ];
 
 impl_view_return![
@@ -56,6 +57,7 @@ impl_view_return![
 pub(crate) enum Call {
     New,
     Withdraw,
+    EngineWithdraw,
     Deposit,
     FtTransfer,
     FtTransferCall,
@@ -80,6 +82,7 @@ impl AsRef<str> for Call {
         match self {
             New => "new",
             Withdraw => "withdraw",
+            EngineWithdraw => "engine_withdraw",
             Deposit => "deposit",
             FtTransfer => "ft_transfer",
             FtTransferCall => "ft_transfer_call",

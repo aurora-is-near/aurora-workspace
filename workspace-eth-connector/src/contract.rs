@@ -1,11 +1,11 @@
 use crate::operation::{
     CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
-    CallEngineStorageUnregister, CallEngineStorageWithdraw, CallFtTransfer, CallFtTransferCall,
-    CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight, CallSetEngineAccount,
-    CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw,
-    CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtMetadata,
-    ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter, ViewGetBridgeProver,
-    ViewGetEngineAccounts, ViewGetPausedFlags, ViewIsOwner, ViewIsUsedProof,
+    CallEngineStorageUnregister, CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer,
+    CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
+    CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
+    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter,
+    ViewGetBridgeProver, ViewGetEngineAccounts, ViewGetPausedFlags, ViewIsOwner, ViewIsUsedProof,
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
@@ -196,13 +196,17 @@ impl EthConnectorContract {
         CallSetAccessRight::call(&self.contract).args_json((account,))
     }
 
-    pub fn withdraw(
+    pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
+        CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
+    }
+
+    pub fn engine_withdraw(
         &self,
         sender_id: AccountId,
         recipient_address: Address,
         amount: Balance,
-    ) -> CallWithdraw {
-        CallWithdraw::call(&self.contract).args_borsh((sender_id, recipient_address, amount))
+    ) -> CallEngineWithdraw {
+        CallEngineWithdraw::call(&self.contract).args_borsh((sender_id, recipient_address, amount))
     }
 
     pub fn deposit(&self, raw_proof: Proof) -> CallDeposit {
