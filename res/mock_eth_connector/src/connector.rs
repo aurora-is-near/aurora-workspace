@@ -36,6 +36,13 @@ pub trait ConnectorWithdraw {
     #[result_serializer(borsh)]
     fn withdraw(
         &mut self,
+        #[serializer(borsh)] recipient_address: Address,
+        #[serializer(borsh)] amount: Balance,
+    ) -> WithdrawResult;
+
+    #[result_serializer(borsh)]
+    fn engine_withdraw(
+        &mut self,
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
