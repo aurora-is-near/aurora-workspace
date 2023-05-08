@@ -302,10 +302,29 @@ async fn test_set_access_right() {
 #[tokio::test]
 async fn test_withdraw() {
     let contract = deploy_and_init().await.unwrap();
+    let recipient_address = Address::zero();
+    let res = contract
+        .withdraw(recipient_address, 10)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .into_value();
+    assert_eq!(res.recipient_id, recipient_address);
+    assert_eq!(res.amount, 10);
+    assert_eq!(
+        res.eth_custodian_address,
+        Address::decode(CUSTODIAN_ADDRESS).unwrap()
+    );
+}
+
+#[tokio::test]
+async fn test_engine_withdraw() {
+    let contract = deploy_and_init().await.unwrap();
     let sender_id = AccountId::from_str("test.near").unwrap();
     let recipient_address = Address::zero();
     let res = contract
-        .withdraw(sender_id, recipient_address, 10)
+        .engine_withdraw(sender_id, recipient_address, 10)
         .max_gas()
         .transact()
         .await

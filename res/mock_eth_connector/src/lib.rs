@@ -213,10 +213,25 @@ impl ConnectorWithdraw for EthConnectorContract {
     #[result_serializer(borsh)]
     fn withdraw(
         &mut self,
+        #[serializer(borsh)] recipient_address: Address,
+        #[serializer(borsh)] amount: Balance,
+    ) -> WithdrawResult {
+        WithdrawResult {
+            recipient_id: recipient_address,
+            amount,
+            eth_custodian_address: Address::decode(CUSTODIAN_ADDRESS).unwrap(),
+        }
+    }
+
+    #[payable]
+    #[result_serializer(borsh)]
+    fn engine_withdraw(
+        &mut self,
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
     ) -> WithdrawResult {
+        let _ = sender_id;
         WithdrawResult {
             recipient_id: recipient_address,
             amount,

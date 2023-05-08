@@ -7,7 +7,7 @@ description = "Aurora Workspace Eth Connector is a library for the Aurora Eth Co
 
 [dependencies]
 anyhow = "1"
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "d9763085157188055f62752fd499ac4c7db8331e",  features = ["impl-serde"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.9.0", default-features = false, features = ["impl-serde", "borsh-compat"] }
 aurora-workspace-types = { path = "../workspace-types" }
 aurora-workspace-utils = { path = "../workspace-utils" }
 borsh = { version = "0.9", default-features = false }

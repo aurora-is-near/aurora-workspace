@@ -19,7 +19,7 @@ pub struct FinishDepositCallArgs {
     pub msg: Option<Vec<u8>>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct WithdrawResult {
     pub amount: Balance,
     pub recipient_id: Address,
@@ -35,6 +35,13 @@ pub trait ConnectorDeposit {
 pub trait ConnectorWithdraw {
     #[result_serializer(borsh)]
     fn withdraw(
+        &mut self,
+        #[serializer(borsh)] recipient_address: Address,
+        #[serializer(borsh)] amount: Balance,
+    ) -> WithdrawResult;
+
+    #[result_serializer(borsh)]
+    fn engine_withdraw(
         &mut self,
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
