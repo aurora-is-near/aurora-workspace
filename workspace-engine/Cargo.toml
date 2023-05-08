@@ -1,6 +1,6 @@
 [package]
-name = "aurora-workspace"
-version = "0.1.0"
+name = "aurora-workspace-engine"
+version = "0.2.0"
 authors = [ "Aurora <hello@aurora.dev>" ]
 edition = "2021"
 readme = "README.md"

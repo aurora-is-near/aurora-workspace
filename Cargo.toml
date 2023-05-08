@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "workspace",
+    "workspace-engine",
     "workspace-types",
     "workspace-eth-connector",
     "workspace-utils"

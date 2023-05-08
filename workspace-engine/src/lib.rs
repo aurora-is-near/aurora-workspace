@@ -29,6 +29,7 @@ pub mod types {
     }
 }
 
+// TODO: decide do we need it
 // const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
 //
 // #[non_exhaustive]
