@@ -44,7 +44,7 @@ impl<T: DeserializeOwned> ExecutionResult<T> {
     }
 }
 
-impl TryFrom<workspaces::result::ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
+impl TryFrom<ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
     type Error = anyhow::Error;
 
     fn try_from(result: ExecutionFinalResult) -> Result<Self, Self::Error> {
@@ -57,7 +57,7 @@ impl TryFrom<workspaces::result::ExecutionFinalResult> for ExecutionResult<Promi
 }
 
 impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
-    pub fn borsh(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+    pub fn borsh(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.borsh()?;

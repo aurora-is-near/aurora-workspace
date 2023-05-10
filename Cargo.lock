@@ -159,15 +159,15 @@ checksum = "1181e1e0d1fce796a03db1ae795d67167da795f9cf4a39c37589e85ef57f26d3"
 
 [[package]]
 name = "aurora-engine"
-version = "2.8.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
+version = "2.9.0"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0#5b0054859b779b2aed2c819d12751cebd00be42d"
 dependencies = [
  "aurora-engine-precompiles",
  "aurora-engine-sdk",
  "aurora-engine-transactions",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
+ "aurora-engine-types",
  "bitflags",
- "borsh 0.9.3",
+ "borsh 0.10.3",
  "byte-slice-cast",
  "ethabi",
  "evm",
@@ -181,11 +181,11 @@ dependencies = [
 [[package]]
 name = "aurora-engine-precompiles"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0#5b0054859b779b2aed2c819d12751cebd00be42d"
 dependencies = [
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
- "borsh 0.9.3",
+ "aurora-engine-types",
+ "borsh 0.10.3",
  "ethabi",
  "evm",
  "hex 0.4.3",
@@ -200,11 +200,11 @@ dependencies = [
 [[package]]
 name = "aurora-engine-sdk"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0#5b0054859b779b2aed2c819d12751cebd00be42d"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
+ "aurora-engine-types",
  "base64 0.21.0",
- "borsh 0.9.3",
+ "borsh 0.10.3",
  "sha2 0.10.6",
  "sha3",
 ]
@@ -212,14 +212,13 @@ dependencies = [
 [[package]]
 name = "aurora-engine-transactions"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0#5b0054859b779b2aed2c819d12751cebd00be42d"
 dependencies = [
  "aurora-engine-precompiles",
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
+ "aurora-engine-types",
  "evm",
  "rlp",
- "serde",
 ]
 
 [[package]]
@@ -236,26 +235,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "aurora-engine-types"
-version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e#d9763085157188055f62752fd499ac4c7db8331e"
-dependencies = [
- "borsh 0.9.3",
- "hex 0.4.3",
- "primitive-types 0.12.1",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "aurora-workspace-engine"
 version = "0.2.0"
 dependencies = [
  "anyhow",
  "aurora-engine",
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
+ "aurora-engine-types",
  "aurora-workspace-types",
+ "aurora-workspace-utils",
  "borsh 0.9.3",
  "ethabi",
  "ethereum-types",
@@ -275,7 +263,7 @@ name = "aurora-workspace-eth-connector"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0)",
+ "aurora-engine-types",
  "aurora-workspace-types",
  "aurora-workspace-utils",
  "borsh 0.9.3",
@@ -293,7 +281,7 @@ dependencies = [
 name = "aurora-workspace-types"
 version = "0.2.0"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=d9763085157188055f62752fd499ac4c7db8331e)",
+ "aurora-engine-types",
  "ethereum-types",
  "hex 0.4.3",
  "near-account-id 0.15.0",
@@ -301,6 +289,7 @@ dependencies = [
  "rlp",
  "serde",
  "thiserror",
+ "workspaces",
 ]
 
 [[package]]
@@ -487,7 +476,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4114279215a005bc675e386011e594e1d9b800918cea18fcadadcce864a2046b"
 dependencies = [
  "borsh-derive 0.10.3",
- "hashbrown 0.11.2",
+ "hashbrown 0.12.3",
 ]
 
 [[package]]
@@ -1392,6 +1381,9 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
+dependencies = [
+ "ahash",
+]
 
 [[package]]
 name = "heck"

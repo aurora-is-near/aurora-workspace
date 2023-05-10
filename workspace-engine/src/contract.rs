@@ -22,6 +22,7 @@ use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::input::WithdrawInput;
 use aurora_workspace_types::input::{CallInput, DeployErc20Input, FtOnTransferInput};
 use aurora_workspace_types::{AccountId, Address, Raw, H256, U256};
+use aurora_workspace_utils::Contract;
 use borsh::BorshSerialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
@@ -32,168 +33,34 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::str::FromStr;
 use workspaces::types::SecretKey;
-use workspaces::{Account, Contract, Network, Worker};
+use workspaces::{Account, Network, Worker};
 
 #[derive(Debug, Clone)]
-enum AccountKind {
-    Account {
-        contract_id: AccountId,
-        inner: Account,
-    },
-    Contract(Contract),
+pub struct EngineContract {
+    contract: Contract,
 }
 
-impl AccountKind {
-    fn call<'a, F: AsRef<str> + ?Sized>(&'a self, function: &'a F) -> EngineCallTransaction<'_> {
-        let transaction = match self {
-            AccountKind::Account { contract_id, inner } => {
-                inner.call(contract_id, function.as_ref())
-            }
-            AccountKind::Contract(con) => con.call(function.as_ref()),
-        };
-        EngineCallTransaction::call(transaction)
+impl EngineContract {
+    pub fn new(contract: Contract) -> Self {
+        Self { contract }
     }
 
-    async fn view<F: AsRef<str>>(
-        &self,
-        function: &F,
-        args: Vec<u8>,
-    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
-        Ok(match self {
-            AccountKind::Account { contract_id, inner } => {
-                inner
-                    .view(contract_id, function.as_ref())
-                    .args(args)
-                    .await?
-            }
-            AccountKind::Contract(con) => con.view(function.as_ref()).args(args).await?,
-        })
-    }
-
-    fn id(&self) -> &AccountId {
-        match self {
-            AccountKind::Account { inner, .. } => inner.id(),
-            AccountKind::Contract(con) => con.id(),
-        }
-    }
-}
-
-// TODO(engine): Self should be able to call owner functions.
-pub trait PrivateFunctions: UserFunctions {}
-
-pub trait OwnerFunctions: UserFunctions {}
-
-pub trait ProverFunctions: UserFunctions {}
-
-pub trait UserFunctions: private::Sealed {}
-
-pub trait Tester {}
-
-#[derive(Debug, Clone)]
-pub struct Private;
-
-impl PrivateFunctions for Private {}
-
-impl UserFunctions for Private {}
-
-impl private::Sealed for Private {}
-
-#[derive(Debug, Clone)]
-pub struct Owner;
-
-impl OwnerFunctions for Owner {}
-
-impl UserFunctions for Owner {}
-
-impl private::Sealed for Owner {}
-
-#[derive(Debug, Clone)]
-pub struct Prover;
-
-impl ProverFunctions for Prover {}
-
-impl UserFunctions for Prover {}
-
-impl private::Sealed for Prover {}
-
-#[derive(Debug, Clone)]
-pub struct User;
-
-impl UserFunctions for User {}
-
-impl private::Sealed for User {}
-
-#[derive(Debug, Clone)]
-pub struct EvmAccount<U: UserFunctions> {
-    account: AccountKind,
-    phantom: PhantomData<U>,
-}
-
-impl EvmAccount<Private> {
-    pub fn with_self(contract: Contract) -> EvmAccount<Private> {
-        Self {
-            account: AccountKind::Contract(contract),
-            phantom: PhantomData::default(),
-        }
-    }
-}
-
-impl EvmAccount<Owner> {
-    pub fn with_owner(account: Account, contract_id: AccountId) -> EvmAccount<Owner> {
-        Self {
-            account: AccountKind::Account {
-                contract_id,
-                inner: account,
-            },
-            phantom: PhantomData::default(),
-        }
-    }
-}
-
-impl EvmAccount<Prover> {
-    pub fn with_prover(account: Account, contract_id: AccountId) -> EvmAccount<Prover> {
-        Self {
-            account: AccountKind::Account {
-                contract_id,
-                inner: account,
-            },
-            phantom: PhantomData::default(),
-        }
-    }
-}
-
-impl EvmAccount<User> {
-    pub async fn new(account: Account, contract_id: AccountId) -> EvmAccount<User> {
-        Self {
-            account: AccountKind::Account {
-                contract_id,
-                inner: account,
-            },
-            phantom: PhantomData::default(),
-        }
-    }
-}
-
-impl<U: UserFunctions> EvmAccount<U> {
-    fn near_call<'a, F: AsRef<str> + ?Sized>(
-        &'a self,
-        function: &'a F,
-    ) -> EngineCallTransaction<'_> {
-        self.account.call(function)
-    }
-
-    async fn near_view<F: AsRef<str>>(
-        &self,
-        function: &F,
-        args: Vec<u8>,
-    ) -> anyhow::Result<workspaces::result::ViewResultDetails> {
-        self.account.view(function, args).await
+    pub fn as_contract(&self) -> &Contract {
+        &self.contract
     }
 
     pub fn id(&self) -> &AccountId {
-        self.account.id()
+        self.contract.id()
     }
 
+    pub fn new_from_contract(contract_id: AccountId, account: Account) -> Self {
+        Self {
+            contract: Contract::new(contract_id, account),
+        }
+    }
+}
+
+impl EngineContract {
     pub fn set_eth_connector_contract_data(
         &self,
         prover_account: impl AsRef<str>,
@@ -621,6 +488,7 @@ impl<U: UserFunctions> EvmAccount<U> {
     }
 }
 
+/*
 /// A collection of sources where you can get the contract.
 pub enum ContractSource<P: AsRef<Path>> {
     /// A path to the file containing the contract binary.
@@ -656,12 +524,6 @@ impl Default for InitConfig {
     }
 }
 
-// TODO: Put all parameters per input, not as the struct args!
-// TODO: implement a signer when a method is called, return a signer with
-// TODO: builder
-// information required about the transaction to be made. Then give the option
-// to sign with another key, or with some default. Preferably, run `transact`.
-
 /// A wrapper over workspaces' `Contract` type which provides ease of use when interacting with
 /// the Aurora EVM contract.
 ///
@@ -691,39 +553,6 @@ impl Default for InitConfig {
 #[derive(Debug, Clone)]
 pub struct EvmContract {
     contract: EvmAccount<Private>,
-}
-
-impl AsRef<EvmAccount<Private>> for EvmContract {
-    fn as_ref(&self) -> &EvmAccount<Private> {
-        &self.contract
-    }
-}
-
-impl AsMut<EvmAccount<Private>> for EvmContract {
-    fn as_mut(&mut self) -> &mut EvmAccount<Private> {
-        &mut self.contract
-    }
-}
-
-impl Borrow<EvmAccount<Private>> for EvmContract {
-    fn borrow(&self) -> &EvmAccount<Private> {
-        &self.contract
-    }
-}
-
-impl BorrowMut<EvmAccount<Private>> for EvmContract {
-    fn borrow_mut(&mut self) -> &mut EvmAccount<Private> {
-        &mut self.contract
-    }
-}
-
-// TODO have another PhantomData (maybe) which will note if its the public, owner, etc.
-impl From<Contract> for EvmContract {
-    fn from(contract: Contract) -> Self {
-        EvmContract {
-            contract: EvmAccount::with_self(contract),
-        }
-    }
 }
 
 impl EvmContract {
@@ -791,7 +620,4 @@ impl EvmContract {
         &self.contract
     }
 }
-
-mod private {
-    pub trait Sealed {}
-}
+*/
