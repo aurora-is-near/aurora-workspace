@@ -1,12 +1,7 @@
 #![allow(dead_code)]
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
-use aurora_engine::metadata::FungibleTokenMetadata;
-#[cfg(feature = "deposit-withdraw")]
-use aurora_engine::parameters::WithdrawResult;
-use aurora_engine::parameters::{StorageBalance, TransactionStatus};
-#[cfg(feature = "deposit-withdraw")]
-use aurora_engine_sdk::promise::PromiseId;
+use aurora_engine::parameters::TransactionStatus;
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
 use borsh::BorshDeserialize;
@@ -292,30 +287,6 @@ impl ViewResultDetails<U256> {
         let result: Wei = serde_json::from_slice(view.result.as_slice())?;
         Ok(Self {
             result: result.raw(),
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<FungibleTokenMetadata> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        let result: FungibleTokenMetadata =
-            FungibleTokenMetadata::try_from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<StorageBalance> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: serde_json::from_slice(view.result.as_slice())?,
             logs: view.logs,
         })
     }

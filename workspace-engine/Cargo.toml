@@ -8,9 +8,9 @@ description = "Aurora EVM contract for the Near workspaces library"
 
 [dependencies]
 anyhow = "1"
-aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.9.0" }
-aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.9.0" }
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.9.0",  features = ["impl-serde", "borsh-compat"] }
+aurora-engine = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.8.1", features = ["impl-serde"] }
+aurora-engine-sdk = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.8.1" }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.8.1",  features = ["impl-serde"] }
 aurora-workspace-types = { path = "../workspace-types" }
 aurora-workspace-utils = { path = "../workspace-utils" }
 borsh = { version = "0.9", default-features = false }
