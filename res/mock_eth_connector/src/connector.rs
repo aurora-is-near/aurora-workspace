@@ -1,11 +1,10 @@
 use crate::Proof;
 use aurora_engine_types::types::Address;
 use near_contract_standards::storage_management::StorageBalance;
-use near_sdk::json_types::U64;
 use near_sdk::{
     borsh::{self, BorshDeserialize, BorshSerialize},
     ext_contract,
-    json_types::U128,
+    json_types::{U128, U64},
     AccountId, Balance, Promise, PromiseOrValue,
 };
 
@@ -107,9 +106,9 @@ pub trait EngineStorageManagement {
 
 #[ext_contract(ext_known_engine_accounts)]
 pub trait KnownEngineAccountsManagement {
-    fn set_engine_account(&mut self, engine_account: AccountId);
+    fn set_engine_account(&mut self, engine_account: &AccountId);
 
-    fn remove_engine_account(&mut self, engine_account: AccountId);
+    fn remove_engine_account(&mut self, engine_account: &AccountId);
 
-    fn get_engine_accounts(&self) -> Vec<AccountId>;
+    fn is_engine_account_exist(&self, engine_account: &AccountId) -> bool;
 }

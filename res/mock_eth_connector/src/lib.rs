@@ -109,12 +109,12 @@ impl EngineFungibleToken for EthConnectorContract {
 
 #[near_bindgen]
 impl KnownEngineAccountsManagement for EthConnectorContract {
-    fn set_engine_account(&mut self, engine_account: AccountId) {}
+    fn set_engine_account(&mut self, engine_account: &AccountId) {}
 
-    fn remove_engine_account(&mut self, engine_account: AccountId) {}
+    fn remove_engine_account(&mut self, engine_account: &AccountId) {}
 
-    fn get_engine_accounts(&self) -> Vec<AccountId> {
-        vec![AccountId::from_str("test.root").unwrap()]
+    fn is_engine_account_exist(&self, engine_account: &AccountId) -> bool {
+        engine_account.as_str() == "test.root"
     }
 }
 

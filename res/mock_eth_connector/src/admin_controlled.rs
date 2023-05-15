@@ -41,7 +41,7 @@ pub trait AdminControlled {
         Ok(())
     }
 
-    /// Asseert only owners of contract access right
+    /// Assert only owners of contract access right
     fn assert_owner_access_right(&self) -> Result<(), error::AdminControlledError> {
         Ok(())
     }
