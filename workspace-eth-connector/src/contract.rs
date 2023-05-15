@@ -5,8 +5,8 @@ use crate::operation::{
     CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
     ViewFtMetadata, ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter,
-    ViewGetBridgeProver, ViewGetEngineAccounts, ViewGetPausedFlags, ViewIsOwner, ViewIsUsedProof,
-    ViewStorageBalanceBounds, ViewStorageBalanceOf,
+    ViewGetBridgeProver, ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner,
+    ViewIsUsedProof, ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
@@ -119,20 +119,25 @@ impl EthConnectorContract {
         }))
     }
 
-    pub fn set_engine_account(&self, engine_account: AccountId) -> CallSetEngineAccount {
+    pub fn set_engine_account(&self, engine_account: &AccountId) -> CallSetEngineAccount {
         CallSetEngineAccount::call(&self.contract).args_json(json!({
             "engine_account": engine_account,
         }))
     }
 
-    pub fn remove_engine_account(&self, engine_account: AccountId) -> CallRemoveEngineAccount {
+    pub fn remove_engine_account(&self, engine_account: &AccountId) -> CallRemoveEngineAccount {
         CallRemoveEngineAccount::call(&self.contract).args_json(json!({
             "engine_account": engine_account,
         }))
     }
 
-    pub async fn get_engine_accounts(&self) -> ViewGetEngineAccounts {
-        ViewGetEngineAccounts::view(&self.contract)
+    pub async fn is_engine_account_exist(
+        &self,
+        engine_account: &AccountId,
+    ) -> ViewIsEngineAccountExist {
+        ViewIsEngineAccountExist::view(&self.contract).args_json(json!({
+            "engine_account": engine_account,
+        }))
     }
 
     pub fn storage_deposit(

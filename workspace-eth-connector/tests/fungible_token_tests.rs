@@ -122,7 +122,7 @@ async fn test_set_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .set_engine_account(engine_account)
+        .set_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
@@ -134,7 +134,7 @@ async fn test_remove_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .remove_engine_account(engine_account)
+        .remove_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
@@ -144,14 +144,15 @@ async fn test_remove_engine_account() {
 #[tokio::test]
 async fn test_get_engine_accounts() {
     let contract = deploy_and_init().await.unwrap();
+    let engine_account = AccountId::from_str("test.root").unwrap();
     let res = contract
-        .get_engine_accounts()
+        .is_engine_account_exist(&engine_account)
         .await
         .transact()
         .await
         .unwrap();
     let expected = ViewResult {
-        result: vec![AccountId::from_str("test.root").unwrap()],
+        result: true,
         logs: vec![],
     };
     assert_eq!(res, expected);
