@@ -392,9 +392,14 @@ async fn test_get_accounts_counter() {
 }
 
 #[tokio::test]
-async fn test_get_access_right() {
+async fn test_get_account_with_access_right() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_access_right().await.transact().await.unwrap();
+    let res = contract
+        .get_account_with_access_right()
+        .await
+        .transact()
+        .await
+        .unwrap();
     let expected = ViewResult {
         result: AccountId::from_str("contract.root").unwrap(),
         logs: vec![],
