@@ -34,7 +34,7 @@ pub trait AdminControlled {
     fn set_access_right(&mut self, account: &AccountId);
 
     /// Get account access right for contract
-    fn get_access_right(&self) -> AccountId;
+    fn get_account_with_access_right(&self) -> AccountId;
 
     /// Check access right for predecessor account
     fn assert_access_right(&self) -> Result<(), error::AdminControlledError> {

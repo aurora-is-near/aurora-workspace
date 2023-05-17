@@ -198,7 +198,7 @@ impl AdminControlled for EthConnectorContract {
 
     fn set_access_right(&mut self, account: &AccountId) {}
 
-    fn get_access_right(&self) -> AccountId {
+    fn get_account_with_access_right(&self) -> AccountId {
         AccountId::from_str("contract.root").unwrap()
     }
 

@@ -4,7 +4,7 @@ use crate::operation::{
     CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
     CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
-    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccessRight, ViewGetAccountsCounter,
+    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetAccountsCounter,
     ViewGetBridgeProver, ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner,
     ViewIsUsedProof, ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
@@ -234,8 +234,8 @@ impl EthConnectorContract {
         ViewGetPausedFlags::view(&self.contract)
     }
 
-    pub async fn get_access_right(&self) -> ViewGetAccessRight {
-        ViewGetAccessRight::view(&self.contract)
+    pub async fn get_account_with_access_right(&self) -> ViewGetAccountWithAccessRight {
+        ViewGetAccountWithAccessRight::view(&self.contract)
     }
 
     pub async fn is_owner(&self) -> ViewIsOwner {
