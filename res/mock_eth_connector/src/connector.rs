@@ -4,7 +4,7 @@ use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::{
     borsh::{self, BorshDeserialize, BorshSerialize},
     ext_contract,
-    json_types::{U128, U64},
+    json_types::U128,
     AccountId, Balance, Promise, PromiseOrValue,
 };
 
@@ -57,11 +57,6 @@ pub trait ConnectorFundsFinish {
         #[serializer(borsh)]
         verify_log_result: bool,
     ) -> PromiseOrValue<Option<U128>>;
-}
-
-#[ext_contract(ext_ft_statistic)]
-pub trait FungibleTokeStatistic {
-    fn get_accounts_counter(&self) -> U64;
 }
 
 /// Engine compatible methods for NEP-141

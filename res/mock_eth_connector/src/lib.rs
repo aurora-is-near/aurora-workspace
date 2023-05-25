@@ -2,8 +2,8 @@
 use crate::admin_controlled::{AdminControlled, PausedMask, UNPAUSE_ALL};
 use crate::connector::{
     ConnectorDeposit, ConnectorFundsFinish, ConnectorWithdraw, EngineFungibleToken,
-    EngineStorageManagement, FinishDepositCallArgs, FungibleTokeStatistic,
-    KnownEngineAccountsManagement, WithdrawResult, CUSTODIAN_ADDRESS,
+    EngineStorageManagement, FinishDepositCallArgs, KnownEngineAccountsManagement, WithdrawResult,
+    CUSTODIAN_ADDRESS,
 };
 use crate::migration::{Migration, MigrationCheckResult, MigrationInputData};
 use crate::proof::Proof;
@@ -17,7 +17,7 @@ use near_contract_standards::storage_management::{
     StorageBalance, StorageBalanceBounds, StorageManagement,
 };
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::{
     assert_one_yocto, near_bindgen, AccountId, Balance, PanicOnDefault, Promise, PromiseOrValue,
 };
@@ -176,14 +176,6 @@ impl FungibleTokenMetadataProvider for EthConnectorContract {
             reference_hash: None,
             decimals: 18,
         }
-    }
-}
-
-#[near_bindgen]
-impl FungibleTokeStatistic for EthConnectorContract {
-    #[result_serializer(borsh)]
-    fn get_accounts_counter(&self) -> U64 {
-        U64::from(10)
     }
 }
 

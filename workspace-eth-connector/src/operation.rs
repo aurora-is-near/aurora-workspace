@@ -7,10 +7,7 @@ use near_contract_standards::storage_management::StorageBalanceBounds;
 use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
-use near_sdk::{
-    json_types::{U128, U64},
-    PromiseOrValue,
-};
+use near_sdk::{json_types::U128, PromiseOrValue};
 
 impl_call_return![
     (CallNew, Call::New),
@@ -45,7 +42,6 @@ impl_view_return![
     (ViewStorageBalanceBounds => StorageBalanceBounds, View::StorageBalanceBounds, json),
     (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
-    (ViewGetAccountsCounter => U64, View::GetAccountsCounter, borsh),
     (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
     (ViewGetAccountWithAccessRight => AccountId, View::GetAccountWithAccessRight, json),
     (ViewIsOwner => bool, View::IsOwner, json),
@@ -110,9 +106,7 @@ pub enum View {
     FtMetadata,
     StorageBalanceOf,
     StorageBalanceBounds,
-    AccountsCounter,
     IsEngineAccountExist,
-    GetAccountsCounter,
     GetPausedFlags,
     GetAccountWithAccessRight,
     IsOwner,
@@ -130,9 +124,7 @@ impl AsRef<str> for View {
             FtMetadata => "ft_metadata",
             StorageBalanceOf => "storage_balance_of",
             StorageBalanceBounds => "storage_balance_bounds",
-            AccountsCounter => "get_accounts_counter",
             IsEngineAccountExist => "is_engine_account_exist",
-            GetAccountsCounter => "get_accounts_counter",
             GetPausedFlags => "get_paused_flags",
             GetAccountWithAccessRight => "get_account_with_access_right",
             IsOwner => "is_owner",

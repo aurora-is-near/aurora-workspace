@@ -7,7 +7,7 @@ use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::Contract;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
@@ -373,22 +373,6 @@ async fn test_ft_metadata() {
     assert_eq!(res.result.reference, expected.reference);
     assert_eq!(res.result.reference_hash, expected.reference_hash);
     assert_eq!(res.result.decimals, expected.decimals);
-}
-
-#[tokio::test]
-async fn test_get_accounts_counter() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract
-        .get_accounts_counter()
-        .await
-        .transact()
-        .await
-        .unwrap();
-    let expected = ViewResult {
-        result: U64::from(10),
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
 }
 
 #[tokio::test]
