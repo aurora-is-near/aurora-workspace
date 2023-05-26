@@ -5,25 +5,19 @@ use aurora_workspace_eth_connector::types::{
 };
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::ViewResult;
-use aurora_workspace_utils::Contract;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
-pub const CONTRACT_ACCOUNT_ID: &str = "eth_connector.test.near";
 pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub const OWNER_ID: &str = "aurora.test.near";
 pub const PROVER_ID: &str = "prover.test.near";
 const WASM_BIN_FILE_PATH: &str = "../bin/mock_eth_connector.wasm";
 
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
-    let account = Contract::create_account_from_random_seed(CONTRACT_ACCOUNT_ID.parse()?).await?;
-    let wasm = std::fs::read(WASM_BIN_FILE_PATH)
-        .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
-    let contract = Contract::deploy(account.clone(), wasm).await?;
-    let eth_contract = EthConnectorContract::new(contract);
-
+    let (eth_contract, account) =
+        aurora_workspace_eth_connector::deploy(WASM_BIN_FILE_PATH).await?;
     let prover_account = AccountId::from_str(PROVER_ID)?;
     let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {
@@ -36,6 +30,7 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
         decimals: 0,
     };
     let owner_id = AccountId::from_str(OWNER_ID)?;
+
     eth_contract
         .init(
             prover_account,
