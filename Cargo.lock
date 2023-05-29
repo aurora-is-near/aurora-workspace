@@ -283,6 +283,7 @@ dependencies = [
  "lazy_static",
  "near-contract-standards",
  "near-sdk",
+ "near-units",
  "serde",
  "serde_json",
  "tokio",
