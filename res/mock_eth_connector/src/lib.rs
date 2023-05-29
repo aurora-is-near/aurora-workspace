@@ -2,8 +2,8 @@
 use crate::admin_controlled::{AdminControlled, PausedMask, UNPAUSE_ALL};
 use crate::connector::{
     ConnectorDeposit, ConnectorFundsFinish, ConnectorWithdraw, EngineFungibleToken,
-    EngineStorageManagement, FinishDepositCallArgs, FungibleTokeStatistic,
-    KnownEngineAccountsManagement, WithdrawResult, CUSTODIAN_ADDRESS,
+    EngineStorageManagement, FinishDepositCallArgs, KnownEngineAccountsManagement, WithdrawResult,
+    CUSTODIAN_ADDRESS,
 };
 use crate::migration::{Migration, MigrationCheckResult, MigrationInputData};
 use crate::proof::Proof;
@@ -17,7 +17,7 @@ use near_contract_standards::storage_management::{
     StorageBalance, StorageBalanceBounds, StorageManagement,
 };
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::{
     assert_one_yocto, near_bindgen, AccountId, Balance, PanicOnDefault, Promise, PromiseOrValue,
 };
@@ -109,12 +109,12 @@ impl EngineFungibleToken for EthConnectorContract {
 
 #[near_bindgen]
 impl KnownEngineAccountsManagement for EthConnectorContract {
-    fn set_engine_account(&mut self, engine_account: AccountId) {}
+    fn set_engine_account(&mut self, engine_account: &AccountId) {}
 
-    fn remove_engine_account(&mut self, engine_account: AccountId) {}
+    fn remove_engine_account(&mut self, engine_account: &AccountId) {}
 
-    fn get_engine_accounts(&self) -> Vec<AccountId> {
-        vec![AccountId::from_str("test.root").unwrap()]
+    fn is_engine_account_exist(&self, engine_account: &AccountId) -> bool {
+        engine_account.as_str() == "test.root"
     }
 }
 
@@ -180,14 +180,6 @@ impl FungibleTokenMetadataProvider for EthConnectorContract {
 }
 
 #[near_bindgen]
-impl FungibleTokeStatistic for EthConnectorContract {
-    #[result_serializer(borsh)]
-    fn get_accounts_counter(&self) -> U64 {
-        U64::from(10)
-    }
-}
-
-#[near_bindgen]
 impl AdminControlled for EthConnectorContract {
     #[result_serializer(borsh)]
     fn get_paused_flags(&self) -> PausedMask {
@@ -198,7 +190,7 @@ impl AdminControlled for EthConnectorContract {
 
     fn set_access_right(&mut self, account: &AccountId) {}
 
-    fn get_access_right(&self) -> AccountId {
+    fn get_account_with_access_right(&self) -> AccountId {
         AccountId::from_str("contract.root").unwrap()
     }
 

@@ -5,25 +5,19 @@ use aurora_workspace_eth_connector::types::{
 };
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::ViewResult;
-use aurora_workspace_utils::Contract;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use std::str::FromStr;
 
-pub const CONTRACT_ACCOUNT_ID: &str = "eth_connector.test.near";
 pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub const OWNER_ID: &str = "aurora.test.near";
 pub const PROVER_ID: &str = "prover.test.near";
 const WASM_BIN_FILE_PATH: &str = "../bin/mock_eth_connector.wasm";
 
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
-    let account = Contract::create_account_from_random_seed(CONTRACT_ACCOUNT_ID.parse()?).await?;
-    let wasm = std::fs::read(WASM_BIN_FILE_PATH)
-        .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
-    let contract = Contract::deploy(account.clone(), wasm).await?;
-    let eth_contract = EthConnectorContract::new(contract);
-
+    let (eth_contract, account) =
+        aurora_workspace_eth_connector::deploy(WASM_BIN_FILE_PATH).await?;
     let prover_account = AccountId::from_str(PROVER_ID)?;
     let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {
@@ -36,6 +30,7 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
         decimals: 0,
     };
     let owner_id = AccountId::from_str(OWNER_ID)?;
+
     eth_contract
         .init(
             prover_account,
@@ -122,7 +117,7 @@ async fn test_set_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .set_engine_account(engine_account)
+        .set_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
@@ -134,7 +129,7 @@ async fn test_remove_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
     contract
-        .remove_engine_account(engine_account)
+        .remove_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
@@ -144,14 +139,15 @@ async fn test_remove_engine_account() {
 #[tokio::test]
 async fn test_get_engine_accounts() {
     let contract = deploy_and_init().await.unwrap();
+    let engine_account = AccountId::from_str("test.root").unwrap();
     let res = contract
-        .get_engine_accounts()
+        .is_engine_account_exist(&engine_account)
         .await
         .transact()
         .await
         .unwrap();
     let expected = ViewResult {
-        result: vec![AccountId::from_str("test.root").unwrap()],
+        result: true,
         logs: vec![],
     };
     assert_eq!(res, expected);
@@ -375,25 +371,14 @@ async fn test_ft_metadata() {
 }
 
 #[tokio::test]
-async fn test_get_accounts_counter() {
+async fn test_get_account_with_access_right() {
     let contract = deploy_and_init().await.unwrap();
     let res = contract
-        .get_accounts_counter()
+        .get_account_with_access_right()
         .await
         .transact()
         .await
         .unwrap();
-    let expected = ViewResult {
-        result: U64::from(10),
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_get_access_right() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_access_right().await.transact().await.unwrap();
     let expected = ViewResult {
         result: AccountId::from_str("contract.root").unwrap(),
         logs: vec![],

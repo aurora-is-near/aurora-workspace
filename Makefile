@@ -51,6 +51,6 @@ cp-builded-mocks: create-bin-dir
 	@cp ${ETH_CONNECTOR_MOCK_FILE} bin/
 
 test-flow:
-	@cargo test --all -- --test-threads=4 --nocapture
+	@cargo test --all -- --test-threads 10 --nocapture
 
 test: build-mock-engine build-mock-eth-connector cp-builded-mocks test-flow

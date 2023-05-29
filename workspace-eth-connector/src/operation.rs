@@ -7,10 +7,7 @@ use near_contract_standards::storage_management::StorageBalanceBounds;
 use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
-use near_sdk::{
-    json_types::{U128, U64},
-    PromiseOrValue,
-};
+use near_sdk::{json_types::U128, PromiseOrValue};
 
 impl_call_return![
     (CallNew, Call::New),
@@ -40,14 +37,13 @@ impl_call_return![
 impl_view_return![
     (ViewFtTotalSupply => U128, View::FtTotalSupply, json),
     (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
-    (ViewGetEngineAccounts => Vec<AccountId>, View::GetEngineAccounts, json),
+    (ViewIsEngineAccountExist => bool, View::IsEngineAccountExist, json),
     (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
     (ViewStorageBalanceBounds => StorageBalanceBounds, View::StorageBalanceBounds, json),
     (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
-    (ViewGetAccountsCounter => U64, View::GetAccountsCounter, borsh),
     (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
-    (ViewGetAccessRight => AccountId, View::GetAccessRight, json),
+    (ViewGetAccountWithAccessRight => AccountId, View::GetAccountWithAccessRight, json),
     (ViewIsOwner => bool, View::IsOwner, json),
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
     (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
@@ -110,11 +106,9 @@ pub enum View {
     FtMetadata,
     StorageBalanceOf,
     StorageBalanceBounds,
-    AccountsCounter,
-    GetEngineAccounts,
-    GetAccountsCounter,
+    IsEngineAccountExist,
     GetPausedFlags,
-    GetAccessRight,
+    GetAccountWithAccessRight,
     IsOwner,
     CheckMigrationCorrectness,
     IsUsedProof,
@@ -130,11 +124,9 @@ impl AsRef<str> for View {
             FtMetadata => "ft_metadata",
             StorageBalanceOf => "storage_balance_of",
             StorageBalanceBounds => "storage_balance_bounds",
-            AccountsCounter => "get_accounts_counter",
-            GetEngineAccounts => "get_engine_accounts",
-            GetAccountsCounter => "get_accounts_counter",
+            IsEngineAccountExist => "is_engine_account_exist",
             GetPausedFlags => "get_paused_flags",
-            GetAccessRight => "get_access_right",
+            GetAccountWithAccessRight => "get_account_with_access_right",
             IsOwner => "is_owner",
             CheckMigrationCorrectness => "check_migration_correctness",
             IsUsedProof => "is_used_proof",
