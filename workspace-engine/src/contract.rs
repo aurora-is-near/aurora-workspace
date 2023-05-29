@@ -1,7 +1,5 @@
-#[cfg(feature = "deposit-withdraw")]
 use crate::operation::{CallDeposit, CallWithdraw};
 use crate::types::Account;
-#[cfg(feature = "deposit-withdraw")]
 use aurora_workspace_types::input::WithdrawInput;
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::Contract;
@@ -131,12 +129,10 @@ impl EngineContract {
         )
     }
 
-    #[cfg(feature = "deposit-withdraw")]
     pub fn deposit(&self, proof: ProofInput) -> CallDeposit<'_> {
         CallDeposit(self.near_call(&Call::Deposit).args_borsh(proof))
     }
 
-    #[cfg(feature = "deposit-withdraw")]
     pub fn withdraw<R: Into<Address>, A: Into<u128>>(
         &self,
         receiver_address: R,

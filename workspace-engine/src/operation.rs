@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 use crate::result::ExecutionSuccess;
 use crate::types::output::SubmitResult;
-use aurora_engine::parameters::TransactionStatus;
+use aurora_engine::parameters::{StorageBalance, TransactionStatus, WithdrawResult};
 use aurora_engine_types::types::Wei;
 use aurora_workspace_types::AccountId;
+use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
 use borsh::BorshDeserialize;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
@@ -13,33 +14,29 @@ use near_sdk::PromiseOrValue;
 use workspaces::operations::CallTransaction;
 use workspaces::result::ExecutionFinalResult;
 
-macro_rules! impl_call_return  {
-    ($(($name:ident, $return:ty, $deser_fn:ident)),* $(,)?) => {
-        $(pub struct $name<'a>(pub(crate) EngineCallTransaction<'a>);
+use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
+use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
+use near_contract_standards::storage_management::StorageBalanceBounds;
+use near_contract_standards::{
+    fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
+};
 
-        impl<'a> $name<'a> {
-            pub fn gas(mut self, gas: u64) -> Self {
-                self.0 = self.0.gas(gas);
-                self
-            }
+// Eth-connector
+impl_call_return![
+    (CallFtTransfer, Call::FtTransfer),
+    (CallDeposit, Call::Deposit),
+];
 
-            pub fn max_gas(mut self) -> Self {
-                self.0 = self.0.max_gas();
-                self
-            }
+// Eth-connector
+impl_call_return![
+    (CallFtTransferCall => PromiseOrValue<U128>, Call::FtTransferCall, try_from),
+    (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
+    (CallStorageUnregister => bool, Call::StorageUnregister, json),
+    (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
+    (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+];
 
-            pub fn deposit(mut self, deposit: u128) -> Self {
-                self.0 = self.0.deposit(deposit);
-                self
-            }
-
-            pub async fn transact(self) -> anyhow::Result<$return> {
-                ExecutionSuccess::$deser_fn(self.0.transact().await?)
-            }
-        })*
-    }
-}
-
+/*
 impl_call_return![
     (
         CallDeployCode,
@@ -51,15 +48,6 @@ impl_call_return![
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
     (CallFtOnTransfer, ExecutionSuccess<U128>, try_from_json),
-    (CallFtTransfer, ExecutionSuccess<()>, try_from),
-    (
-        CallFtTransferCall,
-        ExecutionSuccess<PromiseOrValue<U128>>,
-        try_from
-    ),
-    (CallStorageDeposit, ExecutionSuccess<()>, try_from),
-    (CallStorageUnregister, ExecutionSuccess<()>, try_from),
-    (CallStorageWithdraw, ExecutionSuccess<()>, try_from),
     (
         CallSetEthConnectorContractData,
         ExecutionSuccess<()>,
@@ -78,17 +66,7 @@ impl_call_return![
     (CallPausePrecompiles, ExecutionSuccess<()>, try_from),
     (CallStageUpgrade, ExecutionSuccess<()>, try_from),
     (CallStateMigration, ExecutionSuccess<()>, try_from),
-];
-
-#[cfg(feature = "deposit-withdraw")]
-impl_call_return![
-    (CallDeposit, ExecutionSuccess<PromiseId>, try_from),
-    (
-        CallWithdraw,
-        ExecutionSuccess<WithdrawResult>,
-        try_from_borsh
-    )
-];
+];*/
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Call {
@@ -105,6 +83,7 @@ pub(crate) enum Call {
     StorageDeposit,
     StorageUnregister,
     StorageWithdraw,
+    PausePrecompiles,
 }
 
 impl AsRef<str> for Call {
@@ -124,10 +103,88 @@ impl AsRef<str> for Call {
             StorageDeposit => "storage_deposit",
             StorageUnregister => "storage_unregister",
             StorageWithdraw => "storage_withdraw",
+            PausePrecompiles => "pause_precompiles",
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum View {
+    Version,
+    Owner,
+    BridgeProver,
+    ChainId,
+    UpgradeIndex,
+    PausedPrecompiles,
+    BlockHash,
+    Code,
+    Balance,
+    Nonce,
+    Storage,
+    Evm,
+    IsProofUsed,
+    FtTotalSupply,
+    FtBalanceOf,
+    BalanceOfEth,
+    EthTotalSupply,
+    FtMetadata,
+    StorageBalanceOf,
+    PausedFlags,
+    Erc20FromNep141,
+    Nep141FromErc20,
+    New,
+    StageUpgrade,
+    DeployUpgrade,
+    StateMigration,
+    ResumePrecompiles,
+    FactoryUpdate,
+    FactorySetWNEARAddress,
+    SetEthConnectorContractData,
+    FactoryUpdateAddressVersion,
+    RefundOnError,
+}
+
+impl AsRef<str> for View {
+    fn as_ref(&self) -> &str {
+        use View::*;
+        match self {
+            Version => "get_version",
+            Owner => "get_owner",
+            BridgeProver => "get_bridge_prover",
+            ChainId => "get_chain_id",
+            UpgradeIndex => "get_upgrade_index",
+            PausedPrecompiles => "get_paused_precompiles",
+            BlockHash => "get_block_hash",
+            Code => "get_code",
+            Balance => "get_balance",
+            Nonce => "get_nonce",
+            Storage => "get_storage_at",
+            Evm => "get_view",
+            IsProofUsed => "is_used_proof",
+            FtTotalSupply => "ft_total_supply",
+            FtBalanceOf => "ft_balance_of",
+            BalanceOfEth => "ft_balance_of_eth",
+            EthTotalSupply => "ft_total_eth_supply_on_aurora",
+            FtMetadata => "ft_metadata",
+            StorageBalanceOf => "storage_balance_of",
+            PausedFlags => "get_paused_flags",
+            Erc20FromNep141 => "get_erc20_from_nep141",
+            Nep141FromErc20 => "get_nep141_from_erc20",
+            New => "new",
+            StageUpgrade => "stage_upgrade",
+            DeployUpgrade => "deploy_upgrade",
+            StateMigration => "state_migration",
+            ResumePrecompiles => "resume_precompiles",
+            FactoryUpdate => "factory_update",
+            FactorySetWNEARAddress => "factory_set_wnear_address",
+            SetEthConnectorContractData => "set_eth_connector_contract_data",
+            FactoryUpdateAddressVersion => "factory_update_address_version",
+            RefundOnError => "refund_on_error",
+        }
+    }
+}
+
+/*
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ViewResultDetails<T> {
     pub result: T,
@@ -292,121 +349,10 @@ impl ViewResultDetails<U256> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum View {
-    Version,
-    Owner,
-    BridgeProver,
-    ChainId,
-    UpgradeIndex,
-    PausedPrecompiles,
-    BlockHash,
-    Code,
-    Balance,
-    Nonce,
-    Storage,
-    Evm,
-    IsProofUsed,
-    FtTotalSupply,
-    FtBalanceOf,
-    BalanceOfEth,
-    EthTotalSupply,
-    FtMetadata,
-    StorageBalanceOf,
-    PausedFlags,
-    AccountsCounter, // TODO
-    Erc20FromNep141,
-    Nep141FromErc20,
-}
+#
 
-impl AsRef<str> for View {
-    fn as_ref(&self) -> &str {
-        use View::*;
-        match self {
-            Version => "get_version",
-            Owner => "get_owner",
-            BridgeProver => "get_bridge_prover",
-            ChainId => "get_chain_id",
-            UpgradeIndex => "get_upgrade_index",
-            PausedPrecompiles => "get_paused_precompiles",
-            BlockHash => "get_block_hash",
-            Code => "get_code",
-            Balance => "get_balance",
-            Nonce => "get_nonce",
-            Storage => "get_storage_at",
-            Evm => "get_view",
-            IsProofUsed => "is_used_proof",
-            FtTotalSupply => "ft_total_supply",
-            FtBalanceOf => "ft_balance_of",
-            BalanceOfEth => "ft_balance_of_eth",
-            EthTotalSupply => "ft_total_eth_supply_on_aurora",
-            FtMetadata => "ft_metadata",
-            StorageBalanceOf => "storage_balance_of",
-            PausedFlags => "get_paused_flags",
-            AccountsCounter => "get_accounts_counter",
-            Erc20FromNep141 => "get_erc20_from_nep141",
-            Nep141FromErc20 => "get_nep141_from_erc20",
-        }
-    }
-}
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum AuthorizedCall {
-    PausePrecompiles,
-}
 
-impl AsRef<str> for AuthorizedCall {
-    fn as_ref(&self) -> &str {
-        use AuthorizedCall::*;
-        match self {
-            PausePrecompiles => "pause_precompiles",
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum OwnerCall {
-    New,
-    StageUpgrade,
-    DeployUpgrade,
-    StateMigration,
-    ResumePrecompiles,
-    FactoryUpdate,
-    FactorySetWNEARAddress,
-}
-
-impl AsRef<str> for OwnerCall {
-    fn as_ref(&self) -> &str {
-        use OwnerCall::*;
-        match self {
-            New => "new",
-            StageUpgrade => "stage_upgrade",
-            DeployUpgrade => "deploy_upgrade",
-            StateMigration => "state_migration",
-            ResumePrecompiles => "resume_precompiles",
-            FactoryUpdate => "factory_update",
-            FactorySetWNEARAddress => "factory_set_wnear_address",
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SelfCall {
-    SetEthConnectorContractData,
-    FactoryUpdateAddressVersion,
-    RefundOnError,
-}
-
-impl AsRef<str> for SelfCall {
-    fn as_ref(&self) -> &str {
-        use SelfCall::*;
-        match self {
-            SetEthConnectorContractData => "set_eth_connector_contract_data",
-            FactoryUpdateAddressVersion => "factory_update_address_version",
-            RefundOnError => "refund_on_error",
-        }
-    }
-}
 
 pub struct EngineCallTransaction<'a> {
     inner: CallTransaction<'a>,
@@ -451,3 +397,4 @@ impl<'a, 'b> EngineCallTransaction<'a> {
         Ok(self.inner.transact().await?)
     }
 }
+*/

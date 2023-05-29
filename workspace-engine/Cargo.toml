@@ -32,4 +32,3 @@ tokio = { version = "1" }
 default = []
 eth-primitives = []
 full-serde = []
-deposit-withdraw = ["aurora-workspace-types/deposit-withdraw"]
