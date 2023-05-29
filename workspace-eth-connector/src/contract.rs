@@ -4,9 +4,9 @@ use crate::operation::{
     CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
     CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
-    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetAccountsCounter,
-    ViewGetBridgeProver, ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner,
-    ViewIsUsedProof, ViewStorageBalanceBounds, ViewStorageBalanceOf,
+    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetBridgeProver,
+    ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner, ViewIsUsedProof,
+    ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
@@ -224,10 +224,6 @@ impl EthConnectorContract {
 
     pub async fn ft_metadata(&self) -> ViewFtMetadata {
         ViewFtMetadata::view(&self.contract)
-    }
-
-    pub async fn get_accounts_counter(&self) -> ViewGetAccountsCounter {
-        ViewGetAccountsCounter::view(&self.contract)
     }
 
     pub async fn get_paused_flags(&self) -> ViewGetPausedFlags {
