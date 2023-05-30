@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-workspace-engine"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "aurora-engine",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-workspace-eth-connector"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "aurora-engine-types",
@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-workspace-types"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aurora-engine-types",
  "ethereum-types",
@@ -294,7 +294,7 @@ dependencies = [
 
 [[package]]
 name = "aurora-workspace-utils"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "aurora-workspace-types",

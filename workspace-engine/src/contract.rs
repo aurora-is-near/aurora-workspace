@@ -1,10 +1,17 @@
-use crate::operation::{CallDeposit, CallWithdraw};
+use crate::operation::{
+    CallDeposit, CallFtTransfer, CallFtTransferCall, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallWithdraw, ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply,
+    ViewStorageBalanceOf,
+};
 use crate::types::Account;
-use aurora_workspace_types::input::WithdrawInput;
+use aurora_engine_types::types::{Address, Balance};
+use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::Contract;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
+use near_sdk::json_types::U128;
+use serde_json::json;
 
 #[derive(Debug, Clone)]
 pub struct EngineContract {
@@ -30,6 +37,75 @@ impl EngineContract {
         }
     }
 }
+
+impl EngineContract {
+    pub fn ft_transfer(
+        &self,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+    ) -> CallFtTransfer {
+        CallFtTransfer::call(&self.contract)
+            .args_json(json!({ "receiver_id": receiver_id, "amount": amount, "memo": memo }))
+    }
+
+    pub fn ft_transfer_call(
+        &self,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+        msg: String,
+    ) -> CallFtTransferCall {
+        CallFtTransferCall::call(&self.contract).args_json(json!({
+           "receiver_id": receiver_id,
+           "amount": amount,
+           "memo": memo,
+           "msg": msg,
+        }))
+    }
+
+    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
+        ViewFtTotalSupply::view(&self.contract)
+    }
+
+    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
+    }
+
+    pub fn storage_deposit(
+        &self,
+        account_id: Option<AccountId>,
+        registration_only: Option<bool>,
+    ) -> CallStorageDeposit {
+        CallStorageDeposit::call(&self.contract)
+            .args_json(json!({ "account_id": account_id, "registration_only": registration_only}))
+    }
+
+    pub fn storage_withdraw(&self, amount: Option<U128>) -> CallStorageWithdraw {
+        CallStorageWithdraw::call(&self.contract).args_json(json!({ "amount": amount }))
+    }
+
+    pub fn storage_unregister(&self, force: Option<bool>) -> CallStorageUnregister {
+        CallStorageUnregister::call(&self.contract).args_json(serde_json::json!({ "force": force }))
+    }
+
+    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
+    }
+
+    pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
+        CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
+    }
+
+    pub fn deposit(&self, raw_proof: ProofInput) -> CallDeposit {
+        CallDeposit::call(&self.contract).args_borsh(raw_proof)
+    }
+
+    pub async fn ft_metadata(&self) -> ViewFtMetadata {
+        ViewFtMetadata::view(&self.contract)
+    }
+}
+
 /*
 impl EngineContract {
     pub fn set_eth_connector_contract_data(

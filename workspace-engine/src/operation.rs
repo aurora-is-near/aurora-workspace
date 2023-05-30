@@ -1,25 +1,13 @@
-#![allow(dead_code)]
-use crate::result::ExecutionSuccess;
-use crate::types::output::SubmitResult;
-use aurora_engine::parameters::{StorageBalance, TransactionStatus, WithdrawResult};
-use aurora_engine_types::types::Wei;
-use aurora_workspace_types::AccountId;
-use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
-use borsh::BorshDeserialize;
-#[cfg(feature = "ethabi")]
-use ethabi::{ParamType, Token};
-use ethereum_types::{Address, H256, U256};
-use near_sdk::json_types::U128;
-use near_sdk::PromiseOrValue;
-use workspaces::operations::CallTransaction;
-use workspaces::result::ExecutionFinalResult;
-
+use aurora_engine::parameters::WithdrawResult;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
-use near_contract_standards::storage_management::StorageBalanceBounds;
-use near_contract_standards::{
-    fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
-};
+use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
+#[cfg(feature = "ethabi")]
+use ethabi::{ParamType, Token};
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_contract_standards::storage_management::StorageBalance;
+use near_sdk::json_types::U128;
+use near_sdk::PromiseOrValue;
 
 // Eth-connector
 impl_call_return![
@@ -34,6 +22,13 @@ impl_call_return![
     (CallStorageUnregister => bool, Call::StorageUnregister, json),
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+];
+
+impl_view_return![
+    (ViewFtTotalSupply => U128, View::FtTotalSupply, json),
+    (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
+    (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
+    (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
 ];
 
 /*
@@ -69,6 +64,7 @@ impl_call_return![
 ];*/
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(dead_code)]
 pub(crate) enum Call {
     DeployCode,
     DeployErc20Token,

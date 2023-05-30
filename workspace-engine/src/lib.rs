@@ -1,8 +1,6 @@
 pub mod contract;
 pub mod operation;
-pub(crate) mod result;
-
-pub use operation::{EngineCallTransaction, ViewResultDetails};
+// pub(crate) mod result;
 
 pub mod types {
     pub use aurora_engine::proof::Proof;
