@@ -1,6 +1,5 @@
 pub mod contract;
 pub mod operation;
-// pub(crate) mod result;
 
 pub mod types {
     pub use aurora_engine::proof::Proof;
@@ -13,10 +12,6 @@ pub mod types {
 
     pub mod input {
         pub use aurora_workspace_types::input::*;
-    }
-
-    pub mod output {
-        pub use aurora_workspace_types::output::*;
     }
 
     pub mod network {

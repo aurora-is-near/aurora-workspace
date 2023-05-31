@@ -1,5 +1,5 @@
 use aurora_engine::parameters::{SubmitResult, WithdrawResult};
-use aurora_engine_types::types::Address;
+use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
@@ -50,6 +50,16 @@ impl_view_return![
     (ViewFtBalanceOf => U128, View::FtBalanceOf, json),
     (ViewStorageBalanceOf => StorageBalance, View::StorageBalanceOf, json),
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
+    (ViewVersion => String, View::Version, borsh),
+    (ViewOwner => AccountId, View::Owner, borsh),
+    (ViewBridgeProver => AccountId, View::BridgeProver, borsh),
+
+    (ViewChainId => AccountId, View::ChainId, borsh),
+    (ViewUpgradeIndex => u64, View::UpgradeIndex, borsh),
+    (ViewPausedPrecompiles => u32, View::PausedPrecompiles, borsh),
+    (ViewBlockHash => H256, View::BlockHash, try_from),
+    (ViewCode => Vec<u8>, View::Code, borsh),
+    (ViewBalance => U256, View::Balance, try_from),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -175,27 +185,7 @@ pub struct ViewResultDetails<T> {
     pub logs: Vec<String>,
 }
 
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<String> {
-    type Error = anyhow::Error;
 
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: String::from_utf8(view.result)?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<AccountId> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: AccountId::try_from_slice(view.result.as_slice())?,
-            logs: view.logs,
-        })
-    }
-}
 
 impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<U256> {
     fn from(view: workspaces::result::ViewResultDetails) -> Self {

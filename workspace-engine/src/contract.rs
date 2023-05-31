@@ -4,7 +4,9 @@ use crate::operation::{
     CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallPausePrecompiles, CallRefundOnError,
     CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
     CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
-    CallWithdraw, ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewStorageBalanceOf,
+    CallWithdraw, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode,
+    ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewOwner, ViewPausedPrecompiles,
+    ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion,
 };
 use crate::types::Account;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
@@ -43,7 +45,7 @@ impl EngineContract {
     }
 }
 
-/// Call functions
+/// Callable functions
 impl EngineContract {
     pub fn ft_transfer(
         &self,
@@ -212,80 +214,46 @@ impl EngineContract {
     pub fn ft_metadata(&self) -> ViewFtMetadata {
         ViewFtMetadata::view(&self.contract)
     }
+
+    pub fn version(&self) -> ViewVersion {
+        ViewVersion::view(&self.contract)
+    }
+
+    pub fn owner(&self) -> ViewOwner {
+        ViewOwner::view(&self.contract)
+    }
+
+    pub fn bridge_prover(&self) -> ViewBridgeProver {
+        ViewBridgeProver::view(&self.contract)
+    }
+
+    pub fn chain_id(&self) -> ViewChainId {
+        ViewChainId::view(&self.contract)
+    }
+
+    pub fn upgrade_index(&self) -> ViewUpgradeIndex {
+        ViewUpgradeIndex::view(&self.contract)
+    }
+
+    pub fn paused_precompiles(&self) -> ViewPausedPrecompiles {
+        ViewPausedPrecompiles::view(&self.contract)
+    }
+
+    pub fn block_hash(&self, block_height: u64) -> ViewBlockHash {
+        ViewBlockHash::view(&self.contract).args_borsh(block_height)
+    }
+
+    pub fn code(&self, address: Address) -> ViewCode {
+        ViewCode::view(&self.contract).args_borsh(address)
+    }
+
+    pub fn balance(&self, address: Address) -> ViewBalance {
+        ViewBalance::view(&self.contract).args_borsh(address)
+    }
 }
 
 /*
 impl EngineContract {
-    pub async fn version(&self) -> anyhow::Result<ViewResultDetails<String>> {
-        ViewResultDetails::try_from(self.near_view(&View::Version, vec![]).await?)
-    }
-
-    pub async fn owner(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
-        ViewResultDetails::try_from(self.near_view(&View::Owner, vec![]).await?)
-    }
-
-    pub async fn bridge_prover(&self) -> anyhow::Result<ViewResultDetails<AccountId>> {
-        ViewResultDetails::try_from(self.near_view(&View::BridgeProver, vec![]).await?)
-    }
-
-    pub async fn chain_id(&self) -> anyhow::Result<ViewResultDetails<String>> {
-        ViewResultDetails::try_from(self.near_view(&View::ChainId, vec![]).await?)
-    }
-
-    pub async fn upgrade_index(&self) -> anyhow::Result<ViewResultDetails<u64>> {
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::UpgradeIndex, vec![]).await?,
-        ))
-    }
-
-    pub async fn paused_precompiles(&self) -> anyhow::Result<ViewResultDetails<u32>> {
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::PausedPrecompiles, vec![]).await?,
-        ))
-    }
-
-    pub async fn block_hash(&self, block_height: u64) -> anyhow::Result<ViewResultDetails<H256>> {
-        let args = block_height.try_to_vec()?;
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::BlockHash, args).await?,
-        ))
-    }
-
-    #[cfg(not(feature = "ethabi"))]
-    pub async fn code<A: Into<Address>>(
-        &self,
-        address: A,
-    ) -> anyhow::Result<ViewResultDetails<Vec<u8>>> {
-        let address = address.into();
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::Code, address.as_bytes().to_vec())
-                .await?,
-        ))
-    }
-
-    #[cfg(feature = "ethabi")]
-    pub async fn code(
-        &self,
-        types: &[ParamType],
-        address: Address,
-    ) -> anyhow::Result<ViewResultDetails<Vec<Token>>> {
-        let address = aurora_engine_types::types::Address::new(address);
-        ViewResultDetails::decode(
-            types,
-            self.near_view(&View::Code, address.try_to_vec()?).await?,
-        )
-    }
-
-    pub async fn balance<A: Into<Address>>(
-        &self,
-        address: A,
-    ) -> anyhow::Result<ViewResultDetails<u128>> {
-        Ok(ViewResultDetails::from_u256(
-            self.near_view(&View::Balance, address.into().0.to_vec())
-                .await?,
-        ))
-    }
-
     pub async fn nonce<A: Into<Address>>(
         &self,
         address: A,

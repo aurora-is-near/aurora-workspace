@@ -14,8 +14,9 @@ macro_rules! impl_view_return  {
                 self.0 = self.0.args_borsh(args);
                 self
             }
+            #[allow(clippy::needless_question_mark)]
             pub async fn transact(self)  -> anyhow::Result<ViewResult<$return>> {
-                ViewResult::$deser_fn(self.0.transact().await?)
+                Ok(ViewResult::$deser_fn(self.0.transact().await?)?)
             }
         })*
     };

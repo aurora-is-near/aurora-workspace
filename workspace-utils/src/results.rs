@@ -1,3 +1,4 @@
+use aurora_workspace_types::{H256, U256};
 use near_sdk::{json_types::U128, PromiseOrValue};
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
@@ -25,6 +26,28 @@ impl<T: borsh::BorshDeserialize> ViewResult<T> {
             result: view.borsh()?,
             logs: view.logs,
         })
+    }
+}
+
+impl From<workspaces::result::ViewResultDetails> for ViewResult<U256> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+        let mut buf = [0u8; 32];
+        buf.copy_from_slice(view.result.as_slice());
+        Self {
+            result: U256::from(buf),
+            logs: view.logs,
+        }
+    }
+}
+
+impl From<workspaces::result::ViewResultDetails> for ViewResult<H256> {
+    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+        let mut buf = [0u8; 32];
+        buf.copy_from_slice(view.result.as_slice());
+        Self {
+            result: H256::from(buf),
+            logs: view.logs,
+        }
     }
 }
 
