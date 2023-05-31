@@ -1,9 +1,8 @@
-use aurora_engine::parameters::WithdrawResult;
+use aurora_engine::parameters::{SubmitResult, WithdrawResult};
+use aurora_engine_types::types::Address;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
-#[cfg(feature = "ethabi")]
-use ethabi::{ParamType, Token};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
@@ -21,6 +20,15 @@ impl_call_return![
         CallFactoryUpdateAddressVersion,
         Call::FactoryUpdateAddressVersion
     ),
+    (CallRegisterRelayer, Call::RegisterRelayer),
+    (CallRefundOnError, Call::RefundOnError),
+    (CallFactoryUpdate, Call::FactoryUpdate),
+    (CallFactorySetWNearAddress, Call::FactorySetWNearAddress),
+    (CallDeployUpgrade, Call::DeployUpgrade),
+    (CallResumePrecompiles, Call::ResumePrecompiles),
+    (CallPausePrecompiles, Call::PausePrecompiles),
+    (CallStageUpgrade, Call::StageUpgrade),
+    (CallStateMigration, Call::StateMigration),
 ];
 
 // Eth-connector
@@ -30,6 +38,11 @@ impl_call_return![
     (CallStorageUnregister => bool, Call::StorageUnregister, json),
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
+    (CallDeployCode => SubmitResult, Call::DeployCode, borsh),
+    (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh),
+    (CallCall => SubmitResult, Call::Call, borsh),
+    (CallSubmit => SubmitResult, Call::Submit, borsh),
+    (CallFtOnTransfer => U128, Call::Call, json),
 ];
 
 impl_view_return![
@@ -39,45 +52,13 @@ impl_view_return![
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
 ];
 
-/*
-    (
-        CallSetEthConnectorContractData,
-        ExecutionSuccess<()>,
-        try_from_borsh
-    ),
-        (
-        CallFactoryUpdateAddressVersion,
-        ExecutionSuccess<()>,
-        try_from
-    ),
-impl_call_return![
-    (
-        CallDeployCode,
-        ExecutionSuccess<SubmitResult>,
-        try_from_borsh
-    ),
-    (CallDeployErc20, ExecutionSuccess<Address>, try_from),
-    (CallEvm, ExecutionSuccess<SubmitResult>, try_from_borsh),
-    (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
-    (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
-    (CallFtOnTransfer, ExecutionSuccess<U128>, try_from_json),
-    (CallRefundOnError, ExecutionSuccess<()>, try_from),
-    (CallFactoryUpdate, ExecutionSuccess<()>, try_from),
-    (CallFactorySetWNearAddress, ExecutionSuccess<()>, try_from),
-    (CallDeployUpgrade, ExecutionSuccess<()>, try_from),
-    (CallResumePrecompiles, ExecutionSuccess<()>, try_from),
-    (CallPausePrecompiles, ExecutionSuccess<()>, try_from),
-    (CallStageUpgrade, ExecutionSuccess<()>, try_from),
-    (CallStateMigration, ExecutionSuccess<()>, try_from),
-];*/
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(dead_code)]
 pub(crate) enum Call {
     New,
     DeployCode,
     DeployErc20Token,
-    Evm,
+    Call,
     Submit,
     RegisterRelayer,
     FtOnTransfer,
@@ -94,7 +75,7 @@ pub(crate) enum Call {
     StateMigration,
     ResumePrecompiles,
     FactoryUpdate,
-    FactorySetWNEARAddress,
+    FactorySetWNearAddress,
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
@@ -102,32 +83,31 @@ pub(crate) enum Call {
 
 impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
-        use Call::*;
         match self {
-            DeployCode => "deploy_code",
-            DeployErc20Token => "deploy_erc20_token",
-            Evm => "call",
-            Submit => "submit",
-            RegisterRelayer => "register_relayer",
-            FtOnTransfer => "ft_on_transfer",
-            Withdraw => "withdraw",
-            Deposit => "deposit",
-            FtTransfer => "ft_transfer",
-            FtTransferCall => "ft_transfer_call",
-            StorageDeposit => "storage_deposit",
-            StorageUnregister => "storage_unregister",
-            StorageWithdraw => "storage_withdraw",
-            PausePrecompiles => "pause_precompiles",
-            New => "new",
-            StageUpgrade => "stage_upgrade",
-            DeployUpgrade => "deploy_upgrade",
-            StateMigration => "state_migration",
-            ResumePrecompiles => "resume_precompiles",
-            FactoryUpdate => "factory_update",
-            FactorySetWNEARAddress => "factory_set_wnear_address",
-            SetEthConnectorContractData => "set_eth_connector_contract_data",
-            FactoryUpdateAddressVersion => "factory_update_address_version",
-            RefundOnError => "refund_on_error",
+            Call::New => "new",
+            Call::DeployCode => "deploy_code",
+            Call::DeployErc20Token => "deploy_erc20_token",
+            Call::Call => "call",
+            Call::Submit => "submit",
+            Call::RegisterRelayer => "register_relayer",
+            Call::FtOnTransfer => "ft_on_transfer",
+            Call::Withdraw => "withdraw",
+            Call::Deposit => "deposit",
+            Call::FtTransfer => "ft_transfer",
+            Call::FtTransferCall => "ft_transfer_call",
+            Call::StorageDeposit => "storage_deposit",
+            Call::StorageUnregister => "storage_unregister",
+            Call::StorageWithdraw => "storage_withdraw",
+            Call::PausePrecompiles => "pause_precompiles",
+            Call::StageUpgrade => "stage_upgrade",
+            Call::DeployUpgrade => "deploy_upgrade",
+            Call::StateMigration => "state_migration",
+            Call::ResumePrecompiles => "resume_precompiles",
+            Call::FactoryUpdate => "factory_update",
+            Call::FactorySetWNearAddress => "factory_set_wnear_address",
+            Call::SetEthConnectorContractData => "set_eth_connector_contract_data",
+            Call::FactoryUpdateAddressVersion => "factory_update_address_version",
+            Call::RefundOnError => "refund_on_error",
         }
     }
 }
@@ -360,45 +340,5 @@ impl ViewResultDetails<U256> {
 
 pub struct EngineCallTransaction<'a> {
     inner: CallTransaction<'a>,
-}
-
-impl<'a, 'b> EngineCallTransaction<'a> {
-    pub(crate) fn call(transaction: CallTransaction<'a>) -> Self {
-        Self { inner: transaction }
-    }
-
-    pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
-        self.inner = self.inner.args(args);
-        self
-    }
-
-    pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
-        self.inner = self.inner.args_json(args);
-        self
-    }
-
-    pub(crate) fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
-        self.inner = self.inner.args_borsh(args);
-        self
-    }
-
-    pub fn gas(mut self, gas: u64) -> Self {
-        self.inner = self.inner.gas(gas);
-        self
-    }
-
-    pub fn max_gas(mut self) -> Self {
-        self.inner = self.inner.max_gas();
-        self
-    }
-
-    pub fn deposit(mut self, deposit: u128) -> Self {
-        self.inner = self.inner.deposit(deposit);
-        self
-    }
-
-    pub async fn transact(self) -> anyhow::Result<ExecutionFinalResult> {
-        Ok(self.inner.transact().await?)
-    }
 }
 */
