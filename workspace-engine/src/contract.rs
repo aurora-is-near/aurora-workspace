@@ -1,9 +1,11 @@
 use crate::operation::{
-    CallDeposit, CallFtTransfer, CallFtTransferCall, CallStorageDeposit, CallStorageUnregister,
+    CallDeposit, CallFactoryUpdateAddressVersion, CallFtTransfer, CallFtTransferCall,
+    CallSetEthConnectorContractData, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply,
     ViewStorageBalanceOf,
 };
 use crate::types::Account;
+use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine_types::types::{Address, Balance};
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::AccountId;
@@ -38,6 +40,7 @@ impl EngineContract {
     }
 }
 
+/// Call functions
 impl EngineContract {
     pub fn ft_transfer(
         &self,
@@ -64,14 +67,6 @@ impl EngineContract {
         }))
     }
 
-    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
-        ViewFtTotalSupply::view(&self.contract)
-    }
-
-    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
-    }
-
     pub fn storage_deposit(
         &self,
         account_id: Option<AccountId>,
@@ -89,10 +84,6 @@ impl EngineContract {
         CallStorageUnregister::call(&self.contract).args_json(serde_json::json!({ "force": force }))
     }
 
-    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
-        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
-    }
-
     pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
         CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
     }
@@ -101,48 +92,49 @@ impl EngineContract {
         CallDeposit::call(&self.contract).args_borsh(raw_proof)
     }
 
-    pub async fn ft_metadata(&self) -> ViewFtMetadata {
+    pub fn set_eth_connector_contract_data(
+        &self,
+        prover_account: AccountId,
+        eth_custodian_address: Address,
+        metadata: FungibleTokenMetadata,
+    ) -> CallSetEthConnectorContractData {
+        CallSetEthConnectorContractData::call(&self.contract).args_borsh((
+            prover_account,
+            eth_custodian_address,
+            metadata,
+        ))
+    }
+
+    pub fn factory_update_address_version(
+        &self,
+        address: Address,
+        version: u32,
+    ) -> CallFactoryUpdateAddressVersion {
+        CallFactoryUpdateAddressVersion::call(&self.contract).args_borsh((address, version))
+    }
+}
+
+/// View functions
+impl EngineContract {
+    pub fn ft_total_supply(&self) -> ViewFtTotalSupply {
+        ViewFtTotalSupply::view(&self.contract)
+    }
+
+    pub fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
+    }
+
+    pub fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
+    }
+
+    pub fn ft_metadata(&self) -> ViewFtMetadata {
         ViewFtMetadata::view(&self.contract)
     }
 }
 
 /*
 impl EngineContract {
-    pub fn set_eth_connector_contract_data(
-        &self,
-        prover_account: impl AsRef<str>,
-        eth_custodian_address: impl Into<String>,
-        metadata: FungibleTokenMetadata,
-    ) -> CallSetEthConnectorContractData<'_> {
-        let args = SetContractDataCallArgs {
-            prover_account: aurora_engine_types::account_id::AccountId::new(
-                prover_account.as_ref(),
-            )
-            .unwrap(),
-            eth_custodian_address: eth_custodian_address.into(),
-            metadata,
-        };
-        CallSetEthConnectorContractData(
-            self.near_call(&SelfCall::SetEthConnectorContractData)
-                .args_borsh(args),
-        )
-    }
-
-    pub fn factory_update_address_version(
-        &self,
-        address: impl Into<Address>,
-        version: u32,
-    ) -> CallFactoryUpdateAddressVersion<'_> {
-        let args = AddressVersionUpdateArgs {
-            address: aurora_engine_types::types::Address::new(address.into()),
-            version: aurora_engine::xcc::CodeVersion(version),
-        };
-        CallFactoryUpdateAddressVersion(
-            self.near_call(&SelfCall::FactoryUpdateAddressVersion)
-                .args_borsh(args),
-        )
-    }
-
     pub fn refund_on_error<A: Into<Address>>(
         &self,
         recipient_address: A,

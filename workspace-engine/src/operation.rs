@@ -13,6 +13,14 @@ use near_sdk::PromiseOrValue;
 impl_call_return![
     (CallFtTransfer, Call::FtTransfer),
     (CallDeposit, Call::Deposit),
+    (
+        CallSetEthConnectorContractData,
+        Call::SetEthConnectorContractData
+    ),
+    (
+        CallFactoryUpdateAddressVersion,
+        Call::FactoryUpdateAddressVersion
+    ),
 ];
 
 // Eth-connector
@@ -32,6 +40,16 @@ impl_view_return![
 ];
 
 /*
+    (
+        CallSetEthConnectorContractData,
+        ExecutionSuccess<()>,
+        try_from_borsh
+    ),
+        (
+        CallFactoryUpdateAddressVersion,
+        ExecutionSuccess<()>,
+        try_from
+    ),
 impl_call_return![
     (
         CallDeployCode,
@@ -43,16 +61,6 @@ impl_call_return![
     (CallSubmit, ExecutionSuccess<SubmitResult>, try_from_borsh),
     (CallRegisterRelayer, ExecutionSuccess<()>, try_from),
     (CallFtOnTransfer, ExecutionSuccess<U128>, try_from_json),
-    (
-        CallSetEthConnectorContractData,
-        ExecutionSuccess<()>,
-        try_from_borsh
-    ),
-    (
-        CallFactoryUpdateAddressVersion,
-        ExecutionSuccess<()>,
-        try_from
-    ),
     (CallRefundOnError, ExecutionSuccess<()>, try_from),
     (CallFactoryUpdate, ExecutionSuccess<()>, try_from),
     (CallFactorySetWNearAddress, ExecutionSuccess<()>, try_from),
@@ -66,6 +74,7 @@ impl_call_return![
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(dead_code)]
 pub(crate) enum Call {
+    New,
     DeployCode,
     DeployErc20Token,
     Evm,
@@ -80,6 +89,15 @@ pub(crate) enum Call {
     StorageUnregister,
     StorageWithdraw,
     PausePrecompiles,
+    StageUpgrade,
+    DeployUpgrade,
+    StateMigration,
+    ResumePrecompiles,
+    FactoryUpdate,
+    FactorySetWNEARAddress,
+    SetEthConnectorContractData,
+    FactoryUpdateAddressVersion,
+    RefundOnError,
 }
 
 impl AsRef<str> for Call {
@@ -100,6 +118,16 @@ impl AsRef<str> for Call {
             StorageUnregister => "storage_unregister",
             StorageWithdraw => "storage_withdraw",
             PausePrecompiles => "pause_precompiles",
+            New => "new",
+            StageUpgrade => "stage_upgrade",
+            DeployUpgrade => "deploy_upgrade",
+            StateMigration => "state_migration",
+            ResumePrecompiles => "resume_precompiles",
+            FactoryUpdate => "factory_update",
+            FactorySetWNEARAddress => "factory_set_wnear_address",
+            SetEthConnectorContractData => "set_eth_connector_contract_data",
+            FactoryUpdateAddressVersion => "factory_update_address_version",
+            RefundOnError => "refund_on_error",
         }
     }
 }
@@ -128,16 +156,6 @@ pub enum View {
     PausedFlags,
     Erc20FromNep141,
     Nep141FromErc20,
-    New,
-    StageUpgrade,
-    DeployUpgrade,
-    StateMigration,
-    ResumePrecompiles,
-    FactoryUpdate,
-    FactorySetWNEARAddress,
-    SetEthConnectorContractData,
-    FactoryUpdateAddressVersion,
-    RefundOnError,
 }
 
 impl AsRef<str> for View {
@@ -166,16 +184,6 @@ impl AsRef<str> for View {
             PausedFlags => "get_paused_flags",
             Erc20FromNep141 => "get_erc20_from_nep141",
             Nep141FromErc20 => "get_nep141_from_erc20",
-            New => "new",
-            StageUpgrade => "stage_upgrade",
-            DeployUpgrade => "deploy_upgrade",
-            StateMigration => "state_migration",
-            ResumePrecompiles => "resume_precompiles",
-            FactoryUpdate => "factory_update",
-            FactorySetWNEARAddress => "factory_set_wnear_address",
-            SetEthConnectorContractData => "set_eth_connector_contract_data",
-            FactoryUpdateAddressVersion => "factory_update_address_version",
-            RefundOnError => "refund_on_error",
         }
     }
 }
