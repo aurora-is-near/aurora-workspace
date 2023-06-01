@@ -1,11 +1,14 @@
 use crate::operation::{
-    CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
-    CallEngineStorageUnregister, CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer,
-    CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
-    CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
-    ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetBridgeProver,
-    ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner, ViewIsUsedProof,
+    CallClaimFee, CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall,
+    CallEngineStorageDeposit, CallEngineStorageUnregister, CallEngineStorageWithdraw,
+    CallEngineWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate, CallNew,
+    CallRemoveEngineAccount, CallSetAccessRight, CallSetDepositFeeBound,
+    CallSetDepositFeePercentage, CallSetEngineAccount, CallSetPausedFlags, CallSetWithdrawFeeBound,
+    CallSetWithdrawFeePercentage, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw,
+    CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf, ViewFtMetadata,
+    ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetBridgeProver, ViewGetDepositFeeBound,
+    ViewGetDepositFeePercentage, ViewGetPausedFlags, ViewGetWithdrawFeeBounds,
+    ViewGetWithdrawFeePercentage, ViewIsEngineAccountExist, ViewIsOwner, ViewIsUsedProof,
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
@@ -251,5 +254,41 @@ impl EthConnectorContract {
         data: MigrationInputData,
     ) -> ViewCheckMigrationCorrectness {
         ViewCheckMigrationCorrectness::view(&self.contract).args_borsh(data)
+    }
+
+    pub fn set_deposit_fee_percentage(&self, eth_to_aurora: u128, eth_to_near: u128) {
+        CallSetDepositFeePercentage::call(&self.contract).args_json((eth_to_aurora, eth_to_near));
+    }
+
+    pub fn set_deposit_fee_bounds(&self, lower_bound: u128, upper_bound: u128) {
+        CallSetDepositFeeBound::call(&self.contract).args_json((lower_bound, upper_bound));
+    }
+
+    pub fn set_withdraw_fee_percentage(&self, aurora_to_eth: u128, near_to_eth: u128) {
+        CallSetWithdrawFeePercentage::call(&self.contract).args_json((aurora_to_eth, near_to_eth));
+    }
+
+    pub fn set_withdraw_fee_bounds(&self, lower_bound: u128, upper_bound: u128) {
+        CallSetWithdrawFeeBound::call(&self.contract).args_json((lower_bound, upper_bound));
+    }
+
+    pub fn claim_fee(&self, amount: u128) {
+        CallClaimFee::call(&self.contract).args_json((amount,));
+    }
+
+    pub async fn get_deposit_fee_percentage(&self) -> ViewGetDepositFeePercentage {
+        ViewGetDepositFeePercentage::view(&self.contract)
+    }
+
+    pub async fn get_deposit_fee_bounds(&self) -> ViewGetDepositFeeBound {
+        ViewGetDepositFeeBound::view(&self.contract)
+    }
+
+    pub async fn get_withdraw_fee_percentage(&self) -> ViewGetWithdrawFeePercentage {
+        ViewGetWithdrawFeePercentage::view(&self.contract)
+    }
+
+    pub async fn get_withdraw_fee_bounds(&self) -> ViewGetWithdrawFeeBounds {
+        ViewGetWithdrawFeeBounds::view(&self.contract)
     }
 }

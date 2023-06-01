@@ -1,4 +1,7 @@
-use crate::types::{MigrationCheckResult, PausedMask, WithdrawResult};
+use crate::types::{
+    DepositFeePercentage, FeeBounds, MigrationCheckResult, PausedMask, WithdrawFeePercentage,
+    WithdrawResult,
+};
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
@@ -19,6 +22,11 @@ impl_call_return![
     (CallSetPausedFlags, Call::SetPausedFlags),
     (CallSetAccessRight, Call::SetAccessRight),
     (CallMigrate, Call::Migrate),
+    (CallSetDepositFeePercentage, Call::SetDepositFeePercentage),
+    (CallSetDepositFeeBound, Call::SetDepositFeeBound),
+    (CallSetWithdrawFeePercentage, Call::SetWithdrawFeePercentage),
+    (CallSetWithdrawFeeBound, Call::SetWithdrawFeeBound),
+    (CallClaimFee, Call::ClaimFee)
 ];
 
 impl_call_return![
@@ -47,6 +55,10 @@ impl_view_return![
     (ViewIsOwner => bool, View::IsOwner, json),
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
     (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
+    (ViewGetDepositFeePercentage => DepositFeePercentage, View::GetDepositFeePercentage, json),
+    (ViewGetDepositFeeBound => FeeBounds, View::GetDepositFeeBound, json),
+    (ViewGetWithdrawFeePercentage => WithdrawFeePercentage, View::GetWithdrawFeePercentage, json),
+    (ViewGetWithdrawFeeBounds => FeeBounds, View::GetWithdrawFeeBound, json)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -70,6 +82,11 @@ pub(crate) enum Call {
     SetPausedFlags,
     SetAccessRight,
     Migrate,
+    SetDepositFeePercentage,
+    SetDepositFeeBound,
+    SetWithdrawFeePercentage,
+    SetWithdrawFeeBound,
+    ClaimFee,
 }
 
 impl AsRef<str> for Call {
@@ -95,6 +112,11 @@ impl AsRef<str> for Call {
             SetPausedFlags => "set_paused_flags",
             SetAccessRight => "set_access_right",
             Migrate => "migrate",
+            SetDepositFeePercentage => "set_deposit_fee_percentage",
+            SetDepositFeeBound => "set_deposit_fee_bounds",
+            SetWithdrawFeePercentage => "set_withdraw_fee_percentage",
+            SetWithdrawFeeBound => "set_withdraw_fee_bounds",
+            ClaimFee => "claim_fee",
         }
     }
 }
@@ -113,6 +135,10 @@ pub enum View {
     CheckMigrationCorrectness,
     IsUsedProof,
     GetBridgeProver,
+    GetDepositFeePercentage,
+    GetDepositFeeBound,
+    GetWithdrawFeePercentage,
+    GetWithdrawFeeBound,
 }
 
 impl AsRef<str> for View {
@@ -131,6 +157,10 @@ impl AsRef<str> for View {
             CheckMigrationCorrectness => "check_migration_correctness",
             IsUsedProof => "is_used_proof",
             GetBridgeProver => "get_bridge_prover",
+            GetDepositFeePercentage => "get_deposit_fee_percentage",
+            GetDepositFeeBound => "get_deposit_fee_bounds",
+            GetWithdrawFeePercentage => "get_withdraw_fee_percentage",
+            GetWithdrawFeeBound => "get_withdraw_fee_bounds",
         }
     }
 }
