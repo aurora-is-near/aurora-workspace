@@ -1,4 +1,4 @@
-use aurora_engine::parameters::{SubmitResult, WithdrawResult};
+use aurora_engine::parameters::{SubmitResult, TransactionStatus, WithdrawResult};
 use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
@@ -53,13 +53,16 @@ impl_view_return![
     (ViewVersion => String, View::Version, borsh),
     (ViewOwner => AccountId, View::Owner, borsh),
     (ViewBridgeProver => AccountId, View::BridgeProver, borsh),
-
     (ViewChainId => AccountId, View::ChainId, borsh),
     (ViewUpgradeIndex => u64, View::UpgradeIndex, borsh),
     (ViewPausedPrecompiles => u32, View::PausedPrecompiles, borsh),
-    (ViewBlockHash => H256, View::BlockHash, try_from),
+    (ViewBlockHash => H256, View::BlockHash, borsh_H256),
     (ViewCode => Vec<u8>, View::Code, borsh),
-    (ViewBalance => U256, View::Balance, try_from),
+    (ViewBalance => U256, View::Balance, borsh_U256),
+    (ViewNonce => U256, View::Nonce, borsh_U256),
+    (ViewStorageAt => H256, View::StorageAt, borsh_H256),
+    (ViewView => TransactionStatus, View::View, borsh),
+
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -134,13 +137,13 @@ pub enum View {
     Code,
     Balance,
     Nonce,
-    Storage,
-    Evm,
-    IsProofUsed,
+    StorageAt,
+    View,
+    IsUsedProof,
     FtTotalSupply,
     FtBalanceOf,
     BalanceOfEth,
-    EthTotalSupply,
+    FtTotalSupplyOnAurora,
     FtMetadata,
     StorageBalanceOf,
     PausedFlags,
@@ -150,30 +153,29 @@ pub enum View {
 
 impl AsRef<str> for View {
     fn as_ref(&self) -> &str {
-        use View::*;
         match self {
-            Version => "get_version",
-            Owner => "get_owner",
-            BridgeProver => "get_bridge_prover",
-            ChainId => "get_chain_id",
-            UpgradeIndex => "get_upgrade_index",
-            PausedPrecompiles => "get_paused_precompiles",
-            BlockHash => "get_block_hash",
-            Code => "get_code",
-            Balance => "get_balance",
-            Nonce => "get_nonce",
-            Storage => "get_storage_at",
-            Evm => "get_view",
-            IsProofUsed => "is_used_proof",
-            FtTotalSupply => "ft_total_supply",
-            FtBalanceOf => "ft_balance_of",
-            BalanceOfEth => "ft_balance_of_eth",
-            EthTotalSupply => "ft_total_eth_supply_on_aurora",
-            FtMetadata => "ft_metadata",
-            StorageBalanceOf => "storage_balance_of",
-            PausedFlags => "get_paused_flags",
-            Erc20FromNep141 => "get_erc20_from_nep141",
-            Nep141FromErc20 => "get_nep141_from_erc20",
+            View::Version => "get_version",
+            View::Owner => "get_owner",
+            View::BridgeProver => "get_bridge_prover",
+            View::ChainId => "get_chain_id",
+            View::UpgradeIndex => "get_upgrade_index",
+            View::PausedPrecompiles => "get_paused_precompiles",
+            View::BlockHash => "get_block_hash",
+            View::Code => "get_code",
+            View::Balance => "get_balance",
+            View::Nonce => "get_nonce",
+            View::StorageAt => "get_storage_at",
+            View::View => "get_view",
+            View::IsUsedProof => "is_used_proof",
+            View::FtTotalSupply => "ft_total_supply",
+            View::FtBalanceOf => "ft_balance_of",
+            View::BalanceOfEth => "ft_balance_of_eth",
+            View::FtTotalSupplyOnAurora => "ft_total_eth_supply_on_aurora",
+            View::FtMetadata => "ft_metadata",
+            View::StorageBalanceOf => "storage_balance_of",
+            View::PausedFlags => "get_paused_flags",
+            View::Erc20FromNep141 => "get_erc20_from_nep141",
+            View::Nep141FromErc20 => "get_nep141_from_erc20",
         }
     }
 }

@@ -29,25 +29,27 @@ impl<T: borsh::BorshDeserialize> ViewResult<T> {
     }
 }
 
-impl From<workspaces::result::ViewResultDetails> for ViewResult<U256> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+impl ViewResult<U256> {
+    #[allow(non_snake_case)]
+    pub fn borsh_U256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
-        Self {
+        Ok(Self {
             result: U256::from(buf),
             logs: view.logs,
-        }
+        })
     }
 }
 
-impl From<workspaces::result::ViewResultDetails> for ViewResult<H256> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
+impl ViewResult<H256> {
+    #[allow(non_snake_case)]
+    pub fn borsh_H256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
-        Self {
+        Ok(Self {
             result: H256::from(buf),
             logs: view.logs,
-        }
+        })
     }
 }
 

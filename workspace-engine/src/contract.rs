@@ -5,15 +5,16 @@ use crate::operation::{
     CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
     CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
     CallWithdraw, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode,
-    ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewOwner, ViewPausedPrecompiles,
-    ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion,
+    ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewNonce, ViewOwner,
+    ViewPausedPrecompiles, ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion,
+    ViewView,
 };
 use crate::types::Account;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine_types::types::{Address, Balance};
 use aurora_engine_types::U256;
 use aurora_workspace_types::input::ProofInput;
-use aurora_workspace_types::AccountId;
+use aurora_workspace_types::{AccountId, H256};
 use aurora_workspace_utils::Contract;
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
@@ -250,52 +251,31 @@ impl EngineContract {
     pub fn balance(&self, address: Address) -> ViewBalance {
         ViewBalance::view(&self.contract).args_borsh(address)
     }
+
+    pub fn nonce(&self, address: Address) -> ViewNonce {
+        ViewNonce::view(&self.contract).args_borsh(address)
+    }
+
+    pub fn storage(&self, address: Address, key: H256) -> ViewStorageAt {
+        let raw_key = <H256 as Into<aurora_engine_types::types::RawH256>>::into(key);
+        ViewStorageAt::view(&self.contract).args_borsh((address, raw_key))
+    }
+
+    pub fn view(
+        &self,
+        sender: Address,
+        address: Address,
+        amount: U256,
+        input: Vec<u8>,
+    ) -> ViewView {
+        let mut raw_amount = [0u8; 32];
+        amount.to_big_endian(&mut raw_amount);
+        ViewView::view(&self.contract).args_borsh((sender, address, raw_amount, input))
+    }
 }
 
 /*
 impl EngineContract {
-    pub async fn nonce<A: Into<Address>>(
-        &self,
-        address: A,
-    ) -> anyhow::Result<ViewResultDetails<u128>> {
-        Ok(ViewResultDetails::from_u256(
-            self.near_view(&View::Nonce, address.into().0.to_vec())
-                .await?,
-        ))
-    }
-
-    pub async fn storage<A: Into<Address>, K: Into<H256>>(
-        &self,
-        address: A,
-        key: K,
-    ) -> anyhow::Result<ViewResultDetails<H256>> {
-        let args = GetStorageAtArgs {
-            address: aurora_engine_types::types::Address::new(address.into()),
-            key: key.into().0,
-        };
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::Storage, args.try_to_vec()?).await?,
-        ))
-    }
-
-    pub async fn view<A: Into<Address>, V: Into<U256>>(
-        &self,
-        sender: A,
-        address: A,
-        amount: V,
-        input: Vec<u8>,
-    ) -> anyhow::Result<ViewResultDetails<TransactionStatus>> {
-        let mut buf = [0u8; 32];
-        amount.into().to_big_endian(&mut buf);
-        let args = ViewCallArgs {
-            sender: aurora_engine_types::types::Address::new(sender.into()),
-            address: aurora_engine_types::types::Address::new(address.into()),
-            amount: buf,
-            input,
-        };
-        ViewResultDetails::try_from(self.near_view(&View::Evm, args.try_to_vec()?).await?)
-    }
-
     pub async fn is_proof_used(
         &self,
         proof: ProofInput,
@@ -305,10 +285,6 @@ impl EngineContract {
             self.near_view(&View::IsProofUsed, args.try_to_vec()?)
                 .await?,
         )
-    }
-
-    pub async fn ft_total_supply(&self) -> anyhow::Result<ViewResultDetails<u128>> {
-        ViewResultDetails::try_from(self.near_view(&View::FtTotalSupply, vec![]).await?)
     }
 
     pub async fn eth_balance_of<A: Into<Address>>(
