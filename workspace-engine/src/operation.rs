@@ -42,7 +42,7 @@ impl_call_return![
     (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh),
     (CallCall => SubmitResult, Call::Call, borsh),
     (CallSubmit => SubmitResult, Call::Submit, borsh),
-    (CallFtOnTransfer => U128, Call::Call, json),
+    (CallFtOnTransfer => U128, Call::FtOnTransfer, json),
 ];
 
 impl_view_return![
@@ -62,13 +62,14 @@ impl_view_return![
     (ViewNonce => U256, View::Nonce, borsh_U256),
     (ViewStorageAt => H256, View::StorageAt, borsh_H256),
     (ViewView => TransactionStatus, View::View, borsh),
-
+    (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
+    (ViewFtTotalEthSupplyOnAurora => U256, View::FtTotalEthSupplyOnAurora, borsh_U256),
+    (ViewFtBalanceOfEth => U256, View::FtBalanceOfEth, borsh_U256),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[allow(dead_code)]
+#[allow(clippy::enum_variant_names)]
 pub(crate) enum Call {
-    New,
     DeployCode,
     DeployErc20Token,
     Call,
@@ -97,7 +98,6 @@ pub(crate) enum Call {
 impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
         match self {
-            Call::New => "new",
             Call::DeployCode => "deploy_code",
             Call::DeployErc20Token => "deploy_erc20_token",
             Call::Call => "call",
@@ -142,8 +142,8 @@ pub enum View {
     IsUsedProof,
     FtTotalSupply,
     FtBalanceOf,
-    BalanceOfEth,
-    FtTotalSupplyOnAurora,
+    FtBalanceOfEth,
+    FtTotalEthSupplyOnAurora,
     FtMetadata,
     StorageBalanceOf,
     PausedFlags,
@@ -169,8 +169,8 @@ impl AsRef<str> for View {
             View::IsUsedProof => "is_used_proof",
             View::FtTotalSupply => "ft_total_supply",
             View::FtBalanceOf => "ft_balance_of",
-            View::BalanceOfEth => "ft_balance_of_eth",
-            View::FtTotalSupplyOnAurora => "ft_total_eth_supply_on_aurora",
+            View::FtBalanceOfEth => "ft_balance_of_eth",
+            View::FtTotalEthSupplyOnAurora => "ft_total_eth_supply_on_aurora",
             View::FtMetadata => "ft_metadata",
             View::StorageBalanceOf => "storage_balance_of",
             View::PausedFlags => "get_paused_flags",
@@ -179,158 +179,3 @@ impl AsRef<str> for View {
         }
     }
 }
-
-/*
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ViewResultDetails<T> {
-    pub result: T,
-    pub logs: Vec<String>,
-}
-
-
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<U256> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: U256::from(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u64> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 8];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: u64::from_le_bytes(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-// TODO return this as bitflags.
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u32> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 4];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: u32::from_le_bytes(buf),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<u8> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 1];
-        buf.copy_from_slice(view.result.as_slice());
-        Self {
-            result: buf[0],
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<H256> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        Self {
-            result: H256::from_slice(view.result.as_slice()),
-            logs: view.logs,
-        }
-    }
-}
-
-impl From<workspaces::result::ViewResultDetails> for ViewResultDetails<Vec<u8>> {
-    fn from(view: workspaces::result::ViewResultDetails) -> Self {
-        Self {
-            result: view.result,
-            logs: view.logs,
-        }
-    }
-}
-
-#[cfg(feature = "ethabi")]
-impl ViewResultDetails<Vec<Token>> {
-    pub fn decode(
-        types: &[ParamType],
-        view: workspaces::result::ViewResultDetails,
-    ) -> anyhow::Result<Self> {
-        Ok(Self {
-            result: ethabi::decode(types, &view.result)?,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<u128> {
-    pub(crate) fn from_u256(view: workspaces::result::ViewResultDetails) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(view.result.as_slice());
-        let value = U256::from(buf);
-        Self {
-            result: value.as_u128(),
-            logs: vec![],
-        }
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<TransactionStatus> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        let result: TransactionStatus = TransactionStatus::try_from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<bool> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        let result: bool = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl TryFrom<workspaces::result::ViewResultDetails> for ViewResultDetails<u128> {
-    type Error = anyhow::Error;
-
-    fn try_from(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
-        let result: u128 = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result,
-            logs: view.logs,
-        })
-    }
-}
-
-impl ViewResultDetails<U256> {
-    pub(crate) fn try_from_json(
-        view: workspaces::result::ViewResultDetails,
-    ) -> anyhow::Result<Self> {
-        let result: Wei = serde_json::from_slice(view.result.as_slice())?;
-        Ok(Self {
-            result: result.raw(),
-            logs: view.logs,
-        })
-    }
-}
-
-#
-
-
-
-
-pub struct EngineCallTransaction<'a> {
-    inner: CallTransaction<'a>,
-}
-*/

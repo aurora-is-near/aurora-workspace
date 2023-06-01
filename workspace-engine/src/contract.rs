@@ -5,9 +5,9 @@ use crate::operation::{
     CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
     CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
     CallWithdraw, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode,
-    ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewNonce, ViewOwner,
-    ViewPausedPrecompiles, ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion,
-    ViewView,
+    ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata, ViewFtTotalEthSupplyOnAurora,
+    ViewFtTotalSupply, ViewIsUsedProof, ViewNonce, ViewOwner, ViewPausedPrecompiles, ViewStorageAt,
+    ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
@@ -216,52 +216,52 @@ impl EngineContract {
         ViewFtMetadata::view(&self.contract)
     }
 
-    pub fn version(&self) -> ViewVersion {
+    pub fn get_version(&self) -> ViewVersion {
         ViewVersion::view(&self.contract)
     }
 
-    pub fn owner(&self) -> ViewOwner {
+    pub fn get_owner(&self) -> ViewOwner {
         ViewOwner::view(&self.contract)
     }
 
-    pub fn bridge_prover(&self) -> ViewBridgeProver {
+    pub fn get_bridge_prover(&self) -> ViewBridgeProver {
         ViewBridgeProver::view(&self.contract)
     }
 
-    pub fn chain_id(&self) -> ViewChainId {
+    pub fn get_chain_id(&self) -> ViewChainId {
         ViewChainId::view(&self.contract)
     }
 
-    pub fn upgrade_index(&self) -> ViewUpgradeIndex {
+    pub fn get_upgrade_index(&self) -> ViewUpgradeIndex {
         ViewUpgradeIndex::view(&self.contract)
     }
 
-    pub fn paused_precompiles(&self) -> ViewPausedPrecompiles {
+    pub fn get_paused_precompiles(&self) -> ViewPausedPrecompiles {
         ViewPausedPrecompiles::view(&self.contract)
     }
 
-    pub fn block_hash(&self, block_height: u64) -> ViewBlockHash {
+    pub fn get_block_hash(&self, block_height: u64) -> ViewBlockHash {
         ViewBlockHash::view(&self.contract).args_borsh(block_height)
     }
 
-    pub fn code(&self, address: Address) -> ViewCode {
+    pub fn get_code(&self, address: Address) -> ViewCode {
         ViewCode::view(&self.contract).args_borsh(address)
     }
 
-    pub fn balance(&self, address: Address) -> ViewBalance {
+    pub fn get_balance(&self, address: Address) -> ViewBalance {
         ViewBalance::view(&self.contract).args_borsh(address)
     }
 
-    pub fn nonce(&self, address: Address) -> ViewNonce {
+    pub fn get_nonce(&self, address: Address) -> ViewNonce {
         ViewNonce::view(&self.contract).args_borsh(address)
     }
 
-    pub fn storage(&self, address: Address, key: H256) -> ViewStorageAt {
+    pub fn get_storage_at(&self, address: Address, key: H256) -> ViewStorageAt {
         let raw_key = <H256 as Into<aurora_engine_types::types::RawH256>>::into(key);
         ViewStorageAt::view(&self.contract).args_borsh((address, raw_key))
     }
 
-    pub fn view(
+    pub fn get_view(
         &self,
         sender: Address,
         address: Address,
@@ -272,35 +272,22 @@ impl EngineContract {
         amount.to_big_endian(&mut raw_amount);
         ViewView::view(&self.contract).args_borsh((sender, address, raw_amount, input))
     }
+
+    pub fn is_used_proof(&self, proof: ProofInput) -> ViewIsUsedProof {
+        ViewIsUsedProof::view(&self.contract).args_borsh(proof)
+    }
+
+    pub fn ft_total_eth_supply_on_aurora(&self) -> ViewFtTotalEthSupplyOnAurora {
+        ViewFtTotalEthSupplyOnAurora::view(&self.contract)
+    }
+
+    pub fn ft_balance_of_eth(&self, address: Address) -> ViewFtBalanceOfEth {
+        ViewFtBalanceOfEth::view(&self.contract).args_borsh(address)
+    }
 }
 
 /*
 impl EngineContract {
-    pub async fn is_proof_used(
-        &self,
-        proof: ProofInput,
-    ) -> anyhow::Result<ViewResultDetails<bool>> {
-        let args = IsUsedProofCallArgs { proof };
-        ViewResultDetails::try_from(
-            self.near_view(&View::IsProofUsed, args.try_to_vec()?)
-                .await?,
-        )
-    }
-
-    pub async fn eth_balance_of<A: Into<Address>>(
-        &self,
-        address: A,
-    ) -> anyhow::Result<ViewResultDetails<U256>> {
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::BalanceOfEth, address.into().0.to_vec())
-                .await?,
-        ))
-    }
-
-    pub async fn eth_total_supply(&self) -> anyhow::Result<ViewResultDetails<U256>> {
-        ViewResultDetails::try_from_json(self.near_view(&View::EthTotalSupply, vec![]).await?)
-    }
-
     pub async fn erc20_from_nep141(
         &self,
         nep141_account_id: AccountId,
