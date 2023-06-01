@@ -7,7 +7,6 @@ readme = "README.md"
 
 [dependencies]
 ethereum-types = { version = "0.14", default-features = false, features = ["serialize", "rlp"] }
-# aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "d9763085157188055f62752fd499ac4c7db8331e",  features = ["impl-serde"] }
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "2.8.1", default-features = false, features = ["impl-serde"] }
 near-sdk = "4.1"
 near-account-id = "0.15"
