@@ -36,6 +36,7 @@ impl EthConnectorContract {
     }
 }
 
+/// Call functions
 impl EthConnectorContract {
     pub fn init(
         &self,
@@ -79,14 +80,6 @@ impl EthConnectorContract {
         }))
     }
 
-    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
-        ViewFtTotalSupply::view(&self.contract)
-    }
-
-    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
-    }
-
     pub fn engine_ft_transfer(
         &self,
         sender_id: AccountId,
@@ -127,15 +120,6 @@ impl EthConnectorContract {
 
     pub fn remove_engine_account(&self, engine_account: &AccountId) -> CallRemoveEngineAccount {
         CallRemoveEngineAccount::call(&self.contract).args_json(json!({
-            "engine_account": engine_account,
-        }))
-    }
-
-    pub async fn is_engine_account_exist(
-        &self,
-        engine_account: &AccountId,
-    ) -> ViewIsEngineAccountExist {
-        ViewIsEngineAccountExist::view(&self.contract).args_json(json!({
             "engine_account": engine_account,
         }))
     }
@@ -185,14 +169,6 @@ impl EthConnectorContract {
             .args_json(json!({ "sender_id":  sender_id, "force": force }))
     }
 
-    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
-        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
-    }
-
-    pub async fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
-        ViewStorageBalanceBounds::view(&self.contract)
-    }
-
     pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags {
         CallSetPausedFlags::call(&self.contract).args_borsh(paused)
     }
@@ -221,6 +197,20 @@ impl EthConnectorContract {
     pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
         CallMigrate::call(&self.contract).args_borsh(data)
     }
+}
+
+/// View functions
+impl EthConnectorContract {
+    pub async fn get_bridge_prover(&self) -> ViewGetBridgeProver {
+        ViewGetBridgeProver::view(&self.contract)
+    }
+
+    pub async fn check_migration_correctness(
+        &self,
+        data: MigrationInputData,
+    ) -> ViewCheckMigrationCorrectness {
+        ViewCheckMigrationCorrectness::view(&self.contract).args_borsh(data)
+    }
 
     pub async fn ft_metadata(&self) -> ViewFtMetadata {
         ViewFtMetadata::view(&self.contract)
@@ -242,14 +232,28 @@ impl EthConnectorContract {
         ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
-    pub async fn get_bridge_prover(&self) -> ViewGetBridgeProver {
-        ViewGetBridgeProver::view(&self.contract)
+    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
-    pub async fn check_migration_correctness(
+    pub async fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
+        ViewStorageBalanceBounds::view(&self.contract)
+    }
+
+    pub async fn is_engine_account_exist(
         &self,
-        data: MigrationInputData,
-    ) -> ViewCheckMigrationCorrectness {
-        ViewCheckMigrationCorrectness::view(&self.contract).args_borsh(data)
+        engine_account: &AccountId,
+    ) -> ViewIsEngineAccountExist {
+        ViewIsEngineAccountExist::view(&self.contract).args_json(json!({
+            "engine_account": engine_account,
+        }))
+    }
+
+    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
+        ViewFtTotalSupply::view(&self.contract)
+    }
+
+    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
     }
 }

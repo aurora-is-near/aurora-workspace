@@ -5,8 +5,9 @@ use crate::operation::{
     CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
     CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
     CallWithdraw, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode,
-    ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata, ViewFtTotalEthSupplyOnAurora,
-    ViewFtTotalSupply, ViewIsUsedProof, ViewNonce, ViewOwner, ViewPausedPrecompiles, ViewStorageAt,
+    ViewErc20FromNep141, ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata,
+    ViewFtTotalEthSupplyOnAurora, ViewFtTotalSupply, ViewIsUsedProof, ViewNep141FromErc20,
+    ViewNonce, ViewOwner, ViewPausedFlags, ViewPausedPrecompiles, ViewStorageAt,
     ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
@@ -284,34 +285,16 @@ impl EngineContract {
     pub fn ft_balance_of_eth(&self, address: Address) -> ViewFtBalanceOfEth {
         ViewFtBalanceOfEth::view(&self.contract).args_borsh(address)
     }
-}
 
-/*
-impl EngineContract {
-    pub async fn erc20_from_nep141(
-        &self,
-        nep141_account_id: AccountId,
-    ) -> anyhow::Result<ViewResultDetails<AccountId>> {
-        ViewResultDetails::try_from(
-            self.near_view(&View::Erc20FromNep141, nep141_account_id.try_to_vec()?)
-                .await?,
-        )
+    pub fn get_erc20_from_nep141(&self, account: AccountId) -> ViewErc20FromNep141 {
+        ViewErc20FromNep141::view(&self.contract).args_borsh(account)
     }
 
-    pub async fn nep141_from_erc20(
-        &self,
-        erc20_account_id: AccountId,
-    ) -> anyhow::Result<ViewResultDetails<AccountId>> {
-        ViewResultDetails::try_from(
-            self.near_view(&View::Nep141FromErc20, erc20_account_id.try_to_vec()?)
-                .await?,
-        )
+    pub fn get_nep141_from_erc20(&self, address: Address) -> ViewNep141FromErc20 {
+        ViewNep141FromErc20::view(&self.contract).args_borsh(address)
     }
 
-    pub async fn paused_flags(&self) -> anyhow::Result<ViewResultDetails<u8>> {
-        Ok(ViewResultDetails::from(
-            self.near_view(&View::PausedFlags, Vec::new()).await?,
-        ))
+    pub fn get_paused_flags(&self) -> ViewPausedFlags {
+        ViewPausedFlags::view(&self.contract)
     }
 }
-*/

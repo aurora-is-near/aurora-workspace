@@ -65,6 +65,9 @@ impl_view_return![
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
     (ViewFtTotalEthSupplyOnAurora => U256, View::FtTotalEthSupplyOnAurora, borsh_U256),
     (ViewFtBalanceOfEth => U256, View::FtBalanceOfEth, borsh_U256),
+    (ViewErc20FromNep141 => Address, View::Erc20FromNep141, borsh),
+    (ViewNep141FromErc20 => AccountId, View::Nep141FromErc20, borsh),
+    (ViewPausedFlags => u8, View::PausedFlags, borsh)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
