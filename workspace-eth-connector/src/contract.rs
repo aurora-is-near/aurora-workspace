@@ -11,7 +11,7 @@ use crate::operation::{
 use crate::types::{MigrationInputData, PausedMask, Proof};
 use aurora_engine_types::types::Address;
 use aurora_workspace_types::AccountId;
-use aurora_workspace_utils::Contract;
+use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use near_sdk::Balance;
@@ -26,12 +26,14 @@ impl EthConnectorContract {
     pub fn new(contract: Contract) -> Self {
         Self { contract }
     }
+}
 
-    pub fn as_contract(&self) -> &Contract {
+impl ContractId for EthConnectorContract {
+    fn as_contract(&self) -> &Contract {
         &self.contract
     }
 
-    pub fn id(&self) -> &AccountId {
+    fn id(&self) -> &AccountId {
         self.contract.id()
     }
 }

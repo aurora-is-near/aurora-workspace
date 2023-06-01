@@ -8,6 +8,11 @@ pub mod macros;
 pub mod results;
 pub mod transactions;
 
+pub trait ContractId {
+    fn as_contract(&self) -> &Contract;
+    fn id(&self) -> &AccountId;
+}
+
 #[derive(Debug, Clone)]
 pub enum AccountKind {
     Account {

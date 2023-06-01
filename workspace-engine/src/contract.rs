@@ -16,7 +16,7 @@ use aurora_engine_types::types::{Address, Balance};
 use aurora_engine_types::U256;
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::{AccountId, H256};
-use aurora_workspace_utils::Contract;
+use aurora_workspace_utils::{Contract, ContractId};
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use near_sdk::json_types::U128;
@@ -32,18 +32,20 @@ impl EngineContract {
         Self { contract }
     }
 
-    pub fn as_contract(&self) -> &Contract {
-        &self.contract
-    }
-
-    pub fn id(&self) -> &AccountId {
-        self.contract.id()
-    }
-
     pub fn new_from_contract(contract_id: AccountId, account: Account) -> Self {
         Self {
             contract: Contract::new(contract_id, account),
         }
+    }
+}
+
+impl ContractId for EngineContract {
+    fn as_contract(&self) -> &Contract {
+        &self.contract
+    }
+
+    fn id(&self) -> &AccountId {
+        self.contract.id()
     }
 }
 
