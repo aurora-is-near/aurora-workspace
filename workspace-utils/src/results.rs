@@ -1,3 +1,4 @@
+use aurora_workspace_types::{H256, U256};
 use near_sdk::{json_types::U128, PromiseOrValue};
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
@@ -28,6 +29,30 @@ impl<T: borsh::BorshDeserialize> ViewResult<T> {
     }
 }
 
+impl ViewResult<U256> {
+    #[allow(non_snake_case)]
+    pub fn borsh_U256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+        let mut buf = [0u8; 32];
+        buf.copy_from_slice(view.result.as_slice());
+        Ok(Self {
+            result: U256::from(buf),
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResult<H256> {
+    #[allow(non_snake_case)]
+    pub fn borsh_H256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+        let mut buf = [0u8; 32];
+        buf.copy_from_slice(view.result.as_slice());
+        Ok(Self {
+            result: H256::from(buf),
+            logs: view.logs,
+        })
+    }
+}
+
 #[derive(Debug)]
 pub struct ExecutionResult<T> {
     inner: workspaces::result::ExecutionSuccess,
@@ -44,7 +69,7 @@ impl<T: DeserializeOwned> ExecutionResult<T> {
     }
 }
 
-impl TryFrom<workspaces::result::ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
+impl TryFrom<ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
     type Error = anyhow::Error;
 
     fn try_from(result: ExecutionFinalResult) -> Result<Self, Self::Error> {
@@ -57,7 +82,7 @@ impl TryFrom<workspaces::result::ExecutionFinalResult> for ExecutionResult<Promi
 }
 
 impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
-    pub fn borsh(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+    pub fn borsh(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.borsh()?;

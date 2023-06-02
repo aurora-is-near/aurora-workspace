@@ -5,6 +5,7 @@ use aurora_workspace_eth_connector::types::{
 };
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::ViewResult;
+use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;

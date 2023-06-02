@@ -1,4 +1,4 @@
-use aurora_workspace::{types::AccountId, EvmContract, InitConfig};
+use aurora_workspace_engine::{types::AccountId, EvmContract, InitConfig};
 use std::str::FromStr;
 use workspaces::types::{KeyType, SecretKey};
 
