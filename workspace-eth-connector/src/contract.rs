@@ -202,6 +202,42 @@ impl EthConnectorContract {
     pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
         CallMigrate::call(&self.contract).args_borsh(data)
     }
+
+    pub fn set_deposit_fee_percentage(
+        &self,
+        eth_to_aurora: u128,
+        eth_to_near: u128,
+    ) -> CallSetDepositFeePercentage {
+        CallSetDepositFeePercentage::call(&self.contract).args_json((eth_to_aurora, eth_to_near))
+    }
+
+    pub fn set_deposit_fee_bounds(
+        &self,
+        lower_bound: u128,
+        upper_bound: u128,
+    ) -> CallSetDepositFeeBound {
+        CallSetDepositFeeBound::call(&self.contract).args_json((lower_bound, upper_bound))
+    }
+
+    pub fn set_withdraw_fee_percentage(
+        &self,
+        aurora_to_eth: u128,
+        near_to_eth: u128,
+    ) -> CallSetWithdrawFeePercentage {
+        CallSetWithdrawFeePercentage::call(&self.contract).args_json((aurora_to_eth, near_to_eth))
+    }
+
+    pub fn set_withdraw_fee_bounds(
+        &self,
+        lower_bound: u128,
+        upper_bound: u128,
+    ) -> CallSetWithdrawFeeBound {
+        CallSetWithdrawFeeBound::call(&self.contract).args_json((lower_bound, upper_bound))
+    }
+
+    pub fn claim_fee(&self, amount: u128) -> CallClaimFee {
+        CallClaimFee::call(&self.contract).args_json((amount,))
+    }
 }
 
 /// View functions
@@ -260,26 +296,6 @@ impl EthConnectorContract {
 
     pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
         ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
-    }
-
-    pub fn set_deposit_fee_percentage(&self, eth_to_aurora: u128, eth_to_near: u128) {
-        CallSetDepositFeePercentage::call(&self.contract).args_json((eth_to_aurora, eth_to_near));
-    }
-
-    pub fn set_deposit_fee_bounds(&self, lower_bound: u128, upper_bound: u128) {
-        CallSetDepositFeeBound::call(&self.contract).args_json((lower_bound, upper_bound));
-    }
-
-    pub fn set_withdraw_fee_percentage(&self, aurora_to_eth: u128, near_to_eth: u128) {
-        CallSetWithdrawFeePercentage::call(&self.contract).args_json((aurora_to_eth, near_to_eth));
-    }
-
-    pub fn set_withdraw_fee_bounds(&self, lower_bound: u128, upper_bound: u128) {
-        CallSetWithdrawFeeBound::call(&self.contract).args_json((lower_bound, upper_bound));
-    }
-
-    pub fn claim_fee(&self, amount: u128) {
-        CallClaimFee::call(&self.contract).args_json((amount,));
     }
 
     pub async fn get_deposit_fee_percentage(&self) -> ViewGetDepositFeePercentage {
