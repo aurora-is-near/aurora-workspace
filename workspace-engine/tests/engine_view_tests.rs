@@ -1,6 +1,6 @@
 use aurora_engine_types::parameters::engine::TransactionStatus;
-use aurora_workspace::operation::ViewResultDetails;
-use aurora_workspace::types::AccountId;
+use aurora_workspace_engine::operation::ViewResultDetails;
+use aurora_workspace_engine::types::AccountId;
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::H160;
 use ethereum_types::{H256, U256};

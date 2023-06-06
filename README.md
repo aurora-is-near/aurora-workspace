@@ -3,7 +3,11 @@
 <img src="https://raw.githubusercontent.com/aurora-is-near/aurora-workspace/main/res/aurora-workspace-logo.svg">
 </p>
 
-# aurora-workspace
+# Aurora Workspace
+
+[![Project license](https://img.shields.io/badge/License-Public%20Domain-blue.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
+[![CI](https://github.com/aurora-is-near/aurora-workspace/actions/workflows/rust.yaml/badge.svg)](https://github.com/aurora-is-near/aurora-workspace/actions/workflows/rust.yaml)
+
 
 Aurora Workspace is a library for the **Aurora Engine** and Aurora 
 **Eth Connector** and EVM contracts based on **NEAR Protocol**.

@@ -1,5 +1,4 @@
-use aurora_engine::metadata::FungibleTokenMetadata;
-use aurora_workspace::EvmContract;
+use aurora_workspace_engine::EvmContract;
 use aurora_workspace_types::output::{Log, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256};
 use std::str::FromStr;

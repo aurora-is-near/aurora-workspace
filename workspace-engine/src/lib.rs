@@ -1,11 +1,5 @@
 pub mod contract;
 pub mod operation;
-pub(crate) mod result;
-
-pub use contract::{EvmAccount, EvmContract, InitConfig};
-pub use operation::{EngineCallTransaction, ViewResultDetails};
-
-pub use crate::contract::ContractSource;
 
 pub mod types {
     pub use aurora_engine::proof::Proof;
@@ -20,15 +14,12 @@ pub mod types {
         pub use aurora_workspace_types::input::*;
     }
 
-    pub mod output {
-        pub use aurora_workspace_types::output::*;
-    }
-
     pub mod network {
         pub use workspaces::network::Sandbox;
     }
 }
 
+// TODO: decide do we need it
 // const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
 //
 // #[non_exhaustive]

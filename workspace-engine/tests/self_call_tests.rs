@@ -1,4 +1,3 @@
-use aurora_engine::metadata::FungibleTokenMetadata;
 use aurora_workspace_types::Address;
 
 mod utils;

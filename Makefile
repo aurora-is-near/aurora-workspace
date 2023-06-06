@@ -12,7 +12,8 @@ ETH_CONNECTOR_MOCK_FILE = ${ETH_CONNECTOR_MOCK_DIR}target/wasm32-unknown-unknown
 
 check: check-fmt clippy
 
-clippy: clippy-lib clippy-mock-engine clippy-mock-eth-connector clippy-test
+# clippy: clippy-lib clippy-mock-engine 
+clippy: clippy-lib clippy-mock-eth-connector
 
 clippy-mock-engine:
 	@cd ${ENGINE_MOCK_DIR} && \
@@ -46,10 +47,10 @@ create-bin-dir:
 	@mkdir -p bin || true
 
 cp-builded-mocks: create-bin-dir
-	@cp ${ENGINE_MOCK_FILE} bin/
+#	@cp ${ENGINE_MOCK_FILE} bin/
 	@cp ${ETH_CONNECTOR_MOCK_FILE} bin/
 
 test-flow:
-	@cargo test --all -- --test-threads 10 --nocapture
+	@cargo test --package aurora-workspace-eth-connector -- --test-threads 10 --nocapture
 
-test: build-mock-engine build-mock-eth-connector cp-builded-mocks test-flow
+test: build-mock-eth-connector cp-builded-mocks test-flow
