@@ -1,31 +1,45 @@
-use aurora_workspace_engine::{types::AccountId, EvmContract, InitConfig};
-use std::str::FromStr;
+use aurora_workspace_engine::EngineContract;
+use aurora_workspace_utils::Contract;
+use ethereum_types::U256;
 use workspaces::types::{KeyType, SecretKey};
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
 const OWNER_ACCOUNT_ID: &str = "owner.test.near";
-const PROVER_ACCOUNT_ID: &str = "prover.test.near";
 const WASM_BIN_FILE_PATH: &str = "../bin/mock_engine.wasm";
 
-pub async fn init_and_deploy_contract() -> anyhow::Result<EvmContract> {
+pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
     let worker = workspaces::sandbox()
         .await
         .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
     let sk = SecretKey::from_random(KeyType::ED25519);
     let evm_account = worker
-        .create_tla(AccountId::from_str(AURORA_ACCOUNT_ID)?, sk)
+        .create_tla(AURORA_ACCOUNT_ID.parse()?, sk)
         .await?
         .into_result()?;
-    let init_config = InitConfig {
-        chain_id: AURORA_LOCAL_CHAIN_ID.into(),
-        owner_id: AccountId::from_str(OWNER_ACCOUNT_ID)?,
-        prover_id: AccountId::from_str(PROVER_ACCOUNT_ID)?,
-    };
     let wasm = std::fs::read(WASM_BIN_FILE_PATH)
         .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
     // create contract
-    let contract = EvmContract::deploy_and_init(evm_account, init_config, wasm).await?;
+    let contract = Contract::deploy(evm_account, wasm).await?;
+    let engine_contract = EngineContract::from(contract);
 
-    Ok(contract)
+    engine_contract
+        .new(
+            into_chain_id(AURORA_LOCAL_CHAIN_ID),
+            OWNER_ACCOUNT_ID.parse()?,
+            1,
+        )
+        .max_gas()
+        .transact()
+        .await?;
+
+    Ok(engine_contract)
+}
+
+fn into_chain_id(value: u64) -> [u8; 32] {
+    let chain_id = U256::from(value);
+    let mut result = [0; 32];
+    chain_id.to_big_endian(&mut result);
+
+    result
 }

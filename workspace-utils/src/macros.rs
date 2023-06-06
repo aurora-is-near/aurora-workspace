@@ -6,6 +6,10 @@ macro_rules! impl_view_return  {
             pub(crate) fn view(contract: &'a Contract) -> Self {
                 Self(contract.near_view(&$fn_name))
             }
+            pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
+                self.0 = self.0.args(args);
+                self
+            }
             pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
                 self.0 = self.0.args_json(args);
                 self
@@ -41,6 +45,10 @@ macro_rules! impl_call_return  {
                 self.0 = self.0.deposit(deposit);
                 self
             }
+            pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
+                self.0 = self.0.args(args);
+                self
+            }
             pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {
                 self.0 = self.0.args_json(args);
                 self
@@ -70,6 +78,10 @@ macro_rules! impl_call_return  {
             }
             pub fn deposit(mut self, deposit: u128) -> Self {
                 self.0 = self.0.deposit(deposit);
+                self
+            }
+            pub(crate) fn args(mut self, args: Vec<u8>) -> Self {
+                self.0 = self.0.args(args);
                 self
             }
             pub(crate) fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {

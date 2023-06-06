@@ -74,7 +74,7 @@ impl Contract {
         self.account.call(function)
     }
 
-    pub fn near_view<F: AsRef<str>>(&self, function_name: &F) -> ViewTransaction {
+    pub fn near_view<'a, F: AsRef<str>>(&'a self, function_name: &'a F) -> ViewTransaction {
         self.account.view(function_name)
     }
 

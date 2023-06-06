@@ -8,8 +8,9 @@ use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 
-// Eth-connector
 impl_call_return![
+    (CallNew, Call::New),
+    (CallNewEthConnector, Call::NewEthConnector),
     (CallFtTransfer, Call::FtTransfer),
     (CallDeposit, Call::Deposit),
     (
@@ -23,15 +24,16 @@ impl_call_return![
     (CallRegisterRelayer, Call::RegisterRelayer),
     (CallRefundOnError, Call::RefundOnError),
     (CallFactoryUpdate, Call::FactoryUpdate),
+    (CallFundXccSubAccount, Call::FundXccSubAccount),
     (CallFactorySetWNearAddress, Call::FactorySetWNearAddress),
     (CallDeployUpgrade, Call::DeployUpgrade),
     (CallResumePrecompiles, Call::ResumePrecompiles),
     (CallPausePrecompiles, Call::PausePrecompiles),
     (CallStageUpgrade, Call::StageUpgrade),
     (CallStateMigration, Call::StateMigration),
+    (CallMintAccount, Call::MintAccount),
 ];
 
-// Eth-connector
 impl_call_return![
     (CallFtTransferCall => PromiseOrValue<U128>, Call::FtTransferCall, try_from),
     (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
@@ -73,6 +75,8 @@ impl_view_return![
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(clippy::enum_variant_names)]
 pub(crate) enum Call {
+    New,
+    NewEthConnector,
     DeployCode,
     DeployErc20Token,
     Call,
@@ -92,15 +96,19 @@ pub(crate) enum Call {
     StateMigration,
     ResumePrecompiles,
     FactoryUpdate,
+    FundXccSubAccount,
     FactorySetWNearAddress,
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
+    MintAccount,
 }
 
 impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
         match self {
+            Call::New => "new",
+            Call::NewEthConnector => "new_eth_connector",
             Call::DeployCode => "deploy_code",
             Call::DeployErc20Token => "deploy_erc20_token",
             Call::Call => "call",
@@ -120,10 +128,12 @@ impl AsRef<str> for Call {
             Call::StateMigration => "state_migration",
             Call::ResumePrecompiles => "resume_precompiles",
             Call::FactoryUpdate => "factory_update",
+            Call::FundXccSubAccount => "fund_xcc_sub_account",
             Call::FactorySetWNearAddress => "factory_set_wnear_address",
             Call::SetEthConnectorContractData => "set_eth_connector_contract_data",
             Call::FactoryUpdateAddressVersion => "factory_update_address_version",
             Call::RefundOnError => "refund_on_error",
+            Call::MintAccount => "mint_account",
         }
     }
 }

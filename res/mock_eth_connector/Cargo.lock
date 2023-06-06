@@ -66,7 +66,7 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 [[package]]
 name = "aurora-engine-types"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f#0742e5f056aff7a0ae5f3f438a365319d6ee8bda"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?branch=develop#ddbde784cece70de7919ef0addba3f9e59af2f23"
 dependencies = [
  "borsh 0.10.3",
  "borsh 0.9.3",
@@ -921,9 +921,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.17.2"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9670a07f94779e00908f3e686eab508878ebb390ba6e604d3a284c00e8d0487b"
+checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "opaque-debug"

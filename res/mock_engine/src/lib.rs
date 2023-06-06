@@ -1,20 +1,18 @@
-use crate::submit::SubmitResult;
-use aurora_workspace_types::input::{CallInput, DeployErc20Input, NewInput};
-use aurora_workspace_types::output::TransactionStatus;
-use aurora_workspace_types::{AccountId, Raw};
+use aurora_engine_types::account_id::AccountId;
+use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{near_bindgen, PanicOnDefault};
-
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{near_bindgen, serde, PanicOnDefault};
 mod fungible_token;
 mod storage;
-mod submit;
+
+type Raw = Vec<u8>;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct MockEngineContract {
     pub chain_id: [u8; 32],
     pub owner_id: AccountId,
-    pub bridge_prover_id: AccountId,
     pub upgrade_delay_blocks: u64,
 }
 
@@ -25,34 +23,33 @@ impl MockEngineContract {
         Self {
             chain_id: input.chain_id,
             owner_id: input.owner_id,
-            bridge_prover_id: input.bridge_prover_id,
             upgrade_delay_blocks: input.upgrade_delay_blocks,
         }
     }
 
     #[result_serializer(borsh)]
     pub fn deploy_code(&mut self, #[serializer(borsh)] _input: Raw) -> SubmitResult {
-        SubmitResult::dummy_submit_result()
+        dummy_submit_result()
     }
 
     #[result_serializer(borsh)]
     pub fn deploy_erc20_token(&mut self, #[serializer(borsh)] _input: DeployErc20Input) -> Raw {
-        Raw(vec![1u8; 20])
+        vec![1u8; 20]
     }
 
     #[result_serializer(borsh)]
     pub fn call(&mut self, #[serializer(borsh)] _input: CallInput) -> SubmitResult {
-        SubmitResult::dummy_submit_result()
+        dummy_submit_result()
     }
 
     #[result_serializer(borsh)]
     pub fn submit(&mut self, #[serializer(borsh)] _input: Raw) -> SubmitResult {
-        SubmitResult::dummy_submit_result()
+        dummy_submit_result()
     }
 
     #[result_serializer(borsh)]
     pub fn register_relayer(&mut self, #[serializer(borsh)] input: Raw) {
-        assert_eq!(input.0.len(), 20);
+        assert_eq!(input.len(), 20);
     }
 
     //
@@ -101,7 +98,7 @@ impl MockEngineContract {
     #[result_serializer(borsh)]
     pub fn get_code(&self, #[serializer(borsh)] _input: Raw) -> Raw {
         // `(string,bool,string) (spiral,true,quasar)`
-        Raw(hex::decode(b"00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000673706972616c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067175617361720000000000000000000000000000000000000000000000000000").unwrap())
+        hex::decode(b"00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000673706972616c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067175617361720000000000000000000000000000000000000000000000000000").unwrap()
     }
 
     #[result_serializer(borsh)]
@@ -122,11 +119,6 @@ impl MockEngineContract {
     #[result_serializer(borsh)]
     pub fn get_paused_flags(&self, #[serializer(borsh)] _input: Raw) -> u8 {
         0
-    }
-
-    #[result_serializer(borsh)]
-    pub fn get_bridge_prover(&self) -> AccountId {
-        self.bridge_prover_id.clone()
     }
 
     #[result_serializer(borsh)]
@@ -178,4 +170,32 @@ impl MockEngineContract {
 
     #[allow(unused_variables)]
     pub fn stage_upgrade(&mut self, #[serializer(borsh)] input: Raw) {}
+}
+
+fn dummy_submit_result() -> SubmitResult {
+    SubmitResult::new(TransactionStatus::Succeed(vec![]), 0, vec![])
+}
+
+/// Json-encoded parameters for the `new` function.
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+pub struct NewInput {
+    /// Chain id, according to the EIP-115 / ethereum-lists spec.
+    pub chain_id: [u8; 32],
+    /// Account which can upgrade this contract.
+    /// Use empty to disable updatability.
+    pub owner_id: AccountId,
+    /// How many blocks after staging upgrade can deploy it.
+    pub upgrade_delay_blocks: u64,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct DeployErc20Input {
+    pub nep141: AccountId,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+pub struct CallInput {
+    pub contract: [u8; 20],
+    pub value: [u8; 32],
+    pub input: Vec<u8>,
 }
