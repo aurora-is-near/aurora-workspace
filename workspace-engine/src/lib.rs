@@ -18,8 +18,7 @@ pub mod types {
     pub use aurora_workspace_types::ParseAccountError;
     pub use workspaces::types::KeyType;
     pub use workspaces::types::SecretKey;
-    pub use workspaces::Account;
-    pub use workspaces::Worker;
+    pub use workspaces::{Account, Contract, Worker};
 
     pub mod input {
         pub use aurora_workspace_types::input::*;
@@ -98,12 +97,12 @@ impl EngineContractBuilder {
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
         let sk = SecretKey::from_random(KeyType::ED25519);
-        let evm_account = worker
+        let owner = worker
             .create_tla(self.owner_id.clone(), sk)
             .await?
             .into_result()?;
-        let contract = Contract::deploy(evm_account, self.code.expect("WASM wasn't set")).await?;
-        let contract = EngineContract::from(contract);
+        let contract = Contract::deploy(owner.clone(), self.code.expect("WASM wasn't set")).await?;
+        let contract = EngineContract::new_from_contract(contract, owner);
 
         contract
             .new(self.chain_id, self.owner_id, self.upgrade_delay_blocks)

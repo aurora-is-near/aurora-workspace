@@ -46,8 +46,8 @@ create-bin-dir:
 	@mkdir -p bin || true
 
 cp-built-mocks: create-bin-dir
-	@cp ${ENGINE_MOCK_FILE} bin/
-	@cp ${ETH_CONNECTOR_MOCK_FILE} bin/
+	@cp -rf ${ENGINE_MOCK_FILE} bin/
+	@cp -rf ${ETH_CONNECTOR_MOCK_FILE} bin/
 
 test-engine:
 	@cargo test --package aurora-workspace-engine -- --test-threads 10 --nocapture

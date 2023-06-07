@@ -20,8 +20,8 @@ pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
     let wasm = std::fs::read(WASM_BIN_FILE_PATH)
         .map_err(|e| anyhow::anyhow!("failed read wasm file: {e}"))?;
     // create contract
-    let contract = Contract::deploy(evm_account, wasm).await?;
-    let engine_contract = EngineContract::from(contract);
+    let contract = Contract::deploy(evm_account.clone(), wasm).await?;
+    let engine_contract = EngineContract::new_from_contract(contract, evm_account);
 
     engine_contract
         .new(
@@ -29,9 +29,9 @@ pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
             OWNER_ACCOUNT_ID.parse()?,
             1,
         )
-        .max_gas()
         .transact()
-        .await?;
+        .await
+        .unwrap();
 
     Ok(engine_contract)
 }

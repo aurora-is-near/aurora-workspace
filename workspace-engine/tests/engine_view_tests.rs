@@ -1,36 +1,19 @@
-// use aurora_engine_types::parameters::engine::TransactionStatus;
-// use aurora_workspace_engine::operation::ViewResultDetails;
-// use aurora_workspace_engine::types::AccountId;
-// use aurora_workspace_types::input::ProofInput;
-// use aurora_workspace_types::H160;
-// use ethereum_types::{H256, U256};
-// use std::str::FromStr;
-// use workspaces::result::ViewResultDetails;
-//
-// mod utils;
-//
-// #[tokio::test]
-// async fn test_version() {
-//     let contract = utils::init_and_deploy_contract().await.unwrap();
-//     let res = contract.as_account().version().await.unwrap();
-//     let expected = ViewResultDetails {
-//         result: r#""v1""#.to_string(),
-//         logs: vec![],
-//     };
-//     assert_eq!(res, expected);
-// }
-//
-// #[tokio::test]
-// async fn test_owner() {
-//     let contract = utils::init_and_deploy_contract().await.unwrap();
-//     let res = contract.as_account().owner().await.unwrap();
-//     let expected = ViewResultDetails {
-//         result: AccountId::from_str("owner.test.near").expect("Invalid account"),
-//         logs: vec![],
-//     };
-//     assert_eq!(res, expected)
-// }
-//
+mod utils;
+
+#[tokio::test]
+async fn test_version() {
+    let contract = utils::deploy_and_init_contract().await.unwrap();
+    let res = contract.get_version().transact().await.unwrap().result;
+    assert_eq!(res, "2.9.1".to_string());
+}
+
+#[tokio::test]
+async fn test_owner() {
+    let contract = utils::deploy_and_init_contract().await.unwrap();
+    let res = contract.get_owner().transact().await.unwrap().result;
+    assert_eq!(res.as_str(), "owner.test.near");
+}
+
 // #[tokio::test]
 // async fn test_chain_id() {
 //     let contract = utils::init_and_deploy_contract().await.unwrap();

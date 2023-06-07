@@ -112,7 +112,7 @@ async fn test_set_eth_connector_contract_data() {
     contract
         .set_eth_connector_contract_data(
             "prover.test.near".parse().unwrap(),
-            Address::zero(),
+            Address::zero().encode(),
             FungibleTokenMetadata::default(),
         )
         .transact()

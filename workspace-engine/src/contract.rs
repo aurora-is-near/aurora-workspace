@@ -15,6 +15,7 @@ use crate::types::Account;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{NewCallArgs, NewCallArgsV2};
 use aurora_engine::xcc::FundXccArgs;
+use aurora_engine_types::parameters::engine::DeployErc20TokenArgs;
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::types::{Balance, RawU256};
 use aurora_engine_types::U256;
@@ -29,13 +30,16 @@ use serde_json::json;
 #[derive(Debug, Clone)]
 pub struct EngineContract {
     contract: Contract,
+    owner: Account,
 }
 
 impl EngineContract {
-    pub fn new_from_contract(contract_id: AccountId, account: Account) -> Self {
-        Self {
-            contract: Contract::new(contract_id, account),
-        }
+    pub fn new_from_contract(contract: Contract, owner: Account) -> Self {
+        Self { contract, owner }
+    }
+
+    pub fn owner(&self) -> &Account {
+        &self.owner
     }
 }
 
@@ -133,7 +137,7 @@ impl EngineContract {
     pub fn set_eth_connector_contract_data(
         &self,
         prover_account: AccountId,
-        eth_custodian_address: Address,
+        eth_custodian_address: String,
         metadata: FungibleTokenMetadata,
     ) -> CallSetEthConnectorContractData {
         CallSetEthConnectorContractData::call(&self.contract).args_borsh((
@@ -169,10 +173,14 @@ impl EngineContract {
     }
 
     pub fn deploy_erc20_token(&self, account_id: AccountId) -> CallDeployErc20Token {
-        CallDeployErc20Token::call(&self.contract).args_borsh(account_id)
+        let args = DeployErc20TokenArgs {
+            nep141: account_id.as_str().parse().unwrap(),
+        };
+        CallDeployErc20Token::call(&self.contract).args_borsh(args)
     }
 
-    pub fn call(&self, contract: Address, amount: U256, input: Vec<u8>) -> CallCall {
+    pub fn call(&self, contract: &[u8], amount: U256, input: Vec<u8>) -> CallCall {
+        let contract = Address::try_from_slice(contract).unwrap();
         CallCall::call(&self.contract).args_borsh((contract, amount.0, input))
     }
 
@@ -348,11 +356,5 @@ impl EngineContract {
 
     pub fn get_paused_flags(&self) -> ViewPausedFlags {
         ViewPausedFlags::view(&self.contract)
-    }
-}
-
-impl From<Contract> for EngineContract {
-    fn from(contract: Contract) -> Self {
-        Self { contract }
     }
 }

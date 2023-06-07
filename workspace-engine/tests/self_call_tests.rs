@@ -10,7 +10,7 @@ async fn test_set_eth_connector_contract_data() {
     contract
         .set_eth_connector_contract_data(
             "prover.test.near".parse().unwrap(),
-            Address::zero(),
+            Address::zero().encode(),
             FungibleTokenMetadata::default(),
         )
         .transact()
@@ -23,7 +23,7 @@ async fn test_factory_update_address_version() {
     let contract = utils::deploy_and_init_contract().await.unwrap();
 
     contract
-        .factory_update_address_version(Address::default(), 0)
+        .factory_update_address_version(Address::zero(), 0)
         .transact()
         .await
         .unwrap();

@@ -127,7 +127,7 @@ impl Contract {
         Ok(Account::from_secret_key(root, sk, &worker))
     }
 
-    pub async fn create_sub_account(root_account: Account, name: &str) -> anyhow::Result<Account> {
+    pub async fn create_sub_account(root_account: &Account, name: &str) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)
             .initial_balance(near_units::parse_near!("15 N"))
