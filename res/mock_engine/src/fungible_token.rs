@@ -1,9 +1,10 @@
 use crate::*;
-use aurora_workspace_types::input::{IsUsedProofCallArgs, StorageBalance};
+use aurora_engine_types::types::Yocto;
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
 use near_sdk::serde_json;
 use near_sdk::PromiseOrValue;
+use serde::Serialize;
 
 #[near_bindgen]
 impl MockEngineContract {
@@ -73,4 +74,26 @@ impl MockEngineContract {
     pub fn is_used_proof(&self, #[serializer(borsh)] _proof: IsUsedProofCallArgs) -> bool {
         true
     }
+}
+
+#[derive(Default, Serialize)]
+pub struct StorageBalance {
+    pub total: Yocto,
+    pub available: Yocto,
+}
+
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct IsUsedProofCallArgs {
+    /// Proof data
+    pub proof: Proof,
+}
+
+#[derive(Debug, Default, BorshDeserialize, BorshSerialize, Clone)]
+pub struct Proof {
+    pub log_index: u64,
+    pub log_entry_data: Vec<u8>,
+    pub receipt_index: u64,
+    pub receipt_data: Vec<u8>,
+    pub header_data: Vec<u8>,
+    pub proof: Vec<Vec<u8>>,
 }

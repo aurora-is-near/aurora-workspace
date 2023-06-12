@@ -31,7 +31,7 @@ pub async fn deploy<P: AsRef<Path> + Copy>(
         )
     })?;
     assert_eq!(eth_connector.view_account().await?.balance, INIT_BALANCE);
-    let contract = Contract::deploy(eth_connector, contract_data).await?;
+    let contract = Contract::deploy(&eth_connector, contract_data).await?;
 
     Ok((EthConnectorContract::new(contract), root_account))
 }

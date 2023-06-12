@@ -7,13 +7,11 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-workspace-types = { path = "../../workspace-types" }
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", rev = "0742e5f", default-features = false, features = ["impl-serde", "borsh-compat"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["borsh-compat"] }
 hex = "0.4.3"
 near-sdk = "4.1"
 near-contract-standards = "4.1"
-serde = { version = "1", features = ["derive"] }
-getrandom = {version = "0.2", default-features = false, features = ["custom"]}
+serde = { version = "1", features = [ "derive" ] }
 
 [profile.release]
 codegen-units = 1
