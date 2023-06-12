@@ -7,17 +7,16 @@ use crate::operation::{
     CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw,
     ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode, ViewErc20FromNep141,
     ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata, ViewFtTotalEthSupplyOnAurora,
-    ViewFtTotalSupply, ViewIsUsedProof, ViewNep141FromErc20, ViewNonce, ViewOwner, ViewPausedFlags,
-    ViewPausedPrecompiles, ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion,
-    ViewView,
+    ViewFtTotalEthSupplyOnNear, ViewFtTotalSupply, ViewIsUsedProof, ViewNep141FromErc20, ViewNonce,
+    ViewOwner, ViewPausedFlags, ViewPausedPrecompiles, ViewStorageAt, ViewStorageBalanceOf,
+    ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
 use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine::parameters::{NewCallArgs, NewCallArgsV2};
 use aurora_engine::xcc::FundXccArgs;
-use aurora_engine_types::parameters::engine::DeployErc20TokenArgs;
 use aurora_engine_types::types::address::Address;
-use aurora_engine_types::types::{Balance, RawU256};
+use aurora_engine_types::types::RawU256;
 use aurora_engine_types::U256;
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::{AccountId, H256};
@@ -30,16 +29,16 @@ use serde_json::json;
 #[derive(Debug, Clone)]
 pub struct EngineContract {
     contract: Contract,
-    owner: Account,
+    root: Account,
 }
 
 impl EngineContract {
-    pub fn new_from_contract(contract: Contract, owner: Account) -> Self {
-        Self { contract, owner }
+    pub fn new_from_contract(contract: Contract, root: Account) -> Self {
+        Self { contract, root }
     }
 
-    pub fn owner(&self) -> &Account {
-        &self.owner
+    pub fn root(&self) -> &Account {
+        &self.root
     }
 }
 
@@ -86,7 +85,7 @@ impl EngineContract {
 
     pub fn ft_transfer(
         &self,
-        receiver_id: AccountId,
+        receiver_id: &str,
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer {
@@ -96,14 +95,14 @@ impl EngineContract {
 
     pub fn ft_transfer_call(
         &self,
-        receiver_id: AccountId,
+        receiver_id: &str,
         amount: U128,
         memo: Option<String>,
         msg: String,
     ) -> CallFtTransferCall {
         CallFtTransferCall::call(&self.contract).args_json(json!({
            "receiver_id": receiver_id,
-           "amount": amount,
+           "amount": amount.0.to_string(),
            "memo": memo,
            "msg": msg,
         }))
@@ -126,7 +125,8 @@ impl EngineContract {
         CallStorageUnregister::call(&self.contract).args_json(json!({ "force": force }))
     }
 
-    pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
+    pub fn withdraw(&self, recipient_address: &[u8], amount: u128) -> CallWithdraw {
+        let recipient_address = Address::try_from_slice(recipient_address).unwrap();
         CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
     }
 
@@ -173,22 +173,21 @@ impl EngineContract {
     }
 
     pub fn deploy_erc20_token(&self, account_id: AccountId) -> CallDeployErc20Token {
-        let args = DeployErc20TokenArgs {
-            nep141: account_id.as_str().parse().unwrap(),
-        };
-        CallDeployErc20Token::call(&self.contract).args_borsh(args)
+        CallDeployErc20Token::call(&self.contract).args_borsh(account_id)
     }
 
     pub fn call(&self, contract: &[u8], amount: U256, input: Vec<u8>) -> CallCall {
         let contract = Address::try_from_slice(contract).unwrap();
-        CallCall::call(&self.contract).args_borsh((contract, amount.0, input))
+        // 0 - means first enum variant which is second version of the args
+        CallCall::call(&self.contract).args_borsh((0u8, contract, amount.0, input))
     }
 
     pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
         CallSubmit::call(&self.contract).args(input)
     }
 
-    pub fn register_relayer(&self, address: Address) -> CallRegisterRelayer {
+    pub fn register_relayer(&self, address: &str) -> CallRegisterRelayer {
+        let address = Address::decode(address).unwrap();
         CallRegisterRelayer::call(&self.contract).args_borsh(address)
     }
 
@@ -265,11 +264,11 @@ impl EngineContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
+    pub fn ft_balance_of(&self, account_id: &str) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
-    pub fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+    pub fn storage_balance_of(&self, account_id: &str) -> ViewStorageBalanceOf {
         ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
@@ -342,7 +341,12 @@ impl EngineContract {
         ViewFtTotalEthSupplyOnAurora::view(&self.contract)
     }
 
-    pub fn ft_balance_of_eth(&self, address: Address) -> ViewFtBalanceOfEth {
+    pub fn ft_total_eth_supply_on_near(&self) -> ViewFtTotalEthSupplyOnNear {
+        ViewFtTotalEthSupplyOnNear::view(&self.contract)
+    }
+
+    pub fn ft_balance_of_eth(&self, address: &[u8]) -> ViewFtBalanceOfEth {
+        let address = Address::try_from_slice(address).unwrap();
         ViewFtBalanceOfEth::view(&self.contract).args_borsh(address)
     }
 

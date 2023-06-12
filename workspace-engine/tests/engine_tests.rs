@@ -96,7 +96,7 @@ async fn test_register_relayer() {
     let contract = utils::deploy_and_init_contract().await.unwrap();
 
     contract
-        .register_relayer(Address::from_array([1u8; 20]))
+        .register_relayer(&Address::from_array([1u8; 20]).encode())
         .transact()
         .await
         .unwrap()

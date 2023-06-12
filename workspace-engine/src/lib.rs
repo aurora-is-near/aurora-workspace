@@ -2,10 +2,9 @@ use aurora_engine::fungible_token::FungibleTokenMetadata;
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::U256;
 use aurora_workspace_utils::Contract;
-use workspaces::types::{KeyType, SecretKey};
-use workspaces::AccountId;
+use workspaces::{Account, AccountId};
 
-pub use aurora_workspace_utils::ContractId;
+pub use aurora_workspace_utils::{parse_near, ContractId};
 pub use contract::EngineContract;
 
 pub mod contract;
@@ -15,10 +14,13 @@ pub mod types {
     pub use aurora_engine::parameters::{SubmitResult, TransactionStatus};
     pub use aurora_engine::proof::Proof;
     pub use aurora_workspace_types::AccountId;
+    pub use aurora_workspace_types::Address;
     pub use aurora_workspace_types::ParseAccountError;
+    pub use aurora_workspace_utils::Contract;
+    pub use workspaces::result::ExecutionOutcome;
     pub use workspaces::types::KeyType;
     pub use workspaces::types::SecretKey;
-    pub use workspaces::{Account, Contract, Worker};
+    pub use workspaces::{Account, Worker};
 
     pub mod input {
         pub use aurora_workspace_types::input::*;
@@ -93,16 +95,9 @@ impl EngineContractBuilder {
     }
 
     pub async fn deploy_and_init(self) -> anyhow::Result<EngineContract> {
-        let worker = workspaces::sandbox()
-            .await
-            .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
-        let sk = SecretKey::from_random(KeyType::ED25519);
-        let owner = worker
-            .create_tla(self.owner_id.clone(), sk)
-            .await?
-            .into_result()?;
-        let contract = Contract::deploy(owner.clone(), self.code.expect("WASM wasn't set")).await?;
-        let contract = EngineContract::new_from_contract(contract, owner);
+        let (owner_acc, root_acc) = Self::create_accounts(&self.owner_id).await?;
+        let contract = Contract::deploy(&owner_acc, self.code.expect("WASM wasn't set")).await?;
+        let contract = EngineContract::new_from_contract(contract, root_acc);
 
         contract
             .new(self.chain_id, self.owner_id, self.upgrade_delay_blocks)
@@ -121,6 +116,25 @@ impl EngineContractBuilder {
             .map_err(|e| anyhow::anyhow!("error while initialize eth connector: {e}"))?;
 
         Ok(contract)
+    }
+
+    async fn create_accounts(account_id: &AccountId) -> anyhow::Result<(Account, Account)> {
+        let account_id_str = account_id.as_str();
+        let (sub, root) = match account_id_str.rsplit_once('.') {
+            Some((sub, root)) if root == "near" => {
+                (Some(sub), Contract::find_root_account().await?)
+            }
+            Some((sub, root)) => (Some(sub), Contract::create_root_account(root).await?),
+            None => (None, Contract::create_root_account(account_id_str).await?),
+        };
+
+        if let Some(sub) = sub {
+            Contract::create_sub_account(&root, sub)
+                .await
+                .map(|sub| (sub, root))
+        } else {
+            Ok((root.clone(), root))
+        }
     }
 }
 

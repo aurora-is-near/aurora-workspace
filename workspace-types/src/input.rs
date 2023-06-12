@@ -36,7 +36,9 @@ pub struct FtOnTransferInput {
 }
 
 // #[cfg(feature = "deposit-withdraw")]
-#[derive(Debug, Default, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug, Default, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize,
+)]
 pub struct ProofInput {
     pub log_index: u64,
     pub log_entry_data: Vec<u8>,

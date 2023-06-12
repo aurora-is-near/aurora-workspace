@@ -4,6 +4,8 @@ use workspaces::network::NetworkClient;
 use workspaces::types::{KeyType, SecretKey};
 use workspaces::{Account, Worker};
 
+pub use near_units::parse_near;
+
 pub mod macros;
 pub mod results;
 pub mod transactions;
@@ -82,7 +84,7 @@ impl Contract {
         self.account.id()
     }
 
-    pub async fn deploy(account: Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
+    pub async fn deploy(account: &Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
         let contract = account.deploy(&wasm).await?.into_result()?;
         Ok(Self {
             account: AccountKind::Contract(contract),
@@ -94,7 +96,15 @@ impl Contract {
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
         let sk = SecretKey::from_random(KeyType::ED25519);
+
         Ok(worker.create_tla(account_id, sk).await?.into_result()?)
+    }
+
+    pub async fn find_root_account() -> anyhow::Result<Account> {
+        let worker = workspaces::sandbox()
+            .await
+            .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
+        Ok(worker.root_account()?)
     }
 
     pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<Account> {

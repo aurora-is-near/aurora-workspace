@@ -1,5 +1,7 @@
 use aurora_engine_types::account_id::AccountId;
-use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
+use aurora_engine_types::parameters::engine::{
+    DeployErc20TokenArgs, SubmitResult, TransactionStatus,
+};
 use aurora_engine_types::types::{Address, RawU256};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -21,7 +23,6 @@ pub struct MockEngineContract {
 impl MockEngineContract {
     #[init]
     pub fn new(#[serializer(borsh)] input: InitArgs) -> Self {
-        near_sdk::log!("init args: {:?}", &input);
         let input = match input {
             InitArgs::V1 => panic!("Wrong version of the init args"),
             InitArgs::V2(args) => args,
@@ -40,7 +41,10 @@ impl MockEngineContract {
     }
 
     #[result_serializer(borsh)]
-    pub fn deploy_erc20_token(&mut self, #[serializer(borsh)] _input: DeployErc20Input) -> Address {
+    pub fn deploy_erc20_token(
+        &mut self,
+        #[serializer(borsh)] _input: DeployErc20TokenArgs,
+    ) -> Address {
         Address::from_array([1; 20])
     }
 
@@ -199,11 +203,6 @@ pub struct NewInput {
     pub owner_id: AccountId,
     /// How many blocks after staging upgrade can deploy it.
     pub upgrade_delay_blocks: u64,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
-pub struct DeployErc20Input {
-    pub nep141: AccountId,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
