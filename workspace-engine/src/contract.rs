@@ -12,6 +12,7 @@ use crate::operation::{
     ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
+use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
 use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
 use aurora_engine_types::parameters::engine::{NewCallArgs, NewCallArgsV2};
 use aurora_engine_types::types::address::Address;
@@ -22,7 +23,6 @@ use aurora_workspace_types::{AccountId, H256};
 use aurora_workspace_utils::{Contract, ContractId};
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use serde_json::json;
 
