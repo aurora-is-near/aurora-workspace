@@ -3,20 +3,22 @@ use crate::operation::{
     CallFactorySetWNearAddress, CallFactoryUpdate, CallFactoryUpdateAddressVersion,
     CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallFundXccSubAccount, CallMintAccount,
     CallNew, CallNewEthConnector, CallPausePrecompiles, CallRefundOnError, CallRegisterRelayer,
-    CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade, CallStateMigration,
-    CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit, CallWithdraw,
-    ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode, ViewErc20FromNep141,
-    ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata, ViewFtTotalEthSupplyOnAurora,
-    ViewFtTotalEthSupplyOnNear, ViewFtTotalSupply, ViewIsUsedProof, ViewNep141FromErc20, ViewNonce,
-    ViewOwner, ViewPausedFlags, ViewPausedPrecompiles, ViewStorageAt, ViewStorageBalanceOf,
-    ViewUpgradeIndex, ViewVersion, ViewView,
+    CallResumePrecompiles, CallSetEthConnectorContractData, CallSetPausedFlags, CallStageUpgrade,
+    CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
+    CallWithdraw, ViewAccountsCounter, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId,
+    ViewCode, ViewErc20FromNep141, ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata,
+    ViewFtTotalEthSupplyOnAurora, ViewFtTotalEthSupplyOnNear, ViewFtTotalSupply, ViewIsUsedProof,
+    ViewNep141FromErc20, ViewNonce, ViewOwner, ViewPausedFlags, ViewPausedPrecompiles,
+    ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
 use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
 use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
-use aurora_engine_types::parameters::engine::{NewCallArgs, NewCallArgsV2};
+use aurora_engine_types::parameters::engine::{
+    CallArgs, FunctionCallArgsV2, NewCallArgs, NewCallArgsV2,
+};
 use aurora_engine_types::types::address::Address;
-use aurora_engine_types::types::RawU256;
+use aurora_engine_types::types::{RawU256, WeiU256};
 use aurora_engine_types::U256;
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::{AccountId, H256};
@@ -185,8 +187,13 @@ impl EngineContract {
 
     pub fn call(&self, contract: &[u8], amount: U256, input: Vec<u8>) -> CallCall {
         let contract = Address::try_from_slice(contract).unwrap();
-        // 0 - means first enum variant which is second version of the args
-        CallCall::call(&self.contract).args_borsh((0u8, contract, amount.0, input))
+        let value = WeiU256::from(amount);
+        let args = CallArgs::V2(FunctionCallArgsV2 {
+            contract,
+            value,
+            input,
+        });
+        CallCall::call(&self.contract).args_borsh(args)
     }
 
     pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
@@ -262,6 +269,10 @@ impl EngineContract {
             init_nonce,
             init_balance,
         ))
+    }
+
+    pub fn set_paused_flags(&self, flags: u8) -> CallSetPausedFlags {
+        CallSetPausedFlags::call(&self.contract).args_borsh(flags)
     }
 }
 
@@ -367,5 +378,9 @@ impl EngineContract {
 
     pub fn get_paused_flags(&self) -> ViewPausedFlags {
         ViewPausedFlags::view(&self.contract)
+    }
+
+    pub fn get_accounts_counter(&self) -> ViewAccountsCounter {
+        ViewAccountsCounter::view(&self.contract)
     }
 }

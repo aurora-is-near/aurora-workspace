@@ -32,8 +32,8 @@ pub mod types {
 }
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
-const OWNER_ACCOUNT_ID: &str = "aurora.test.near";
-const PROVER_ACCOUNT_ID: &str = "prover.test.near";
+const OWNER_ACCOUNT_ID: &str = "aurora.root";
+const PROVER_ACCOUNT_ID: &str = "prover.root";
 
 #[derive(Debug)]
 pub struct EngineContractBuilder {

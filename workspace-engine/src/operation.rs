@@ -1,11 +1,13 @@
+use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
 use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, WithdrawResult};
-use aurora_engine_types::parameters::engine::{StorageBalance, SubmitResult, TransactionStatus};
+use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
+use serde::{Deserialize, Serialize};
 
 impl_call_return![
     (CallNew, Call::New),
@@ -31,6 +33,7 @@ impl_call_return![
     (CallStageUpgrade, Call::StageUpgrade),
     (CallStateMigration, Call::StateMigration),
     (CallMintAccount, Call::MintAccount),
+    (CallSetPausedFlags, Call::SetPausedFlags),
 ];
 
 impl_call_return![
@@ -40,7 +43,7 @@ impl_call_return![
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
     (CallDeployCode => SubmitResult, Call::DeployCode, borsh),
-    (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh),
+    (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh_address),
     (CallCall => SubmitResult, Call::Call, borsh),
     (CallSubmit => SubmitResult, Call::Submit, borsh),
     (CallFtOnTransfer => U128, Call::FtOnTransfer, json),
@@ -54,11 +57,11 @@ impl_view_return![
     (ViewVersion => String, View::Version, borsh),
     (ViewOwner => AccountId, View::Owner, borsh),
     (ViewBridgeProver => AccountId, View::BridgeProver, borsh),
-    (ViewChainId => AccountId, View::ChainId, borsh),
+    (ViewChainId => U256, View::ChainId, borsh_U256),
     (ViewUpgradeIndex => u64, View::UpgradeIndex, borsh),
     (ViewPausedPrecompiles => u32, View::PausedPrecompiles, borsh),
     (ViewBlockHash => H256, View::BlockHash, borsh_H256),
-    (ViewCode => Vec<u8>, View::Code, borsh),
+    (ViewCode => Vec<u8>, View::Code, vec),
     (ViewBalance => U256, View::Balance, borsh_U256),
     (ViewNonce => U256, View::Nonce, borsh_U256),
     (ViewStorageAt => H256, View::StorageAt, borsh_H256),
@@ -69,7 +72,8 @@ impl_view_return![
     (ViewFtBalanceOfEth => U128, View::FtBalanceOfEth, json),
     (ViewErc20FromNep141 => Address, View::Erc20FromNep141, borsh),
     (ViewNep141FromErc20 => AccountId, View::Nep141FromErc20, borsh),
-    (ViewPausedFlags => u8, View::PausedFlags, borsh)
+    (ViewPausedFlags => u8, View::PausedFlags, borsh),
+    (ViewAccountsCounter => u64, View::AccountsCounter, borsh)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -102,6 +106,7 @@ pub(crate) enum Call {
     FactoryUpdateAddressVersion,
     RefundOnError,
     MintAccount,
+    SetPausedFlags,
 }
 
 impl AsRef<str> for Call {
@@ -134,6 +139,7 @@ impl AsRef<str> for Call {
             Call::FactoryUpdateAddressVersion => "factory_update_address_version",
             Call::RefundOnError => "refund_on_error",
             Call::MintAccount => "mint_account",
+            Call::SetPausedFlags => "set_paused_flags",
         }
     }
 }
@@ -163,6 +169,7 @@ pub enum View {
     PausedFlags,
     Erc20FromNep141,
     Nep141FromErc20,
+    AccountsCounter,
 }
 
 impl AsRef<str> for View {
@@ -191,6 +198,13 @@ impl AsRef<str> for View {
             View::PausedFlags => "get_paused_flags",
             View::Erc20FromNep141 => "get_erc20_from_nep141",
             View::Nep141FromErc20 => "get_nep141_from_erc20",
+            View::AccountsCounter => "get_accounts_counter",
         }
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, BorshDeserialize, BorshSerialize)]
+pub struct StorageBalance {
+    pub total: u128,
+    pub available: u128,
 }

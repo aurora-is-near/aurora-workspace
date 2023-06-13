@@ -129,7 +129,7 @@ impl Contract {
             .batch(&root)
             .create_account()
             .add_key(sk.public_key(), AccessKey::full_access())
-            .transfer(near_units::parse_near!("200 N"))
+            .transfer(parse_near!("10000 N"))
             .transact()
             .await?
             .into_result()?;
@@ -140,7 +140,7 @@ impl Contract {
     pub async fn create_sub_account(root_account: &Account, name: &str) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)
-            .initial_balance(near_units::parse_near!("15 N"))
+            .initial_balance(parse_near!("1000 N"))
             .transact()
             .await?
             .into_result()?)
