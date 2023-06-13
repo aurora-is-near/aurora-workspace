@@ -1,10 +1,9 @@
-use aurora_engine::parameters::{SubmitResult, TransactionStatus, WithdrawResult};
+use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, WithdrawResult};
+use aurora_engine_types::parameters::engine::{StorageBalance, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 

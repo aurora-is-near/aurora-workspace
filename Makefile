@@ -12,7 +12,7 @@ ETH_CONNECTOR_MOCK_FILE = ${ETH_CONNECTOR_MOCK_DIR}/target/wasm32-unknown-unknow
 
 check: check-fmt clippy
 
-clippy: clippy-lib clippy-mock-engine clippy-mock-eth-connector
+clippy: clippy-lib clippy-test clippy-mock-engine clippy-mock-eth-connector
 
 clippy-mock-engine:
 	@cd ${ENGINE_MOCK_DIR} && \
