@@ -1,4 +1,4 @@
-use aurora_engine::fungible_token::FungibleTokenMetadata;
+use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::U256;
 use aurora_workspace_utils::Contract;
@@ -11,8 +11,8 @@ pub mod contract;
 pub mod operation;
 
 pub mod types {
-    pub use aurora_engine::parameters::{SubmitResult, TransactionStatus};
-    pub use aurora_engine::proof::Proof;
+    pub use aurora_engine_types::parameters::connector::Proof;
+    pub use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
     pub use aurora_workspace_types::AccountId;
     pub use aurora_workspace_types::Address;
     pub use aurora_workspace_types::ParseAccountError;

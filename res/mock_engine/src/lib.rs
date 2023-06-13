@@ -1,15 +1,15 @@
 use aurora_engine_types::account_id::AccountId;
+use aurora_engine_types::parameters::connector::InitCallArgs;
 use aurora_engine_types::parameters::engine::{
-    DeployErc20TokenArgs, SubmitResult, TransactionStatus,
+    CallArgs, DeployErc20TokenArgs, NewCallArgs, SubmitResult, TransactionStatus,
 };
-use aurora_engine_types::types::{Address, RawU256};
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use aurora_engine_types::parameters::RefundCallArgs;
+use aurora_engine_types::types::Address;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{near_bindgen, serde, PanicOnDefault};
 
 mod fungible_token;
-mod storage;
+// mod storage;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -22,10 +22,10 @@ pub struct MockEngineContract {
 #[near_bindgen]
 impl MockEngineContract {
     #[init]
-    pub fn new(#[serializer(borsh)] input: InitArgs) -> Self {
+    pub fn new(#[serializer(borsh)] input: NewCallArgs) -> Self {
         let input = match input {
-            InitArgs::V1 => panic!("Wrong version of the init args"),
-            InitArgs::V2(args) => args,
+            NewCallArgs::V1(_) => panic!("Wrong version of the init args"),
+            NewCallArgs::V2(args) => args,
         };
 
         Self {
@@ -49,7 +49,7 @@ impl MockEngineContract {
     }
 
     #[result_serializer(borsh)]
-    pub fn call(&mut self, #[serializer(borsh)] _input: CallInput) -> SubmitResult {
+    pub fn call(&mut self, #[serializer(borsh)] _input: CallArgs) -> SubmitResult {
         dummy_submit_result()
     }
 
@@ -187,49 +187,8 @@ fn dummy_submit_result() -> SubmitResult {
     SubmitResult::new(TransactionStatus::Succeed(vec![]), 0, vec![])
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-pub enum InitArgs {
-    V1,
-    V2(NewInput),
-}
-
-/// Json-encoded parameters for the `new` function.
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-pub struct NewInput {
-    /// Chain id, according to the EIP-115 / ethereum-lists spec.
-    pub chain_id: [u8; 32],
-    /// Account which can upgrade this contract.
-    /// Use empty to disable updatability.
-    pub owner_id: AccountId,
-    /// How many blocks after staging upgrade can deploy it.
-    pub upgrade_delay_blocks: u64,
-}
-
-#[derive(Debug, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
-pub struct CallInput {
-    pub contract: [u8; 20],
-    pub value: [u8; 32],
-    pub input: Vec<u8>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
 pub struct AddressVersionUpdateArgs {
     pub address: Address,
     pub version: u32,
-}
-
-/// Eth-connector initial args
-#[derive(Clone, BorshSerialize, BorshDeserialize)]
-pub struct InitCallArgs {
-    pub prover_account: AccountId,
-    pub eth_custodian_address: String,
-    pub metadata: FungibleTokenMetadata,
-}
-
-/// withdraw NEAR eth-connector call args
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
-pub struct RefundCallArgs {
-    pub recipient_address: Address,
-    pub erc20_address: Option<Address>,
-    pub amount: RawU256,
 }

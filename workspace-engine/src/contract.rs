@@ -12,9 +12,9 @@ use crate::operation::{
     ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine::parameters::{NewCallArgs, NewCallArgsV2};
-use aurora_engine::xcc::FundXccArgs;
+use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
+use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
+use aurora_engine_types::parameters::engine::{NewCallArgs, NewCallArgsV2};
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::types::RawU256;
 use aurora_engine_types::U256;
@@ -25,6 +25,13 @@ use aurora_workspace_utils::{Contract, ContractId};
 use ethabi::{ParamType, Token};
 use near_sdk::json_types::U128;
 use serde_json::json;
+
+// TOD: import from aurora_engine_types
+#[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
+pub struct FundXccArgs {
+    pub target: Address,
+    pub wnear_account_id: Option<AccountId>,
+}
 
 #[derive(Debug, Clone)]
 pub struct EngineContract {
