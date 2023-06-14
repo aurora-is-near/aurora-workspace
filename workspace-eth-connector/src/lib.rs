@@ -4,7 +4,6 @@ use std::path::Path;
 use workspaces::types::Balance;
 use workspaces::Account;
 
-
 pub mod contract;
 pub mod operation;
 pub mod types;
