@@ -1,4 +1,4 @@
-use aurora_workspace_types::{H256, U256};
+use aurora_workspace_types::{Address, H256, U256};
 use near_sdk::{json_types::U128, PromiseOrValue};
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
@@ -24,6 +24,15 @@ impl<T: borsh::BorshDeserialize> ViewResult<T> {
     pub fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.borsh()?,
+            logs: view.logs,
+        })
+    }
+}
+
+impl ViewResult<Vec<u8>> {
+    pub fn vec(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+        Ok(Self {
+            result: view.result,
             logs: view.logs,
         })
     }
@@ -61,7 +70,7 @@ pub struct ExecutionResult<T> {
 }
 
 impl<T: DeserializeOwned> ExecutionResult<T> {
-    pub fn json(result: workspaces::result::ExecutionFinalResult) -> anyhow::Result<Self> {
+    pub fn json(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.json()?;
@@ -86,6 +95,17 @@ impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
         let success = result.is_success();
         let inner = result.into_result()?;
         let value = inner.borsh()?;
+        Ok(Self::new(inner, value, success))
+    }
+}
+
+impl ExecutionResult<Address> {
+    pub fn borsh_address(result: ExecutionFinalResult) -> anyhow::Result<Self> {
+        let success = result.is_success();
+        let inner = result.into_result()?;
+        let bytes: Vec<u8> = inner.borsh()?;
+        let value = Address::try_from_slice(&bytes)
+            .map_err(|e| anyhow::anyhow!("Creating address from slice error: {e}"))?;
         Ok(Self::new(inner, value, success))
     }
 }

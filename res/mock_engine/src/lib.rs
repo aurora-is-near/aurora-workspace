@@ -44,8 +44,8 @@ impl MockEngineContract {
     pub fn deploy_erc20_token(
         &mut self,
         #[serializer(borsh)] _input: DeployErc20TokenArgs,
-    ) -> Address {
-        Address::from_array([1; 20])
+    ) -> Vec<u8> {
+        Address::from_array([1; 20]).as_bytes().to_vec()
     }
 
     #[result_serializer(borsh)]

@@ -32,8 +32,10 @@ pub mod types {
 }
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
-const OWNER_ACCOUNT_ID: &str = "aurora.test.near";
-const PROVER_ACCOUNT_ID: &str = "prover.test.near";
+const OWNER_ACCOUNT_ID: &str = "aurora.root";
+const PROVER_ACCOUNT_ID: &str = "prover.root";
+const ROOT_BALANCE: u128 = parse_near!("400 N");
+const CONTRACT_BALANCE: u128 = parse_near!("200 N");
 
 #[derive(Debug)]
 pub struct EngineContractBuilder {
@@ -43,6 +45,8 @@ pub struct EngineContractBuilder {
     prover_id: AccountId,
     custodian_address: Address,
     upgrade_delay_blocks: u64,
+    root_balance: u128,
+    contract_balance: u128,
     ft_metadata: FungibleTokenMetadata,
 }
 
@@ -55,6 +59,8 @@ impl EngineContractBuilder {
             prover_id: PROVER_ACCOUNT_ID.parse()?,
             custodian_address: Address::zero(),
             upgrade_delay_blocks: 1,
+            root_balance: ROOT_BALANCE,
+            contract_balance: CONTRACT_BALANCE,
             ft_metadata: FungibleTokenMetadata::default(),
         })
     }
@@ -94,8 +100,18 @@ impl EngineContractBuilder {
         self
     }
 
+    pub fn with_root_balance(mut self, balance: u128) -> Self {
+        self.root_balance = balance;
+        self
+    }
+
+    pub fn with_contract_balance(mut self, balance: u128) -> Self {
+        self.contract_balance = balance;
+        self
+    }
+
     pub async fn deploy_and_init(self) -> anyhow::Result<EngineContract> {
-        let (owner_acc, root_acc) = Self::create_accounts(&self.owner_id).await?;
+        let (owner_acc, root_acc) = self.create_accounts(&self.owner_id).await?;
         let contract = Contract::deploy(&owner_acc, self.code.expect("WASM wasn't set")).await?;
         let contract = EngineContract::new_from_contract(contract, root_acc);
 
@@ -118,18 +134,24 @@ impl EngineContractBuilder {
         Ok(contract)
     }
 
-    async fn create_accounts(account_id: &AccountId) -> anyhow::Result<(Account, Account)> {
+    async fn create_accounts(&self, account_id: &AccountId) -> anyhow::Result<(Account, Account)> {
         let account_id_str = account_id.as_str();
         let (sub, root) = match account_id_str.rsplit_once('.') {
             Some((sub, root)) if root == "near" => {
                 (Some(sub), Contract::find_root_account().await?)
             }
-            Some((sub, root)) => (Some(sub), Contract::create_root_account(root).await?),
-            None => (None, Contract::create_root_account(account_id_str).await?),
+            Some((sub, root)) => (
+                Some(sub),
+                Contract::create_root_account(root, self.root_balance).await?,
+            ),
+            None => (
+                None,
+                Contract::create_root_account(account_id_str, self.root_balance).await?,
+            ),
         };
 
         if let Some(sub) = sub {
-            Contract::create_sub_account(&root, sub)
+            Contract::create_sub_account(&root, sub, self.contract_balance)
                 .await
                 .map(|sub| (sub, root))
         } else {

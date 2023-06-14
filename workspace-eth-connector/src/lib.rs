@@ -10,16 +10,17 @@ pub mod types;
 
 const ROOT_ACCOUNT: &str = "root";
 const ETH_CONNECTOR_ACCOUNT: &str = "eth_connector";
-const INIT_BALANCE: Balance = near_units::parse_near!("85 N");
+const ROOT_BALANCE: Balance = near_units::parse_near!("200 N");
+const CONTRACT_BALANCE: Balance = near_units::parse_near!("85 N");
 
 /// Deploy eth-connector contract using provided WASM file.
 pub async fn deploy<P: AsRef<Path> + Copy>(
     path: P,
 ) -> anyhow::Result<(EthConnectorContract, Account)> {
-    let root_account = Contract::create_root_account(ROOT_ACCOUNT).await?;
+    let root_account = Contract::create_root_account(ROOT_ACCOUNT, ROOT_BALANCE).await?;
     let eth_connector = root_account
         .create_subaccount(ETH_CONNECTOR_ACCOUNT)
-        .initial_balance(INIT_BALANCE)
+        .initial_balance(CONTRACT_BALANCE)
         .transact()
         .await?
         .into_result()?;
@@ -30,7 +31,10 @@ pub async fn deploy<P: AsRef<Path> + Copy>(
             path.as_ref().display()
         )
     })?;
-    assert_eq!(eth_connector.view_account().await?.balance, INIT_BALANCE);
+    assert_eq!(
+        eth_connector.view_account().await?.balance,
+        CONTRACT_BALANCE
+    );
     let contract = Contract::deploy(&eth_connector, contract_data).await?;
 
     Ok((EthConnectorContract::new(contract), root_account))
