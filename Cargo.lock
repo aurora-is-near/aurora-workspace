@@ -182,7 +182,7 @@ dependencies = [
  "aurora-engine-precompiles",
  "aurora-engine-sdk",
  "aurora-engine-transactions",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "bitflags",
  "byte-slice-cast",
  "ethabi",
@@ -210,7 +210,7 @@ source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f#07
 dependencies = [
  "aurora-engine-modexp",
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "ethabi",
  "evm",
  "hex 0.4.3",
@@ -227,7 +227,7 @@ name = "aurora-engine-sdk"
 version = "1.0.0"
 source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f#0742e5f056aff7a0ae5f3f438a365319d6ee8bda"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "base64 0.21.2",
  "sha2 0.10.6",
  "sha3",
@@ -240,22 +240,9 @@ source = "git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f#07
 dependencies = [
  "aurora-engine-precompiles",
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "evm",
  "rlp",
-]
-
-[[package]]
-name = "aurora-engine-types"
-version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0#5b0054859b779b2aed2c819d12751cebd00be42d"
-dependencies = [
- "borsh 0.10.3",
- "borsh 0.9.3",
- "hex 0.4.3",
- "primitive-types 0.12.1",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -278,7 +265,7 @@ dependencies = [
  "anyhow",
  "aurora-engine",
  "aurora-engine-sdk",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "aurora-workspace-types",
  "aurora-workspace-utils",
  "borsh 0.9.3",
@@ -300,7 +287,7 @@ name = "aurora-workspace-eth-connector"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?tag=2.9.0)",
+ "aurora-engine-types",
  "aurora-workspace-types",
  "aurora-workspace-utils",
  "borsh 0.9.3",
@@ -319,7 +306,7 @@ dependencies = [
 name = "aurora-workspace-types"
 version = "0.3.0"
 dependencies = [
- "aurora-engine-types 1.0.0 (git+https://github.com/aurora-is-near/aurora-engine.git?rev=0742e5f)",
+ "aurora-engine-types",
  "ethereum-types",
  "hex 0.4.3",
  "near-account-id 0.15.0",
