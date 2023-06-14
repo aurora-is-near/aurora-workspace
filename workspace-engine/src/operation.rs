@@ -1,13 +1,11 @@
-use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
 use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, WithdrawResult};
-use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
+use aurora_engine_types::parameters::engine::{StorageBalance, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
-use serde::{Deserialize, Serialize};
 
 impl_call_return![
     (CallNew, Call::New),
@@ -201,10 +199,4 @@ impl AsRef<str> for View {
             View::AccountsCounter => "get_accounts_counter",
         }
     }
-}
-
-#[derive(Debug, Deserialize, Serialize, BorshDeserialize, BorshSerialize)]
-pub struct StorageBalance {
-    pub total: u128,
-    pub available: u128,
 }

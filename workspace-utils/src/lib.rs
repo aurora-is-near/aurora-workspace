@@ -107,7 +107,10 @@ impl Contract {
         Ok(worker.root_account()?)
     }
 
-    pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<Account> {
+    pub async fn create_root_account(
+        root_acc_name: &str,
+        balance: u128,
+    ) -> anyhow::Result<Account> {
         use workspaces::AccessKey;
 
         let worker = workspaces::sandbox()
@@ -129,7 +132,7 @@ impl Contract {
             .batch(&root)
             .create_account()
             .add_key(sk.public_key(), AccessKey::full_access())
-            .transfer(parse_near!("10000 N"))
+            .transfer(balance)
             .transact()
             .await?
             .into_result()?;
@@ -137,10 +140,14 @@ impl Contract {
         Ok(Account::from_secret_key(root, sk, &worker))
     }
 
-    pub async fn create_sub_account(root_account: &Account, name: &str) -> anyhow::Result<Account> {
+    pub async fn create_sub_account(
+        root_account: &Account,
+        name: &str,
+        balance: u128,
+    ) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)
-            .initial_balance(parse_near!("1000 N"))
+            .initial_balance(balance)
             .transact()
             .await?
             .into_result()?)
