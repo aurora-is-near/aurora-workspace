@@ -3,7 +3,7 @@ use aurora_workspace_utils::Contract;
 use std::path::Path;
 use workspaces::types::Balance;
 use workspaces::Account;
-pub use aurora_engine_types;
+
 
 pub mod contract;
 pub mod operation;
