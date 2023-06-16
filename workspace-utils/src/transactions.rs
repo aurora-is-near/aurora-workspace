@@ -10,6 +10,11 @@ impl<'a> ViewTransaction<'a> {
         Self { inner: view_tx }
     }
 
+    pub fn args(mut self, args: Vec<u8>) -> Self {
+        self.inner = self.inner.args(args);
+        self
+    }
+
     pub fn args_json<U: serde::Serialize>(mut self, args: U) -> Self {
         self.inner = self.inner.args_json(args);
         self
@@ -32,6 +37,11 @@ pub struct CallTransaction<'a> {
 impl<'a> CallTransaction<'a> {
     pub(crate) fn new(call_tx: workspaces::operations::CallTransaction<'a>) -> Self {
         Self { inner: call_tx }
+    }
+
+    pub fn args(mut self, args: Vec<u8>) -> Self {
+        self.inner = self.inner.args(args);
+        self
     }
 
     pub fn args_json<S: serde::Serialize>(mut self, args: S) -> Self {

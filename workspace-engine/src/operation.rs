@@ -1,15 +1,15 @@
-use aurora_engine::parameters::{SubmitResult, TransactionStatus, WithdrawResult};
+use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, WithdrawResult};
+use aurora_engine_types::parameters::engine::{StorageBalance, SubmitResult, TransactionStatus};
 use aurora_workspace_types::{AccountId, Address, H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 
-// Eth-connector
 impl_call_return![
+    (CallNew, Call::New),
+    (CallNewEthConnector, Call::NewEthConnector),
     (CallFtTransfer, Call::FtTransfer),
     (CallDeposit, Call::Deposit),
     (
@@ -23,15 +23,17 @@ impl_call_return![
     (CallRegisterRelayer, Call::RegisterRelayer),
     (CallRefundOnError, Call::RefundOnError),
     (CallFactoryUpdate, Call::FactoryUpdate),
+    (CallFundXccSubAccount, Call::FundXccSubAccount),
     (CallFactorySetWNearAddress, Call::FactorySetWNearAddress),
     (CallDeployUpgrade, Call::DeployUpgrade),
     (CallResumePrecompiles, Call::ResumePrecompiles),
     (CallPausePrecompiles, Call::PausePrecompiles),
     (CallStageUpgrade, Call::StageUpgrade),
     (CallStateMigration, Call::StateMigration),
+    (CallMintAccount, Call::MintAccount),
+    (CallSetPausedFlags, Call::SetPausedFlags),
 ];
 
-// Eth-connector
 impl_call_return![
     (CallFtTransferCall => PromiseOrValue<U128>, Call::FtTransferCall, try_from),
     (CallStorageDeposit => StorageBalance, Call::StorageDeposit, json),
@@ -39,7 +41,7 @@ impl_call_return![
     (CallStorageWithdraw => StorageBalance, Call::StorageWithdraw, json),
     (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
     (CallDeployCode => SubmitResult, Call::DeployCode, borsh),
-    (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh),
+    (CallDeployErc20Token => Address, Call::DeployErc20Token, borsh_address),
     (CallCall => SubmitResult, Call::Call, borsh),
     (CallSubmit => SubmitResult, Call::Submit, borsh),
     (CallFtOnTransfer => U128, Call::FtOnTransfer, json),
@@ -53,26 +55,30 @@ impl_view_return![
     (ViewVersion => String, View::Version, borsh),
     (ViewOwner => AccountId, View::Owner, borsh),
     (ViewBridgeProver => AccountId, View::BridgeProver, borsh),
-    (ViewChainId => AccountId, View::ChainId, borsh),
+    (ViewChainId => U256, View::ChainId, borsh_U256),
     (ViewUpgradeIndex => u64, View::UpgradeIndex, borsh),
     (ViewPausedPrecompiles => u32, View::PausedPrecompiles, borsh),
     (ViewBlockHash => H256, View::BlockHash, borsh_H256),
-    (ViewCode => Vec<u8>, View::Code, borsh),
+    (ViewCode => Vec<u8>, View::Code, vec),
     (ViewBalance => U256, View::Balance, borsh_U256),
     (ViewNonce => U256, View::Nonce, borsh_U256),
     (ViewStorageAt => H256, View::StorageAt, borsh_H256),
     (ViewView => TransactionStatus, View::View, borsh),
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
-    (ViewFtTotalEthSupplyOnAurora => U256, View::FtTotalEthSupplyOnAurora, borsh_U256),
-    (ViewFtBalanceOfEth => U256, View::FtBalanceOfEth, borsh_U256),
+    (ViewFtTotalEthSupplyOnAurora => U128, View::FtTotalEthSupplyOnAurora, json),
+    (ViewFtTotalEthSupplyOnNear => U128, View::FtTotalEthSupplyOnNear, json),
+    (ViewFtBalanceOfEth => U128, View::FtBalanceOfEth, json),
     (ViewErc20FromNep141 => Address, View::Erc20FromNep141, borsh),
     (ViewNep141FromErc20 => AccountId, View::Nep141FromErc20, borsh),
-    (ViewPausedFlags => u8, View::PausedFlags, borsh)
+    (ViewPausedFlags => u8, View::PausedFlags, borsh),
+    (ViewAccountsCounter => u64, View::AccountsCounter, borsh)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(clippy::enum_variant_names)]
 pub(crate) enum Call {
+    New,
+    NewEthConnector,
     DeployCode,
     DeployErc20Token,
     Call,
@@ -92,15 +98,20 @@ pub(crate) enum Call {
     StateMigration,
     ResumePrecompiles,
     FactoryUpdate,
+    FundXccSubAccount,
     FactorySetWNearAddress,
     SetEthConnectorContractData,
     FactoryUpdateAddressVersion,
     RefundOnError,
+    MintAccount,
+    SetPausedFlags,
 }
 
 impl AsRef<str> for Call {
     fn as_ref(&self) -> &str {
         match self {
+            Call::New => "new",
+            Call::NewEthConnector => "new_eth_connector",
             Call::DeployCode => "deploy_code",
             Call::DeployErc20Token => "deploy_erc20_token",
             Call::Call => "call",
@@ -120,10 +131,13 @@ impl AsRef<str> for Call {
             Call::StateMigration => "state_migration",
             Call::ResumePrecompiles => "resume_precompiles",
             Call::FactoryUpdate => "factory_update",
+            Call::FundXccSubAccount => "fund_xcc_sub_account",
             Call::FactorySetWNearAddress => "factory_set_wnear_address",
             Call::SetEthConnectorContractData => "set_eth_connector_contract_data",
             Call::FactoryUpdateAddressVersion => "factory_update_address_version",
             Call::RefundOnError => "refund_on_error",
+            Call::MintAccount => "mint_account",
+            Call::SetPausedFlags => "set_paused_flags",
         }
     }
 }
@@ -147,11 +161,13 @@ pub enum View {
     FtBalanceOf,
     FtBalanceOfEth,
     FtTotalEthSupplyOnAurora,
+    FtTotalEthSupplyOnNear,
     FtMetadata,
     StorageBalanceOf,
     PausedFlags,
     Erc20FromNep141,
     Nep141FromErc20,
+    AccountsCounter,
 }
 
 impl AsRef<str> for View {
@@ -174,11 +190,13 @@ impl AsRef<str> for View {
             View::FtBalanceOf => "ft_balance_of",
             View::FtBalanceOfEth => "ft_balance_of_eth",
             View::FtTotalEthSupplyOnAurora => "ft_total_eth_supply_on_aurora",
+            View::FtTotalEthSupplyOnNear => "ft_total_eth_supply_on_near",
             View::FtMetadata => "ft_metadata",
             View::StorageBalanceOf => "storage_balance_of",
             View::PausedFlags => "get_paused_flags",
             View::Erc20FromNep141 => "get_erc20_from_nep141",
             View::Nep141FromErc20 => "get_nep141_from_erc20",
+            View::AccountsCounter => "get_accounts_counter",
         }
     }
 }

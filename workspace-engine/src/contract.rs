@@ -1,18 +1,24 @@
 use crate::operation::{
     CallCall, CallDeployCode, CallDeployErc20Token, CallDeployUpgrade, CallDeposit,
     CallFactorySetWNearAddress, CallFactoryUpdate, CallFactoryUpdateAddressVersion,
-    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallPausePrecompiles, CallRefundOnError,
-    CallRegisterRelayer, CallResumePrecompiles, CallSetEthConnectorContractData, CallStageUpgrade,
+    CallFtOnTransfer, CallFtTransfer, CallFtTransferCall, CallFundXccSubAccount, CallMintAccount,
+    CallNew, CallNewEthConnector, CallPausePrecompiles, CallRefundOnError, CallRegisterRelayer,
+    CallResumePrecompiles, CallSetEthConnectorContractData, CallSetPausedFlags, CallStageUpgrade,
     CallStateMigration, CallStorageDeposit, CallStorageUnregister, CallStorageWithdraw, CallSubmit,
-    CallWithdraw, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId, ViewCode,
-    ViewErc20FromNep141, ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata,
-    ViewFtTotalEthSupplyOnAurora, ViewFtTotalSupply, ViewIsUsedProof, ViewNep141FromErc20,
-    ViewNonce, ViewOwner, ViewPausedFlags, ViewPausedPrecompiles, ViewStorageAt,
-    ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
+    CallWithdraw, ViewAccountsCounter, ViewBalance, ViewBlockHash, ViewBridgeProver, ViewChainId,
+    ViewCode, ViewErc20FromNep141, ViewFtBalanceOf, ViewFtBalanceOfEth, ViewFtMetadata,
+    ViewFtTotalEthSupplyOnAurora, ViewFtTotalEthSupplyOnNear, ViewFtTotalSupply, ViewIsUsedProof,
+    ViewNep141FromErc20, ViewNonce, ViewOwner, ViewPausedFlags, ViewPausedPrecompiles,
+    ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
-use aurora_engine::fungible_token::FungibleTokenMetadata;
-use aurora_engine_types::types::{Address, Balance};
+use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
+use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
+use aurora_engine_types::parameters::engine::{
+    CallArgs, FunctionCallArgsV2, NewCallArgs, NewCallArgsV2,
+};
+use aurora_engine_types::types::address::Address;
+use aurora_engine_types::types::{RawU256, WeiU256};
 use aurora_engine_types::U256;
 use aurora_workspace_types::input::ProofInput;
 use aurora_workspace_types::{AccountId, H256};
@@ -22,20 +28,26 @@ use ethabi::{ParamType, Token};
 use near_sdk::json_types::U128;
 use serde_json::json;
 
+// TOD: import from aurora_engine_types
+#[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
+pub struct FundXccArgs {
+    pub target: Address,
+    pub wnear_account_id: Option<AccountId>,
+}
+
 #[derive(Debug, Clone)]
 pub struct EngineContract {
     contract: Contract,
+    root: Account,
 }
 
 impl EngineContract {
-    pub fn new(contract: Contract) -> Self {
-        Self { contract }
+    pub fn new_from_contract(contract: Contract, root: Account) -> Self {
+        Self { contract, root }
     }
 
-    pub fn new_from_contract(contract_id: AccountId, account: Account) -> Self {
-        Self {
-            contract: Contract::new(contract_id, account),
-        }
+    pub fn root(&self) -> &Account {
+        &self.root
     }
 }
 
@@ -51,9 +63,38 @@ impl ContractId for EngineContract {
 
 /// Callable functions
 impl EngineContract {
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new(
+        &self,
+        chain_id: RawU256,
+        owner_id: AccountId,
+        upgrade_delay_blocks: u64,
+    ) -> CallNew {
+        let args = NewCallArgs::V2(NewCallArgsV2 {
+            chain_id,
+            owner_id: owner_id.as_str().parse().unwrap(),
+            upgrade_delay_blocks,
+        });
+
+        CallNew::call(&self.contract).args_borsh(args)
+    }
+
+    pub fn new_eth_connector(
+        &self,
+        prover_account: AccountId,
+        custodian_address: String,
+        metadata: FungibleTokenMetadata,
+    ) -> CallNewEthConnector {
+        CallNewEthConnector::call(&self.contract).args_borsh((
+            prover_account,
+            custodian_address,
+            metadata,
+        ))
+    }
+
     pub fn ft_transfer(
         &self,
-        receiver_id: AccountId,
+        receiver_id: &str,
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer {
@@ -63,14 +104,14 @@ impl EngineContract {
 
     pub fn ft_transfer_call(
         &self,
-        receiver_id: AccountId,
+        receiver_id: &str,
         amount: U128,
         memo: Option<String>,
         msg: String,
     ) -> CallFtTransferCall {
         CallFtTransferCall::call(&self.contract).args_json(json!({
            "receiver_id": receiver_id,
-           "amount": amount,
+           "amount": amount.0.to_string(),
            "memo": memo,
            "msg": msg,
         }))
@@ -90,10 +131,11 @@ impl EngineContract {
     }
 
     pub fn storage_unregister(&self, force: Option<bool>) -> CallStorageUnregister {
-        CallStorageUnregister::call(&self.contract).args_json(serde_json::json!({ "force": force }))
+        CallStorageUnregister::call(&self.contract).args_json(json!({ "force": force }))
     }
 
-    pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
+    pub fn withdraw(&self, recipient_address: &[u8], amount: u128) -> CallWithdraw {
+        let recipient_address = Address::try_from_slice(recipient_address).unwrap();
         CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
     }
 
@@ -104,7 +146,7 @@ impl EngineContract {
     pub fn set_eth_connector_contract_data(
         &self,
         prover_account: AccountId,
-        eth_custodian_address: Address,
+        eth_custodian_address: String,
         metadata: FungibleTokenMetadata,
     ) -> CallSetEthConnectorContractData {
         CallSetEthConnectorContractData::call(&self.contract).args_borsh((
@@ -128,34 +170,38 @@ impl EngineContract {
         erc20_address: Option<Address>,
         amount: U256,
     ) -> CallRefundOnError {
-        let mut raw_amount: aurora_engine_types::types::RawU256 = Default::default();
-        amount.to_big_endian(&mut raw_amount);
         CallRefundOnError::call(&self.contract).args_borsh((
             recipient_address,
             erc20_address,
-            raw_amount,
+            amount.0,
         ))
     }
 
     pub fn deploy_code(&self, code: Vec<u8>) -> CallDeployCode {
-        CallDeployCode::call(&self.contract).args_borsh(code)
+        CallDeployCode::call(&self.contract).args(code)
     }
 
     pub fn deploy_erc20_token(&self, account_id: AccountId) -> CallDeployErc20Token {
         CallDeployErc20Token::call(&self.contract).args_borsh(account_id)
     }
 
-    pub fn call(&self, contract: Address, amount: U256, input: Vec<u8>) -> CallCall {
-        let mut raw_amount: aurora_engine_types::types::RawU256 = Default::default();
-        amount.to_big_endian(&mut raw_amount);
-        CallCall::call(&self.contract).args_borsh((contract, raw_amount, input))
+    pub fn call(&self, contract: &[u8], amount: U256, input: Vec<u8>) -> CallCall {
+        let contract = Address::try_from_slice(contract).unwrap();
+        let value = WeiU256::from(amount);
+        let args = CallArgs::V2(FunctionCallArgsV2 {
+            contract,
+            value,
+            input,
+        });
+        CallCall::call(&self.contract).args_borsh(args)
     }
 
     pub fn submit(&self, input: Vec<u8>) -> CallSubmit {
-        CallSubmit::call(&self.contract).args_borsh(input)
+        CallSubmit::call(&self.contract).args(input)
     }
 
-    pub fn register_relayer(&self, address: Address) -> CallRegisterRelayer {
+    pub fn register_relayer(&self, address: &str) -> CallRegisterRelayer {
+        let address = Address::decode(address).unwrap();
         CallRegisterRelayer::call(&self.contract).args_borsh(address)
     }
 
@@ -173,7 +219,19 @@ impl EngineContract {
     }
 
     pub fn factory_update(&self, bytes: Vec<u8>) -> CallFactoryUpdate {
-        CallFactoryUpdate::call(&self.contract).args_borsh(bytes)
+        CallFactoryUpdate::call(&self.contract).args(bytes)
+    }
+
+    pub fn fund_xcc_sub_account(
+        &self,
+        target: Address,
+        wnear_account_id: Option<AccountId>,
+    ) -> CallFundXccSubAccount {
+        let args = FundXccArgs {
+            target,
+            wnear_account_id: wnear_account_id.map(|account| account.as_str().parse().unwrap()),
+        };
+        CallFundXccSubAccount::call(&self.contract).args_borsh(args)
     }
 
     pub fn factory_set_wnear_address(&self, address: Address) -> CallFactorySetWNearAddress {
@@ -181,7 +239,7 @@ impl EngineContract {
     }
 
     pub fn stage_upgrade(&self, bytes: Vec<u8>) -> CallStageUpgrade {
-        CallStageUpgrade::call(&self.contract).args_borsh(bytes)
+        CallStageUpgrade::call(&self.contract).args(bytes)
     }
 
     pub fn deploy_upgrade(&self) -> CallDeployUpgrade {
@@ -199,6 +257,23 @@ impl EngineContract {
     pub fn state_migration(&self) -> CallStateMigration {
         CallStateMigration::call(&self.contract)
     }
+
+    pub fn mint_account(
+        &self,
+        address: &[u8],
+        init_nonce: u64,
+        init_balance: u64,
+    ) -> CallMintAccount {
+        CallMintAccount::call(&self.contract).args_borsh((
+            Address::try_from_slice(address).unwrap(),
+            init_nonce,
+            init_balance,
+        ))
+    }
+
+    pub fn set_paused_flags(&self, flags: u8) -> CallSetPausedFlags {
+        CallSetPausedFlags::call(&self.contract).args_borsh(flags)
+    }
 }
 
 /// View functions
@@ -207,11 +282,11 @@ impl EngineContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
+    pub fn ft_balance_of(&self, account_id: &str) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
-    pub fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+    pub fn storage_balance_of(&self, account_id: &str) -> ViewStorageBalanceOf {
         ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
@@ -251,12 +326,12 @@ impl EngineContract {
         ViewCode::view(&self.contract).args_borsh(address)
     }
 
-    pub fn get_balance(&self, address: Address) -> ViewBalance {
-        ViewBalance::view(&self.contract).args_borsh(address)
+    pub fn get_balance(&self, address: &[u8]) -> ViewBalance {
+        ViewBalance::view(&self.contract).args(address.to_vec())
     }
 
-    pub fn get_nonce(&self, address: Address) -> ViewNonce {
-        ViewNonce::view(&self.contract).args_borsh(address)
+    pub fn get_nonce(&self, address: &[u8]) -> ViewNonce {
+        ViewNonce::view(&self.contract).args(address.to_vec())
     }
 
     pub fn get_storage_at(&self, address: Address, key: H256) -> ViewStorageAt {
@@ -284,7 +359,12 @@ impl EngineContract {
         ViewFtTotalEthSupplyOnAurora::view(&self.contract)
     }
 
-    pub fn ft_balance_of_eth(&self, address: Address) -> ViewFtBalanceOfEth {
+    pub fn ft_total_eth_supply_on_near(&self) -> ViewFtTotalEthSupplyOnNear {
+        ViewFtTotalEthSupplyOnNear::view(&self.contract)
+    }
+
+    pub fn ft_balance_of_eth(&self, address: &[u8]) -> ViewFtBalanceOfEth {
+        let address = Address::try_from_slice(address).unwrap();
         ViewFtBalanceOfEth::view(&self.contract).args_borsh(address)
     }
 
@@ -298,5 +378,9 @@ impl EngineContract {
 
     pub fn get_paused_flags(&self) -> ViewPausedFlags {
         ViewPausedFlags::view(&self.contract)
+    }
+
+    pub fn get_accounts_counter(&self) -> ViewAccountsCounter {
+        ViewAccountsCounter::view(&self.contract)
     }
 }

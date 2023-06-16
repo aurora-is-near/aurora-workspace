@@ -4,6 +4,8 @@ use workspaces::network::NetworkClient;
 use workspaces::types::{KeyType, SecretKey};
 use workspaces::{Account, Worker};
 
+pub use near_units::parse_near;
+
 pub mod macros;
 pub mod results;
 pub mod transactions;
@@ -74,7 +76,7 @@ impl Contract {
         self.account.call(function)
     }
 
-    pub fn near_view<F: AsRef<str>>(&self, function_name: &F) -> ViewTransaction {
+    pub fn near_view<'a, F: AsRef<str>>(&'a self, function_name: &'a F) -> ViewTransaction {
         self.account.view(function_name)
     }
 
@@ -82,7 +84,7 @@ impl Contract {
         self.account.id()
     }
 
-    pub async fn deploy(account: Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
+    pub async fn deploy(account: &Account, wasm: Vec<u8>) -> anyhow::Result<Self> {
         let contract = account.deploy(&wasm).await?.into_result()?;
         Ok(Self {
             account: AccountKind::Contract(contract),
@@ -94,10 +96,21 @@ impl Contract {
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
         let sk = SecretKey::from_random(KeyType::ED25519);
+
         Ok(worker.create_tla(account_id, sk).await?.into_result()?)
     }
 
-    pub async fn create_root_account(root_acc_name: &str) -> anyhow::Result<Account> {
+    pub async fn find_root_account() -> anyhow::Result<Account> {
+        let worker = workspaces::sandbox()
+            .await
+            .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
+        Ok(worker.root_account()?)
+    }
+
+    pub async fn create_root_account(
+        root_acc_name: &str,
+        balance: u128,
+    ) -> anyhow::Result<Account> {
         use workspaces::AccessKey;
 
         let worker = workspaces::sandbox()
@@ -119,7 +132,7 @@ impl Contract {
             .batch(&root)
             .create_account()
             .add_key(sk.public_key(), AccessKey::full_access())
-            .transfer(near_units::parse_near!("200 N"))
+            .transfer(balance)
             .transact()
             .await?
             .into_result()?;
@@ -127,10 +140,14 @@ impl Contract {
         Ok(Account::from_secret_key(root, sk, &worker))
     }
 
-    pub async fn create_sub_account(root_account: Account, name: &str) -> anyhow::Result<Account> {
+    pub async fn create_sub_account(
+        root_account: &Account,
+        name: &str,
+        balance: u128,
+    ) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)
-            .initial_balance(near_units::parse_near!("15 N"))
+            .initial_balance(balance)
             .transact()
             .await?
             .into_result()?)

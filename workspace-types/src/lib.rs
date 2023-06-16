@@ -4,7 +4,6 @@ pub mod input;
 pub use aurora_engine_types::{types::Address, H160, H256, U256};
 pub use near_account_id::AccountId;
 pub use near_account_id::ParseAccountError;
-
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::io::{self, Write};
@@ -26,4 +25,8 @@ impl BorshDeserialize for Raw {
         *bytes = &[];
         Ok(Self(res))
     }
+}
+
+pub mod output {
+    pub use aurora_engine_types::parameters::engine::TransactionStatus;
 }

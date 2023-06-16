@@ -1,4 +1,5 @@
 use crate::AccountId;
+use aurora_engine_types::types::Yocto;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
@@ -11,9 +12,6 @@ pub struct NewInput {
     /// Account which can upgrade this contract.
     /// Use empty to disable updatability.
     pub owner_id: AccountId,
-    /// Account of the bridge prover.
-    /// Use empty to not use base token as bridged asset.
-    pub bridge_prover_id: AccountId,
     /// How many blocks after staging upgrade can deploy it.
     pub upgrade_delay_blocks: u64,
 }
@@ -38,7 +36,9 @@ pub struct FtOnTransferInput {
 }
 
 // #[cfg(feature = "deposit-withdraw")]
-#[derive(Debug, Default, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug, Default, Eq, PartialEq, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize,
+)]
 pub struct ProofInput {
     pub log_index: u64,
     pub log_entry_data: Vec<u8>,
@@ -59,4 +59,10 @@ pub struct IsUsedProofCallArgs {
 pub struct WithdrawInput {
     pub recipient_address: [u8; 20],
     pub amount: u128,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+pub struct StorageBalance {
+    pub total: Yocto,
+    pub available: Yocto,
 }

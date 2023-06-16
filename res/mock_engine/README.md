@@ -14,7 +14,7 @@ rustup target add wasm32-unknown-unknown
 
 - Build the wasm file
 ```bash
-make build-engine-mock
+make build-mock-engine
 ```
 
 You should find the `mock_engine.wasm` file in `../bin/mock_engine.wasm`.
