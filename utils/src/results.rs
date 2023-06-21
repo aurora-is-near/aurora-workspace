@@ -1,4 +1,6 @@
-use aurora_workspace_types::{Address, H256, U256};
+use aurora_engine_types::borsh::BorshDeserialize;
+use aurora_engine_types::types::Address;
+use aurora_engine_types::{H256, U256};
 use near_sdk::{json_types::U128, PromiseOrValue};
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
@@ -20,7 +22,7 @@ impl<T: DeserializeOwned> ViewResult<T> {
     }
 }
 
-impl<T: borsh::BorshDeserialize> ViewResult<T> {
+impl<T: BorshDeserialize> ViewResult<T> {
     pub fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.borsh()?,
@@ -90,7 +92,7 @@ impl TryFrom<ExecutionFinalResult> for ExecutionResult<PromiseOrValue<U128>> {
     }
 }
 
-impl<T: borsh::BorshDeserialize> ExecutionResult<T> {
+impl<T: BorshDeserialize> ExecutionResult<T> {
     pub fn borsh(result: ExecutionFinalResult) -> anyhow::Result<Self> {
         let success = result.is_success();
         let inner = result.into_result()?;

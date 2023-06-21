@@ -1,6 +1,7 @@
 #[macro_export]
 macro_rules! impl_view_return  {
     ($(($name:ident => $return:ty, $fn_name:expr, $deser_fn:ident)),* $(,)?) => {
+        use aurora_engine_types::borsh;
         $(pub struct $name<'a>(ViewTransaction<'a>);
         impl<'a> $name<'a> {
             pub(crate) fn view(contract: &'a Contract) -> Self {
@@ -18,8 +19,14 @@ macro_rules! impl_view_return  {
                 self.0 = self.0.args_borsh(args);
                 self
             }
-            pub async fn transact(self)  -> anyhow::Result<ViewResult<$return>> {
-                ViewResult::$deser_fn(self.0.transact().await?)
+        }
+
+        impl<'a> std::future::IntoFuture for $name<'a> {
+            type Output = anyhow::Result<ViewResult<$return>>;
+            type IntoFuture = workspaces::rpc::BoxFuture<'a, Self::Output>;
+
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async { ViewResult::$deser_fn(self.0.await?) }.into_future())
             }
         })*
     };

@@ -10,9 +10,14 @@ MOCK_CARGO_BUILD = RUSTFLAGS='-C link-arg=-s' cargo build --target wasm32-unknow
 ENGINE_MOCK_FILE = ${ENGINE_MOCK_DIR}/target/wasm32-unknown-unknown/release/mock_engine.wasm
 ETH_CONNECTOR_MOCK_FILE = ${ETH_CONNECTOR_MOCK_DIR}/target/wasm32-unknown-unknown/release/mock_eth_connector.wasm
 
-check: check-fmt clippy
+clean_engine_mock:
+	@cd ${ENGINE_MOCK_DIR} && cargo clean
 
-clippy: clippy-lib clippy-test clippy-mock-engine clippy-mock-eth-connector
+clean_eth_connector_mock:
+	@cd ${ETH_CONNECTOR_MOCK_DIR} && cargo clean
+
+clean_workspace:
+	@rm -rf bin && cargo clean
 
 clippy-mock-engine:
 	@cd ${ENGINE_MOCK_DIR} && \
@@ -54,6 +59,12 @@ test-engine:
 
 test-eth-connector:
 	@cargo test --package aurora-workspace-eth-connector -- --test-threads 10 --nocapture
+
+check: check-fmt clippy
+
+clippy: clippy-lib clippy-test clippy-mock-engine clippy-mock-eth-connector
+
+clean: clean_engine_mock clean_eth_connector_mock clean_workspace
 
 test-flow: test-engine test-eth-connector
 

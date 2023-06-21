@@ -9,8 +9,8 @@ use crate::operation::{
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
+use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
-use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
@@ -33,7 +33,7 @@ impl ContractId for EthConnectorContract {
         &self.contract
     }
 
-    fn id(&self) -> &AccountId {
+    fn id(&self) -> &workspaces::AccountId {
         self.contract.id()
     }
 }
@@ -203,59 +203,56 @@ impl EthConnectorContract {
 
 /// View functions
 impl EthConnectorContract {
-    pub async fn get_bridge_prover(&self) -> ViewGetBridgeProver {
+    pub fn get_bridge_prover(&self) -> ViewGetBridgeProver {
         ViewGetBridgeProver::view(&self.contract)
     }
 
-    pub async fn check_migration_correctness(
+    pub fn check_migration_correctness(
         &self,
         data: MigrationInputData,
     ) -> ViewCheckMigrationCorrectness {
         ViewCheckMigrationCorrectness::view(&self.contract).args_borsh(data)
     }
 
-    pub async fn ft_metadata(&self) -> ViewFtMetadata {
+    pub fn ft_metadata(&self) -> ViewFtMetadata {
         ViewFtMetadata::view(&self.contract)
     }
 
-    pub async fn get_paused_flags(&self) -> ViewGetPausedFlags {
+    pub fn get_paused_flags(&self) -> ViewGetPausedFlags {
         ViewGetPausedFlags::view(&self.contract)
     }
 
-    pub async fn get_account_with_access_right(&self) -> ViewGetAccountWithAccessRight {
+    pub fn get_account_with_access_right(&self) -> ViewGetAccountWithAccessRight {
         ViewGetAccountWithAccessRight::view(&self.contract)
     }
 
-    pub async fn is_owner(&self) -> ViewIsOwner {
+    pub fn is_owner(&self) -> ViewIsOwner {
         ViewIsOwner::view(&self.contract)
     }
 
-    pub async fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
+    pub fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
         ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
-    pub async fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
+    pub fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
         ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
-    pub async fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
+    pub fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
         ViewStorageBalanceBounds::view(&self.contract)
     }
 
-    pub async fn is_engine_account_exist(
-        &self,
-        engine_account: &AccountId,
-    ) -> ViewIsEngineAccountExist {
+    pub fn is_engine_account_exist(&self, engine_account: &AccountId) -> ViewIsEngineAccountExist {
         ViewIsEngineAccountExist::view(&self.contract).args_json(json!({
             "engine_account": engine_account,
         }))
     }
 
-    pub async fn ft_total_supply(&self) -> ViewFtTotalSupply {
+    pub fn ft_total_supply(&self) -> ViewFtTotalSupply {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub async fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
+    pub fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
         ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
     }
 }

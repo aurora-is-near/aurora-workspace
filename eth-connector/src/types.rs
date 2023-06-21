@@ -1,5 +1,5 @@
+use aurora_engine_types::borsh::{self, BorshDeserialize, BorshSerialize};
 use aurora_engine_types::types::Address;
-use borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{AccountId, Balance, StorageUsage};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

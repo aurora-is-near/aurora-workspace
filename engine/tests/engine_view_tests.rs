@@ -3,15 +3,15 @@ mod utils;
 #[tokio::test]
 async fn test_version() {
     let contract = utils::deploy_and_init_contract().await.unwrap();
-    let res = contract.get_version().transact().await.unwrap().result;
+    let res = contract.get_version().await.unwrap().result;
     assert_eq!(res, "2.9.1".to_string());
 }
 
 #[tokio::test]
 async fn test_owner() {
     let contract = utils::deploy_and_init_contract().await.unwrap();
-    let res = contract.get_owner().transact().await.unwrap().result;
-    assert_eq!(res.as_str(), "owner.test.near");
+    let res = contract.get_owner().await.unwrap().result;
+    assert_eq!(res.as_ref(), "owner.test.near");
 }
 
 // #[tokio::test]

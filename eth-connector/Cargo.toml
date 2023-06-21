@@ -6,13 +6,12 @@ edition = "2021"
 description = "Aurora Workspace Eth Connector is a library for the Aurora Eth Connector based on NEAR Protocol."
 
 [dependencies]
+aurora-workspace-utils = { path = "../utils" }
+
 anyhow = "1"
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
-aurora-workspace-types = { path = "../workspace-types" }
-aurora-workspace-utils = { path = "../workspace-utils" }
-borsh = { version = "0.9", default-features = false }
-near-sdk = "4.1"
 near-contract-standards = "4.1"
+near-sdk = "4.1"
 near-units = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -21,6 +20,6 @@ workspaces = "0.7.0"
 [dev-dependencies]
 hex = "0.4.3"
 lazy_static = "1.4"
-tokio = { version = "1" }
+tokio = { version = "1", features = ["macros"] }
 
 [features]
