@@ -11,17 +11,14 @@ aurora-workspace-utils = { path = "../utils" }
 
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["std", "impl-serde", "borsh-compat"] }
 anyhow = "1"
-ethabi = { version = "18" }
-ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
 near-sdk = "4.1"
-near-contract-standards = "4.1"
-near-primitives = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 workspaces = "0.7.0"
 
 [dev-dependencies]
 hex = "0.4.3"
+ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
 lazy_static = "1.4"
 tokio = { version = "1" }
 
