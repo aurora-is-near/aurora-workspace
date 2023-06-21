@@ -177,7 +177,7 @@ checksum = "1181e1e0d1fce796a03db1ae795d67167da795f9cf4a39c37589e85ef57f26d3"
 [[package]]
 name = "aurora-engine-types"
 version = "1.0.0"
-source = "git+https://github.com/aurora-is-near/aurora-engine.git?branch=develop#0bcab2dcac5dae7764fe84dbbaeaa815bfae5a4e"
+source = "git+https://github.com/aurora-is-near/aurora-engine.git?branch=develop#9caf85fac1173587f086e8fd04c3489207020998"
 dependencies = [
  "base64 0.21.2",
  "borsh 0.10.3",
