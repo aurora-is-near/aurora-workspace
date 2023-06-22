@@ -10,6 +10,7 @@ anyhow = "1"
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
 aurora-workspace-types = { path = "../workspace-types" }
 aurora-workspace-utils = { path = "../workspace-utils" }
+aurora-eth-connector = {git = "https://github.com/UrAvgDeveloper/aurora-eth-connector.git", branch = "fee-integration"}
 borsh = { version = "0.9", default-features = false }
 near-sdk = "4.1"
 near-contract-standards = "4.1"

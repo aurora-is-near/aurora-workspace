@@ -1,6 +1,6 @@
-use crate::types::{
-    DepositFeePercentage, FeeBounds, MigrationCheckResult, PausedMask, WithdrawFeePercentage,
-    WithdrawResult,
+use crate::types::{MigrationCheckResult, PausedMask, WithdrawResult};
+use aurora_eth_connector::fee_management::{
+    DepositFeePercentage, FeeBounds, WithdrawFeePercentage,
 };
 use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
