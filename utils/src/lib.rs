@@ -1,8 +1,7 @@
 use crate::transactions::{CallTransaction, ViewTransaction};
-use aurora_workspace_types::AccountId;
 use workspaces::network::NetworkClient;
 use workspaces::types::{KeyType, SecretKey};
-use workspaces::{Account, Worker};
+use workspaces::{Account, AccountId, Worker};
 
 pub use near_units::parse_near;
 

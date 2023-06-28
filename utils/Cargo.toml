@@ -1,22 +1,15 @@
 [package]
-name = "aurora-workspace-types"
+name = "aurora-workspace-utils"
 version = "0.3.0"
 authors = [ "Aurora <hello@aurora.dev>" ]
 edition = "2021"
 readme = "README.md"
 
 [dependencies]
+anyhow = "1"
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["std", "impl-serde", "borsh-compat"] }
-ethereum-types = { version = "0.14", default-features = false, features = ["serialize", "rlp"] }
 near-sdk = "4.1"
-near-account-id = "0.15"
+near-units = "0.2"
 serde = { version = "1", features = ["derive"] }
-thiserror = "1"
-rlp = "0.5"
-workspaces = "0.7.0"
-
-[dev-dependencies]
-hex = "0.4.3"
-
-[features]
-deposit-withdraw = []
+tokio = "1"
+workspaces = "0.7"

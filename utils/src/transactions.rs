@@ -1,5 +1,8 @@
+use aurora_engine_types::borsh::BorshSerialize;
+use std::future::IntoFuture;
 use workspaces::result::ExecutionFinalResult;
 use workspaces::rpc::query::{Query, ViewFunction};
+use workspaces::rpc::BoxFuture;
 
 pub struct ViewTransaction<'a> {
     inner: Query<'a, ViewFunction>,
@@ -20,13 +23,18 @@ impl<'a> ViewTransaction<'a> {
         self
     }
 
-    pub fn args_borsh<U: borsh::BorshSerialize>(mut self, args: U) -> Self {
+    pub fn args_borsh<U: BorshSerialize>(mut self, args: U) -> Self {
         self.inner = self.inner.args_borsh(args);
         self
     }
+}
 
-    pub async fn transact(self) -> anyhow::Result<workspaces::result::ViewResultDetails> {
-        Ok(self.inner.await?)
+impl<'a> IntoFuture for ViewTransaction<'a> {
+    type Output = anyhow::Result<workspaces::result::ViewResultDetails>;
+    type IntoFuture = BoxFuture<'a, Self::Output>;
+
+    fn into_future(self) -> Self::IntoFuture {
+        Box::pin(async { Ok(self.inner.await?) }.into_future())
     }
 }
 
@@ -49,7 +57,7 @@ impl<'a> CallTransaction<'a> {
         self
     }
 
-    pub fn args_borsh<B: borsh::BorshSerialize>(mut self, args: B) -> Self {
+    pub fn args_borsh<B: BorshSerialize>(mut self, args: B) -> Self {
         self.inner = self.inner.args_borsh(args);
         self
     }

@@ -12,23 +12,21 @@ use crate::operation::{
     ViewStorageAt, ViewStorageBalanceOf, ViewUpgradeIndex, ViewVersion, ViewView,
 };
 use crate::types::Account;
-use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
-use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
+use aurora_engine_types::account_id::AccountId;
+use aurora_engine_types::borsh::{self, BorshDeserialize, BorshSerialize};
+use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, Proof};
 use aurora_engine_types::parameters::engine::{
     CallArgs, FunctionCallArgsV2, NewCallArgs, NewCallArgsV2,
 };
-use aurora_engine_types::types::address::Address;
-use aurora_engine_types::types::{RawU256, WeiU256};
-use aurora_engine_types::U256;
-use aurora_workspace_types::input::ProofInput;
-use aurora_workspace_types::{AccountId, H256};
+use aurora_engine_types::types::{Address, RawU256, WeiU256};
+use aurora_engine_types::{H256, U256};
 use aurora_workspace_utils::{Contract, ContractId};
 #[cfg(feature = "ethabi")]
 use ethabi::{ParamType, Token};
 use near_sdk::json_types::U128;
 use serde_json::json;
 
-// TOD: import from aurora_engine_types
+// TODO: import from aurora_engine_types
 #[derive(Debug, Clone, PartialEq, Eq, BorshDeserialize, BorshSerialize)]
 pub struct FundXccArgs {
     pub target: Address,
@@ -56,7 +54,7 @@ impl ContractId for EngineContract {
         &self.contract
     }
 
-    fn id(&self) -> &AccountId {
+    fn id(&self) -> &workspaces::AccountId {
         self.contract.id()
     }
 }
@@ -72,7 +70,7 @@ impl EngineContract {
     ) -> CallNew {
         let args = NewCallArgs::V2(NewCallArgsV2 {
             chain_id,
-            owner_id: owner_id.as_str().parse().unwrap(),
+            owner_id,
             upgrade_delay_blocks,
         });
 
@@ -94,7 +92,7 @@ impl EngineContract {
 
     pub fn ft_transfer(
         &self,
-        receiver_id: &str,
+        receiver_id: &AccountId,
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer {
@@ -104,7 +102,7 @@ impl EngineContract {
 
     pub fn ft_transfer_call(
         &self,
-        receiver_id: &str,
+        receiver_id: &AccountId,
         amount: U128,
         memo: Option<String>,
         msg: String,
@@ -134,12 +132,11 @@ impl EngineContract {
         CallStorageUnregister::call(&self.contract).args_json(json!({ "force": force }))
     }
 
-    pub fn withdraw(&self, recipient_address: &[u8], amount: u128) -> CallWithdraw {
-        let recipient_address = Address::try_from_slice(recipient_address).unwrap();
+    pub fn withdraw(&self, recipient_address: Address, amount: u128) -> CallWithdraw {
         CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
     }
 
-    pub fn deposit(&self, raw_proof: ProofInput) -> CallDeposit {
+    pub fn deposit(&self, raw_proof: Proof) -> CallDeposit {
         CallDeposit::call(&self.contract).args_borsh(raw_proof)
     }
 
@@ -185,8 +182,7 @@ impl EngineContract {
         CallDeployErc20Token::call(&self.contract).args_borsh(account_id)
     }
 
-    pub fn call(&self, contract: &[u8], amount: U256, input: Vec<u8>) -> CallCall {
-        let contract = Address::try_from_slice(contract).unwrap();
+    pub fn call(&self, contract: Address, amount: U256, input: Vec<u8>) -> CallCall {
         let value = WeiU256::from(amount);
         let args = CallArgs::V2(FunctionCallArgsV2 {
             contract,
@@ -200,8 +196,7 @@ impl EngineContract {
         CallSubmit::call(&self.contract).args(input)
     }
 
-    pub fn register_relayer(&self, address: &str) -> CallRegisterRelayer {
-        let address = Address::decode(address).unwrap();
+    pub fn register_relayer(&self, address: Address) -> CallRegisterRelayer {
         CallRegisterRelayer::call(&self.contract).args_borsh(address)
     }
 
@@ -229,7 +224,7 @@ impl EngineContract {
     ) -> CallFundXccSubAccount {
         let args = FundXccArgs {
             target,
-            wnear_account_id: wnear_account_id.map(|account| account.as_str().parse().unwrap()),
+            wnear_account_id,
         };
         CallFundXccSubAccount::call(&self.contract).args_borsh(args)
     }
@@ -260,15 +255,11 @@ impl EngineContract {
 
     pub fn mint_account(
         &self,
-        address: &[u8],
+        address: Address,
         init_nonce: u64,
         init_balance: u64,
     ) -> CallMintAccount {
-        CallMintAccount::call(&self.contract).args_borsh((
-            Address::try_from_slice(address).unwrap(),
-            init_nonce,
-            init_balance,
-        ))
+        CallMintAccount::call(&self.contract).args_borsh((address, init_nonce, init_balance))
     }
 
     pub fn set_paused_flags(&self, flags: u8) -> CallSetPausedFlags {
@@ -282,11 +273,11 @@ impl EngineContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub fn ft_balance_of(&self, account_id: &str) -> ViewFtBalanceOf {
+    pub fn ft_balance_of(&self, account_id: &AccountId) -> ViewFtBalanceOf {
         ViewFtBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
-    pub fn storage_balance_of(&self, account_id: &str) -> ViewStorageBalanceOf {
+    pub fn storage_balance_of(&self, account_id: &AccountId) -> ViewStorageBalanceOf {
         ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
     }
 
@@ -326,12 +317,12 @@ impl EngineContract {
         ViewCode::view(&self.contract).args_borsh(address)
     }
 
-    pub fn get_balance(&self, address: &[u8]) -> ViewBalance {
-        ViewBalance::view(&self.contract).args(address.to_vec())
+    pub fn get_balance(&self, address: Address) -> ViewBalance {
+        ViewBalance::view(&self.contract).args(address.as_bytes().to_vec())
     }
 
-    pub fn get_nonce(&self, address: &[u8]) -> ViewNonce {
-        ViewNonce::view(&self.contract).args(address.to_vec())
+    pub fn get_nonce(&self, address: Address) -> ViewNonce {
+        ViewNonce::view(&self.contract).args(address.as_bytes().to_vec())
     }
 
     pub fn get_storage_at(&self, address: Address, key: H256) -> ViewStorageAt {
@@ -351,7 +342,7 @@ impl EngineContract {
         ViewView::view(&self.contract).args_borsh((sender, address, raw_amount, input))
     }
 
-    pub fn is_used_proof(&self, proof: ProofInput) -> ViewIsUsedProof {
+    pub fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
         ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
@@ -363,8 +354,7 @@ impl EngineContract {
         ViewFtTotalEthSupplyOnNear::view(&self.contract)
     }
 
-    pub fn ft_balance_of_eth(&self, address: &[u8]) -> ViewFtBalanceOfEth {
-        let address = Address::try_from_slice(address).unwrap();
+    pub fn ft_balance_of_eth(&self, address: Address) -> ViewFtBalanceOfEth {
         ViewFtBalanceOfEth::view(&self.contract).args_borsh(address)
     }
 

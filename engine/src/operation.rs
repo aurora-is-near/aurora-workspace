@@ -1,6 +1,8 @@
+use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::parameters::connector::{FungibleTokenMetadata, WithdrawResult};
 use aurora_engine_types::parameters::engine::{StorageBalance, SubmitResult, TransactionStatus};
-use aurora_workspace_types::{AccountId, Address, H256, U256};
+use aurora_engine_types::types::Address;
+use aurora_engine_types::{H256, U256};
 use aurora_workspace_utils::results::{ExecutionResult, ViewResult};
 use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};

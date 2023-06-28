@@ -7,22 +7,18 @@ readme = "README.md"
 description = "Aurora EVM contract for the Near workspaces library"
 
 [dependencies]
-anyhow = "1"
+aurora-workspace-utils = { path = "../utils" }
+
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["std", "impl-serde", "borsh-compat"] }
-aurora-workspace-types = { path = "../workspace-types" }
-aurora-workspace-utils = { path = "../workspace-utils" }
-borsh = { version = "0.9", default-features = false }
-ethabi = { version = "18" }
-ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
+anyhow = "1"
 near-sdk = "4.1"
-near-contract-standards = "4.1"
-near-primitives = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 workspaces = "0.7.0"
 
 [dev-dependencies]
 hex = "0.4.3"
+ethereum-types = { version = "0.14", default-features = false, features = ["serialize"] }
 lazy_static = "1.4"
 tokio = { version = "1" }
 

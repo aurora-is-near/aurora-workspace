@@ -26,7 +26,7 @@ pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
     engine_contract
         .new(
             into_chain_id(AURORA_LOCAL_CHAIN_ID),
-            OWNER_ACCOUNT_ID.parse()?,
+            OWNER_ACCOUNT_ID.parse().unwrap(),
             1,
         )
         .transact()

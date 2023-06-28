@@ -1,9 +1,9 @@
+use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
 use aurora_workspace_eth_connector::types::{
     MigrationCheckResult, MigrationInputData, Proof, UNPAUSE_ALL,
 };
-use aurora_workspace_types::AccountId;
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
@@ -19,7 +19,7 @@ const WASM_BIN_FILE_PATH: &str = "../bin/mock_eth_connector.wasm";
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
     let (eth_contract, account) =
         aurora_workspace_eth_connector::deploy(WASM_BIN_FILE_PATH).await?;
-    let prover_account = AccountId::from_str(PROVER_ID)?;
+    let prover_account = AccountId::from_str(PROVER_ID).unwrap();
     let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {
         spec: String::from("1.0.0"),
@@ -30,14 +30,15 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
         reference_hash: None,
         decimals: 0,
     };
-    let owner_id = AccountId::from_str(OWNER_ID)?;
+    let owner_id = AccountId::from_str(OWNER_ID).unwrap();
+    let account_with_access_right = AccountId::from_str(account.id().as_str()).unwrap();
 
     eth_contract
         .init(
             prover_account,
             eth_custodian_address,
             metadata,
-            account.id(),
+            &account_with_access_right,
             owner_id,
         )
         .transact()
@@ -88,7 +89,7 @@ async fn test_ft_transfer_call() {
 #[tokio::test]
 async fn test_ft_total_supply() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.ft_total_supply().await.transact().await.unwrap();
+    let res = contract.ft_total_supply().await.unwrap();
     let expected = ViewResult {
         result: U128::from(100),
         logs: vec![],
@@ -99,13 +100,9 @@ async fn test_ft_total_supply() {
 #[tokio::test]
 async fn test_ft_balance_of() {
     let contract = deploy_and_init().await.unwrap();
-    let account = contract.as_contract();
-    let res = contract
-        .ft_balance_of(account.id().clone())
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let account = contract.as_contract().id();
+    let account_id = AccountId::from_str(account.as_str()).unwrap();
+    let res = contract.ft_balance_of(account_id).await.unwrap();
     let expected = ViewResult {
         result: U128::from(200),
         logs: vec![],
@@ -143,8 +140,6 @@ async fn test_get_engine_accounts() {
     let engine_account = AccountId::from_str("test.root").unwrap();
     let res = contract
         .is_engine_account_exist(&engine_account)
-        .await
-        .transact()
         .await
         .unwrap();
     let expected = ViewResult {
@@ -249,12 +244,7 @@ async fn test_engine_storage_unregister() {
 async fn test_storage_balance_of() {
     let contract = deploy_and_init().await.unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
-    let res = contract
-        .storage_balance_of(account_id)
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let res = contract.storage_balance_of(account_id).await.unwrap();
     let result = res.result;
     assert_eq!(result.total, U128::from(10));
     assert_eq!(result.available, U128::from(20));
@@ -263,12 +253,7 @@ async fn test_storage_balance_of() {
 #[tokio::test]
 async fn test_storage_balance_bounds() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract
-        .storage_balance_bounds()
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let res = contract.storage_balance_bounds().await.unwrap();
     assert_eq!(res.result.min, U128::from(100));
     assert_eq!(res.result.max, Some(U128::from(200)));
 }
@@ -352,7 +337,7 @@ async fn test_migrate() {
 #[tokio::test]
 async fn test_ft_metadata() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.ft_metadata().await.transact().await.unwrap();
+    let res = contract.ft_metadata().await.unwrap();
     let expected =  FungibleTokenMetadata {
             spec: FT_METADATA_SPEC.to_string(),
             name: "Ether".to_string(),
@@ -374,12 +359,7 @@ async fn test_ft_metadata() {
 #[tokio::test]
 async fn test_get_account_with_access_right() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract
-        .get_account_with_access_right()
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let res = contract.get_account_with_access_right().await.unwrap();
     let expected = ViewResult {
         result: AccountId::from_str("contract.root").unwrap(),
         logs: vec![],
@@ -390,7 +370,7 @@ async fn test_get_account_with_access_right() {
 #[tokio::test]
 async fn test_get_paused_flags() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_paused_flags().await.transact().await.unwrap();
+    let res = contract.get_paused_flags().await.unwrap();
     let expected = ViewResult {
         result: UNPAUSE_ALL,
         logs: vec![],
@@ -401,7 +381,7 @@ async fn test_get_paused_flags() {
 #[tokio::test]
 async fn test_is_owner() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.is_owner().await.transact().await.unwrap();
+    let res = contract.is_owner().await.unwrap();
     let expected = ViewResult {
         result: true,
         logs: vec![],
@@ -413,12 +393,7 @@ async fn test_is_owner() {
 async fn test_check_migration_correctness() {
     let contract = deploy_and_init().await.unwrap();
     let data = MigrationInputData::default();
-    let res = contract
-        .check_migration_correctness(data)
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let res = contract.check_migration_correctness(data).await.unwrap();
     assert_eq!(res.result, MigrationCheckResult::Success);
 }
 
@@ -426,12 +401,7 @@ async fn test_check_migration_correctness() {
 async fn test_is_used_proof() {
     let contract = deploy_and_init().await.unwrap();
     let proof = Proof::default();
-    let res = contract
-        .is_used_proof(proof)
-        .await
-        .transact()
-        .await
-        .unwrap();
+    let res = contract.is_used_proof(proof).await.unwrap();
     let expected = ViewResult {
         result: true,
         logs: vec![],
@@ -442,7 +412,7 @@ async fn test_is_used_proof() {
 #[tokio::test]
 async fn test_get_bridge_prover() {
     let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_bridge_prover().await.transact().await.unwrap();
+    let res = contract.get_bridge_prover().await.unwrap();
     let expected = ViewResult {
         result: AccountId::from_str("bridge_prover.root").unwrap(),
         logs: vec![],

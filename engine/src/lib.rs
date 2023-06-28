@@ -11,20 +11,15 @@ pub mod contract;
 pub mod operation;
 
 pub mod types {
+    pub use aurora_engine_types::account_id::AccountId;
     pub use aurora_engine_types::parameters::connector::Proof;
     pub use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
-    pub use aurora_workspace_types::AccountId;
-    pub use aurora_workspace_types::Address;
-    pub use aurora_workspace_types::ParseAccountError;
+    pub use aurora_engine_types::types::Address;
     pub use aurora_workspace_utils::Contract;
     pub use workspaces::result::ExecutionOutcome;
     pub use workspaces::types::KeyType;
     pub use workspaces::types::SecretKey;
     pub use workspaces::{Account, Worker};
-
-    pub mod input {
-        pub use aurora_workspace_types::input::*;
-    }
 
     pub mod network {
         pub use workspaces::network::Sandbox;
@@ -116,14 +111,18 @@ impl EngineContractBuilder {
         let contract = EngineContract::new_from_contract(contract, root_acc);
 
         contract
-            .new(self.chain_id, self.owner_id, self.upgrade_delay_blocks)
+            .new(
+                self.chain_id,
+                self.owner_id.as_str().parse().unwrap(),
+                self.upgrade_delay_blocks,
+            )
             .transact()
             .await
             .map_err(|e| anyhow::anyhow!("error while initialize contract: {e}"))?;
 
         contract
             .new_eth_connector(
-                self.prover_id,
+                self.prover_id.as_str().parse().unwrap(),
                 self.custodian_address.encode(),
                 self.ft_metadata,
             )

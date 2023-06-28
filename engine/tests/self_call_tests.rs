@@ -1,5 +1,5 @@
 use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
-use aurora_workspace_types::Address;
+use aurora_engine_types::types::Address;
 
 mod utils;
 
