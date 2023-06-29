@@ -234,8 +234,9 @@ impl EthConnectorContract {
         ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
-    pub fn storage_balance_of(&self, account_id: AccountId) -> ViewStorageBalanceOf {
-        ViewStorageBalanceOf::view(&self.contract).args_json(json!({ "account_id": account_id }))
+    pub fn storage_balance_of<A: AsRef<str>>(&self, account_id: A) -> ViewStorageBalanceOf {
+        ViewStorageBalanceOf::view(&self.contract)
+            .args_json(json!({ "account_id": account_id.as_ref() }))
     }
 
     pub fn storage_balance_bounds(&self) -> ViewStorageBalanceBounds {
@@ -252,7 +253,7 @@ impl EthConnectorContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub fn ft_balance_of(&self, account_id: AccountId) -> ViewFtBalanceOf {
-        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id,)))
+    pub fn ft_balance_of<A: AsRef<str>>(&self, account_id: A) -> ViewFtBalanceOf {
+        ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id.as_ref(),)))
     }
 }
