@@ -40,18 +40,18 @@ impl ContractId for EthConnectorContract {
 
 /// Call functions
 impl EthConnectorContract {
-    pub fn init(
+    pub fn init<A: AsRef<str>>(
         &self,
-        prover_account: AccountId,
+        prover_account: A,
         eth_custodian_address: String,
         metadata: FungibleTokenMetadata,
-        account_with_access_right: &AccountId,
-        owner_id: AccountId,
+        account_with_access_right: &A,
+        owner_id: A,
     ) -> CallNew {
         CallNew::call(&self.contract).args_json(json!({
-            "prover_account": prover_account,
-            "account_with_access_right": account_with_access_right,
-            "owner_id": owner_id,
+            "prover_account": prover_account.as_ref(),
+            "account_with_access_right": account_with_access_right.as_ref(),
+            "owner_id": owner_id.as_ref(),
             "eth_custodian_address": eth_custodian_address,
             "metadata": metadata,
         }))
