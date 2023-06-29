@@ -154,7 +154,7 @@ async fn test_storage_deposit() {
     let contract = deploy_and_init().await.unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
     let res = contract
-        .storage_deposit(Some(account_id), Some(true))
+        .storage_deposit(Some(&account_id), Some(true))
         .max_gas()
         .transact()
         .await
@@ -199,7 +199,7 @@ async fn test_engine_storage_deposit() {
     let sender_id = AccountId::from_str("test.near").unwrap();
     let account_id = sender_id.clone();
     let res = contract
-        .engine_storage_deposit(sender_id, Some(account_id), Some(true))
+        .engine_storage_deposit(sender_id, Some(&account_id), Some(true))
         .max_gas()
         .transact()
         .await

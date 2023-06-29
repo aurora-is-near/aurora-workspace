@@ -9,7 +9,6 @@ use crate::operation::{
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, PausedMask, Proof};
-use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
@@ -63,8 +62,9 @@ impl EthConnectorContract {
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer {
-        CallFtTransfer::call(&self.contract)
-            .args_json(json!({ "receiver_id": receiver_id, "amount": amount, "memo": memo }))
+        CallFtTransfer::call(&self.contract).args_json(
+            json!({ "receiver_id": receiver_id.as_ref(), "amount": amount, "memo": memo }),
+        )
     }
 
     pub fn ft_transfer_call<A: AsRef<str>>(
@@ -90,8 +90,8 @@ impl EthConnectorContract {
         memo: Option<String>,
     ) -> CallEngineFtTransfer {
         CallEngineFtTransfer::call(&self.contract).args_json(json!({
-            "sender_id": sender_id,
-            "receiver_id": receiver_id,
+            "sender_id": sender_id.as_ref(),
+            "receiver_id": receiver_id.as_ref(),
             "amount": amount,
             "memo": memo
         }))
@@ -106,8 +106,8 @@ impl EthConnectorContract {
         msg: String,
     ) -> CallEngineFtTransferCall {
         CallEngineFtTransferCall::call(&self.contract).args_json(json!({
-            "sender_id": sender_id,
-            "receiver_id": receiver_id,
+            "sender_id": sender_id.as_ref(),
+            "receiver_id": receiver_id.as_ref(),
             "amount": amount,
             "memo": memo,
             "msg": msg,
@@ -116,7 +116,7 @@ impl EthConnectorContract {
 
     pub fn set_engine_account<A: AsRef<str>>(&self, engine_account: &A) -> CallSetEngineAccount {
         CallSetEngineAccount::call(&self.contract).args_json(json!({
-            "engine_account": engine_account,
+            "engine_account": engine_account.as_ref(),
         }))
     }
 
@@ -125,15 +125,16 @@ impl EthConnectorContract {
         engine_account: &A,
     ) -> CallRemoveEngineAccount {
         CallRemoveEngineAccount::call(&self.contract).args_json(json!({
-            "engine_account": engine_account,
+            "engine_account": engine_account.as_ref(),
         }))
     }
 
     pub fn storage_deposit<A: AsRef<str>>(
         &self,
-        account_id: Option<A>,
+        account_id: Option<&A>,
         registration_only: Option<bool>,
     ) -> CallStorageDeposit {
+        let account_id = account_id.map(|a| a.as_ref());
         CallStorageDeposit::call(&self.contract)
             .args_json(json!({ "account_id": account_id, "registration_only": registration_only}))
     }
@@ -149,11 +150,12 @@ impl EthConnectorContract {
     pub fn engine_storage_deposit<A: AsRef<str>>(
         &self,
         sender_id: A,
-        account_id: Option<A>,
+        account_id: Option<&A>,
         registration_only: Option<bool>,
     ) -> CallEngineStorageDeposit {
+        let account_id = account_id.map(|a| a.as_ref());
         CallEngineStorageDeposit::call(&self.contract)
-            .args_json(json!({ "sender_id":  sender_id, "account_id": account_id, "registration_only": registration_only}))
+            .args_json(json!({ "sender_id":  sender_id.as_ref(), "account_id": account_id, "registration_only": registration_only}))
     }
 
     pub fn engine_storage_withdraw<A: AsRef<str>>(
@@ -162,7 +164,7 @@ impl EthConnectorContract {
         amount: Option<U128>,
     ) -> CallEngineStorageWithdraw {
         CallEngineStorageWithdraw::call(&self.contract)
-            .args_json(json!({ "sender_id":  sender_id, "amount": amount }))
+            .args_json(json!({ "sender_id":  sender_id.as_ref(), "amount": amount }))
     }
 
     pub fn engine_storage_unregister<A: AsRef<str>>(
@@ -171,7 +173,7 @@ impl EthConnectorContract {
         force: Option<bool>,
     ) -> CallEngineStorageUnregister {
         CallEngineStorageUnregister::call(&self.contract)
-            .args_json(json!({ "sender_id":  sender_id, "force": force }))
+            .args_json(json!({ "sender_id":  sender_id.as_ref(), "force": force }))
     }
 
     pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags {
@@ -179,7 +181,7 @@ impl EthConnectorContract {
     }
 
     pub fn set_access_right<A: AsRef<str>>(&self, account: A) -> CallSetAccessRight {
-        CallSetAccessRight::call(&self.contract).args_json((account,))
+        CallSetAccessRight::call(&self.contract).args_json((account.as_ref(),))
     }
 
     pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
@@ -192,7 +194,11 @@ impl EthConnectorContract {
         recipient_address: Address,
         amount: Balance,
     ) -> CallEngineWithdraw {
-        CallEngineWithdraw::call(&self.contract).args_borsh((sender_id, recipient_address, amount))
+        CallEngineWithdraw::call(&self.contract).args_borsh((
+            sender_id.as_ref(),
+            recipient_address,
+            amount,
+        ))
     }
 
     pub fn deposit(&self, raw_proof: Proof) -> CallDeposit {
@@ -251,7 +257,7 @@ impl EthConnectorContract {
         engine_account: &A,
     ) -> ViewIsEngineAccountExist {
         ViewIsEngineAccountExist::view(&self.contract).args_json(json!({
-            "engine_account": engine_account,
+            "engine_account": engine_account.as_ref(),
         }))
     }
 
