@@ -35,11 +35,11 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
 
     eth_contract
         .init(
-            prover_account,
+            &prover_account,
             eth_custodian_address,
             metadata,
             &account_with_access_right,
-            owner_id,
+            &owner_id,
         )
         .transact()
         .await?;
@@ -54,7 +54,7 @@ async fn test_ft_transfer() {
     let memo = Some(String::from("some message"));
 
     contract
-        .ft_transfer(some_acc, amount, memo)
+        .ft_transfer(&some_acc, amount, memo)
         .max_gas()
         .deposit(1)
         .transact()
@@ -71,7 +71,7 @@ async fn test_ft_transfer_call() {
     let msg = String::from("some msg");
 
     let res: PromiseOrValue<U128> = contract
-        .ft_transfer_call(some_acc, amount, memo, msg)
+        .ft_transfer_call(&some_acc, amount, memo, msg)
         .max_gas()
         .deposit(1)
         .transact()
@@ -102,7 +102,7 @@ async fn test_ft_balance_of() {
     let contract = deploy_and_init().await.unwrap();
     let account = contract.as_contract().id();
     let account_id = AccountId::from_str(account.as_str()).unwrap();
-    let res = contract.ft_balance_of(account_id).await.unwrap();
+    let res = contract.ft_balance_of(&account_id).await.unwrap();
     let expected = ViewResult {
         result: U128::from(200),
         logs: vec![],
@@ -199,7 +199,7 @@ async fn test_engine_storage_deposit() {
     let sender_id = AccountId::from_str("test.near").unwrap();
     let account_id = sender_id.clone();
     let res = contract
-        .engine_storage_deposit(sender_id, Some(&account_id), Some(true))
+        .engine_storage_deposit(&sender_id, Some(&account_id), Some(true))
         .max_gas()
         .transact()
         .await
@@ -215,7 +215,7 @@ async fn test_engine_storage_withdraw() {
     let sender_id = AccountId::from_str("test.near").unwrap();
     let amount = Some(U128::from(100));
     let res = contract
-        .engine_storage_withdraw(sender_id, amount)
+        .engine_storage_withdraw(&sender_id, amount)
         .max_gas()
         .transact()
         .await
@@ -231,7 +231,7 @@ async fn test_engine_storage_unregister() {
     let sender_id = AccountId::from_str("test.near").unwrap();
     let force = Some(true);
     let res = contract
-        .engine_storage_unregister(sender_id, force)
+        .engine_storage_unregister(&sender_id, force)
         .max_gas()
         .transact()
         .await
@@ -244,7 +244,7 @@ async fn test_engine_storage_unregister() {
 async fn test_storage_balance_of() {
     let contract = deploy_and_init().await.unwrap();
     let account_id = AccountId::from_str("test.near").unwrap();
-    let res = contract.storage_balance_of(account_id).await.unwrap();
+    let res = contract.storage_balance_of(&account_id).await.unwrap();
     let result = res.result;
     assert_eq!(result.total, U128::from(10));
     assert_eq!(result.available, U128::from(20));
@@ -274,7 +274,7 @@ async fn test_set_access_right() {
     let contract = deploy_and_init().await.unwrap();
     let account = AccountId::from_str("test.near").unwrap();
     contract
-        .set_access_right(account)
+        .set_access_right(&account)
         .max_gas()
         .transact()
         .await
@@ -306,7 +306,7 @@ async fn test_engine_withdraw() {
     let sender_id = AccountId::from_str("test.near").unwrap();
     let recipient_address = Address::zero();
     let res = contract
-        .engine_withdraw(sender_id, recipient_address, 10)
+        .engine_withdraw(&sender_id, recipient_address, 10)
         .max_gas()
         .transact()
         .await

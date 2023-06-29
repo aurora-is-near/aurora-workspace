@@ -41,11 +41,11 @@ impl ContractId for EthConnectorContract {
 impl EthConnectorContract {
     pub fn init<A: AsRef<str>>(
         &self,
-        prover_account: A,
+        prover_account: &A,
         eth_custodian_address: String,
         metadata: FungibleTokenMetadata,
         account_with_access_right: &A,
-        owner_id: A,
+        owner_id: &A,
     ) -> CallNew {
         CallNew::call(&self.contract).args_json(json!({
             "prover_account": prover_account.as_ref(),
@@ -58,7 +58,7 @@ impl EthConnectorContract {
 
     pub fn ft_transfer<A: AsRef<str>>(
         &self,
-        receiver_id: A,
+        receiver_id: &A,
         amount: U128,
         memo: Option<String>,
     ) -> CallFtTransfer {
@@ -69,7 +69,7 @@ impl EthConnectorContract {
 
     pub fn ft_transfer_call<A: AsRef<str>>(
         &self,
-        receiver_id: A,
+        receiver_id: &A,
         amount: U128,
         memo: Option<String>,
         msg: String,
@@ -84,8 +84,8 @@ impl EthConnectorContract {
 
     pub fn engine_ft_transfer<A: AsRef<str>>(
         &self,
-        sender_id: A,
-        receiver_id: A,
+        sender_id: &A,
+        receiver_id: &A,
         amount: U128,
         memo: Option<String>,
     ) -> CallEngineFtTransfer {
@@ -99,8 +99,8 @@ impl EthConnectorContract {
 
     pub fn engine_ft_transfer_call<A: AsRef<str>>(
         &self,
-        sender_id: A,
-        receiver_id: A,
+        sender_id: &A,
+        receiver_id: &A,
         amount: U128,
         memo: Option<String>,
         msg: String,
@@ -149,7 +149,7 @@ impl EthConnectorContract {
 
     pub fn engine_storage_deposit<A: AsRef<str>>(
         &self,
-        sender_id: A,
+        sender_id: &A,
         account_id: Option<&A>,
         registration_only: Option<bool>,
     ) -> CallEngineStorageDeposit {
@@ -160,7 +160,7 @@ impl EthConnectorContract {
 
     pub fn engine_storage_withdraw<A: AsRef<str>>(
         &self,
-        sender_id: A,
+        sender_id: &A,
         amount: Option<U128>,
     ) -> CallEngineStorageWithdraw {
         CallEngineStorageWithdraw::call(&self.contract)
@@ -169,7 +169,7 @@ impl EthConnectorContract {
 
     pub fn engine_storage_unregister<A: AsRef<str>>(
         &self,
-        sender_id: A,
+        sender_id: &A,
         force: Option<bool>,
     ) -> CallEngineStorageUnregister {
         CallEngineStorageUnregister::call(&self.contract)
@@ -180,7 +180,7 @@ impl EthConnectorContract {
         CallSetPausedFlags::call(&self.contract).args_borsh(paused)
     }
 
-    pub fn set_access_right<A: AsRef<str>>(&self, account: A) -> CallSetAccessRight {
+    pub fn set_access_right<A: AsRef<str>>(&self, account: &A) -> CallSetAccessRight {
         CallSetAccessRight::call(&self.contract).args_json((account.as_ref(),))
     }
 
@@ -190,7 +190,7 @@ impl EthConnectorContract {
 
     pub fn engine_withdraw<A: AsRef<str>>(
         &self,
-        sender_id: A,
+        sender_id: &A,
         recipient_address: Address,
         amount: Balance,
     ) -> CallEngineWithdraw {
@@ -243,7 +243,7 @@ impl EthConnectorContract {
         ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
-    pub fn storage_balance_of<A: AsRef<str>>(&self, account_id: A) -> ViewStorageBalanceOf {
+    pub fn storage_balance_of<A: AsRef<str>>(&self, account_id: &A) -> ViewStorageBalanceOf {
         ViewStorageBalanceOf::view(&self.contract)
             .args_json(json!({ "account_id": account_id.as_ref() }))
     }
@@ -265,7 +265,7 @@ impl EthConnectorContract {
         ViewFtTotalSupply::view(&self.contract)
     }
 
-    pub fn ft_balance_of<A: AsRef<str>>(&self, account_id: A) -> ViewFtBalanceOf {
+    pub fn ft_balance_of<A: AsRef<str>>(&self, account_id: &A) -> ViewFtBalanceOf {
         ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id.as_ref(),)))
     }
 }
