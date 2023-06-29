@@ -67,15 +67,15 @@ impl EthConnectorContract {
             .args_json(json!({ "receiver_id": receiver_id, "amount": amount, "memo": memo }))
     }
 
-    pub fn ft_transfer_call(
+    pub fn ft_transfer_call<A: AsRef<str>>(
         &self,
-        receiver_id: AccountId,
+        receiver_id: A,
         amount: U128,
         memo: Option<String>,
         msg: String,
     ) -> CallFtTransferCall {
         CallFtTransferCall::call(&self.contract).args_json(json!({
-           "receiver_id": receiver_id,
+           "receiver_id": receiver_id.as_ref(),
            "amount": amount,
            "memo": memo,
            "msg": msg,
