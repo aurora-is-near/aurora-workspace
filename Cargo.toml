@@ -8,3 +8,4 @@ exclude = [
     "res/mock_engine",
     "res/mock_eth_connector"
 ]
+resolver = "2"
