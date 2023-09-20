@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-      - name: Add toolchain
+      - name: Add toolchain target
         run: rustup target add wasm32-unknown-unknown
       - name: Restore cache
         run: |
@@ -30,7 +30,6 @@ jobs:
       - name: Install sandbox
         run: |
           if [[ ! -f ${{ env.NEAR_SANDBOX_BIN_PATH }} ]]; then
-            mkdir -p $HOME/bin
             rm -rf nearcore
             git clone --depth 1 --branch 1.35.0 https://github.com/near/nearcore
             cd nearcore
@@ -41,10 +40,10 @@ jobs:
             rm -rf nearcore
           fi
       - name: Run tests
-        run: NEAR_SANDBOX_BIN_PATH=${{ env.NEAR_SANDBOX_BIN_PATH }} make test
+        run: make test
       - name: Save cache
         run: |
           cache-util save cargo_git cargo_registry
 
 env:
-  NEAR_SANDBOX_BIN_PATH: $HOME/bin/near-sandbox
+  NEAR_SANDBOX_BIN_PATH: /usr/local/bin/near-sandbox
