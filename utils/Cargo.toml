@@ -1,15 +1,17 @@
 [package]
 name = "aurora-workspace-utils"
-version = "0.3.0"
-authors = [ "Aurora <hello@aurora.dev>" ]
-edition = "2021"
-readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+readme.workspace = true
 
 [dependencies]
-anyhow = "1"
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["std", "impl-serde", "borsh-compat"] }
-near-sdk = "4.1"
-near-units = "0.2"
-serde = { version = "1", features = ["derive"] }
+anyhow.workspace = true
+aurora-engine-types.workspace = true
+near-sdk.workspace = true
+near-gas.workspace = true
+near-units.workspace = true
+serde.workspace = true
 tokio = "1"
-workspaces = "0.7"
+near-workspaces.workspace = true
+borsh = "0.10.3"

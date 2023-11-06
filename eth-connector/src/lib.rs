@@ -1,8 +1,8 @@
 use crate::contract::EthConnectorContract;
 use aurora_workspace_utils::Contract;
+use near_workspaces::types::NearToken;
+use near_workspaces::Account;
 use std::path::Path;
-use workspaces::types::Balance;
-use workspaces::Account;
 
 pub mod contract;
 pub mod operation;
@@ -10,8 +10,8 @@ pub mod types;
 
 const ROOT_ACCOUNT: &str = "root";
 const ETH_CONNECTOR_ACCOUNT: &str = "eth_connector";
-const ROOT_BALANCE: Balance = near_units::parse_near!("200 N");
-const CONTRACT_BALANCE: Balance = near_units::parse_near!("85 N");
+const ROOT_BALANCE: u128 = near_units::parse_near!("200 N");
+const CONTRACT_BALANCE: u128 = near_units::parse_near!("85 N");
 
 /// Deploy eth-connector contract using provided WASM file.
 pub async fn deploy<P: AsRef<Path> + Copy>(
@@ -20,7 +20,7 @@ pub async fn deploy<P: AsRef<Path> + Copy>(
     let root_account = Contract::create_root_account(ROOT_ACCOUNT, ROOT_BALANCE).await?;
     let eth_connector = root_account
         .create_subaccount(ETH_CONNECTOR_ACCOUNT)
-        .initial_balance(CONTRACT_BALANCE)
+        .initial_balance(NearToken::from_yoctonear(CONTRACT_BALANCE))
         .transact()
         .await?
         .into_result()?;

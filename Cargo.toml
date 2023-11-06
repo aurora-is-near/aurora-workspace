@@ -24,7 +24,8 @@ anyhow = "1"
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
 near-contract-standards = "4.1"
 near-sdk = "4.1"
+near-gas = "0.2"
 near-units = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-workspaces = "0.7.0"
+near-workspaces = "0.9"

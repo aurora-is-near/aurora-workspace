@@ -2,7 +2,7 @@ use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::U256;
 use aurora_workspace_utils::Contract;
-use workspaces::{Account, AccountId};
+use near_workspaces::{Account, AccountId};
 
 pub use aurora_workspace_utils::{parse_near, ContractId};
 pub use contract::EngineContract;
@@ -16,13 +16,13 @@ pub mod types {
     pub use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
     pub use aurora_engine_types::types::Address;
     pub use aurora_workspace_utils::Contract;
-    pub use workspaces::result::ExecutionOutcome;
-    pub use workspaces::types::KeyType;
-    pub use workspaces::types::SecretKey;
-    pub use workspaces::{Account, Worker};
+    pub use near_workspaces::result::ExecutionOutcome;
+    pub use near_workspaces::types::KeyType;
+    pub use near_workspaces::types::SecretKey;
+    pub use near_workspaces::{Account, Worker};
 
     pub mod network {
-        pub use workspaces::network::Sandbox;
+        pub use near_workspaces::network::Sandbox;
     }
 }
 

@@ -14,7 +14,7 @@ aurora-engine-types.workspace = true
 near-sdk.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-workspaces.workspace = true
+near-workspaces.workspace = true
 
 [dev-dependencies]
 hex = "0.4.3"

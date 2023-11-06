@@ -1,11 +1,11 @@
-use aurora_engine_types::borsh::BorshDeserialize;
 use aurora_engine_types::types::Address;
 use aurora_engine_types::{H256, U256};
+use borsh::BorshDeserialize;
 use near_sdk::{json_types::U128, PromiseOrValue};
+use near_workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
+use near_workspaces::types::Gas;
 use serde::de::DeserializeOwned;
 use std::borrow::Borrow;
-use workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
-use workspaces::types::Gas;
 
 #[derive(Debug, Eq, PartialOrd, PartialEq)]
 pub struct ViewResult<T> {
@@ -14,7 +14,7 @@ pub struct ViewResult<T> {
 }
 
 impl<T: DeserializeOwned> ViewResult<T> {
-    pub fn json(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn json(view: near_workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.json()?,
             logs: view.logs,
@@ -23,7 +23,7 @@ impl<T: DeserializeOwned> ViewResult<T> {
 }
 
 impl<T: BorshDeserialize> ViewResult<T> {
-    pub fn borsh(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn borsh(view: near_workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.borsh()?,
             logs: view.logs,
@@ -32,7 +32,7 @@ impl<T: BorshDeserialize> ViewResult<T> {
 }
 
 impl ViewResult<Vec<u8>> {
-    pub fn vec(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn vec(view: near_workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         Ok(Self {
             result: view.result,
             logs: view.logs,
@@ -42,7 +42,7 @@ impl ViewResult<Vec<u8>> {
 
 impl ViewResult<U256> {
     #[allow(non_snake_case)]
-    pub fn borsh_U256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn borsh_U256(view: near_workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
         Ok(Self {
@@ -54,7 +54,7 @@ impl ViewResult<U256> {
 
 impl ViewResult<H256> {
     #[allow(non_snake_case)]
-    pub fn borsh_H256(view: workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
+    pub fn borsh_H256(view: near_workspaces::result::ViewResultDetails) -> anyhow::Result<Self> {
         let mut buf = [0u8; 32];
         buf.copy_from_slice(view.result.as_slice());
         Ok(Self {
@@ -66,7 +66,7 @@ impl ViewResult<H256> {
 
 #[derive(Debug)]
 pub struct ExecutionResult<T> {
-    inner: workspaces::result::ExecutionSuccess,
+    inner: near_workspaces::result::ExecutionSuccess,
     value: T,
     success: bool,
 }
@@ -113,7 +113,7 @@ impl ExecutionResult<Address> {
 }
 
 impl<T> ExecutionResult<T> {
-    pub fn new(inner: workspaces::result::ExecutionSuccess, value: T, success: bool) -> Self {
+    pub fn new(inner: near_workspaces::result::ExecutionSuccess, value: T, success: bool) -> Self {
         Self {
             inner,
             value,
