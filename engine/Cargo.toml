@@ -1,20 +1,20 @@
 [package]
 name = "aurora-workspace-engine"
-version = "0.3.0"
-authors = [ "Aurora <hello@aurora.dev>" ]
-edition = "2021"
-readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+readme.workspace = true
 description = "Aurora EVM contract for the Near workspaces library"
 
 [dependencies]
 aurora-workspace-utils = { path = "../utils" }
 
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["std", "impl-serde", "borsh-compat"] }
-anyhow = "1"
-near-sdk = "4.1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-workspaces = "0.7.0"
+anyhow.workspace = true
+aurora-engine-types.workspace = true
+near-sdk.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+workspaces.workspace = true
 
 [dev-dependencies]
 hex = "0.4.3"

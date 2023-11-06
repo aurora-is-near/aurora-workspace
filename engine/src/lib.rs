@@ -136,9 +136,7 @@ impl EngineContractBuilder {
     async fn create_accounts(&self, account_id: &AccountId) -> anyhow::Result<(Account, Account)> {
         let account_id_str = account_id.as_str();
         let (sub, root) = match account_id_str.rsplit_once('.') {
-            Some((sub, root)) if root == "near" => {
-                (Some(sub), Contract::find_root_account().await?)
-            }
+            Some((sub, "near")) => (Some(sub), Contract::find_root_account().await?),
             Some((sub, root)) => (
                 Some(sub),
                 Contract::create_root_account(root, self.root_balance).await?,

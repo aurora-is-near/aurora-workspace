@@ -1,21 +1,21 @@
 [package]
 name = "aurora-workspace-eth-connector"
-version = "0.3.0"
-authors = [ "Aurora <hello@aurora.dev>" ]
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
 description = "Aurora Workspace Eth Connector is a library for the Aurora Eth Connector based on NEAR Protocol."
 
 [dependencies]
 aurora-workspace-utils = { path = "../utils" }
 
-anyhow = "1"
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
-near-contract-standards = "4.1"
-near-sdk = "4.1"
-near-units = "0.2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-workspaces = "0.7.0"
+anyhow.workspace = true
+aurora-engine-types.workspace = true
+near-contract-standards.workspace = true
+near-sdk.workspace = true
+near-units.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+workspaces.workspace = true
 
 [dev-dependencies]
 hex = "0.4.3"
