@@ -2,6 +2,7 @@ target/
 **/*.rs.bk
 bin/
 .idea
+Cargo.lock
 
 # MacOS index files
 .DS_Store

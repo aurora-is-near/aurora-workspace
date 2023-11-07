@@ -8,6 +8,7 @@ use aurora_workspace_utils::transactions::{CallTransaction, ViewTransaction};
 use aurora_workspace_utils::{impl_call_return, impl_view_return, Contract};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
+use near_workspaces::types::{Gas, NearToken};
 
 impl_call_return![
     (CallNew, Call::New),

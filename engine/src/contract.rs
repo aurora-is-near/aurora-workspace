@@ -54,7 +54,7 @@ impl ContractId for EngineContract {
         &self.contract
     }
 
-    fn id(&self) -> &workspaces::AccountId {
+    fn id(&self) -> &near_workspaces::AccountId {
         self.contract.id()
     }
 }

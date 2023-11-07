@@ -9,6 +9,7 @@ use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
+use near_workspaces::types::NearToken;
 use std::str::FromStr;
 
 pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
@@ -56,7 +57,7 @@ async fn test_ft_transfer() {
     contract
         .ft_transfer(&some_acc, amount, memo)
         .max_gas()
-        .deposit(1)
+        .deposit(NearToken::from_yoctonear(1))
         .transact()
         .await
         .unwrap();
@@ -73,7 +74,7 @@ async fn test_ft_transfer_call() {
     let res: PromiseOrValue<U128> = contract
         .ft_transfer_call(&some_acc, amount, memo, msg)
         .max_gas()
-        .deposit(1)
+        .deposit(NearToken::from_yoctonear(1))
         .transact()
         .await
         .unwrap()

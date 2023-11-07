@@ -1,7 +1,7 @@
 use aurora_workspace_engine::EngineContract;
 use aurora_workspace_utils::Contract;
 use ethereum_types::U256;
-use workspaces::types::{KeyType, SecretKey};
+use near_workspaces::types::{KeyType, SecretKey};
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 const AURORA_ACCOUNT_ID: &str = "aurora.test.near";
@@ -9,7 +9,7 @@ const OWNER_ACCOUNT_ID: &str = "owner.test.near";
 const WASM_BIN_FILE_PATH: &str = "../bin/mock_engine.wasm";
 
 pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
-    let worker = workspaces::sandbox()
+    let worker = near_workspaces::sandbox()
         .await
         .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
     let sk = SecretKey::from_random(KeyType::ED25519);

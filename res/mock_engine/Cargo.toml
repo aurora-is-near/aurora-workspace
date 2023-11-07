@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["borsh-compat"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "3.3.1", default-features = false, features = ["borsh-compat"] }
 hex = "0.4.3"
 near-sdk = "4.1"
 near-contract-standards = "4.1"

@@ -1,9 +1,7 @@
 use crate::transactions::{CallTransaction, ViewTransaction};
-use workspaces::network::NetworkClient;
-use workspaces::types::{KeyType, SecretKey};
-use workspaces::{Account, AccountId, Worker};
-
-pub use near_units::parse_near;
+use near_workspaces::network::NetworkClient;
+use near_workspaces::types::{KeyType, NearToken, SecretKey};
+use near_workspaces::{Account, AccountId, Worker};
 
 pub mod macros;
 pub mod results;
@@ -20,7 +18,7 @@ pub enum AccountKind {
         contract_id: AccountId,
         inner: Account,
     },
-    Contract(workspaces::Contract),
+    Contract(near_workspaces::Contract),
 }
 
 impl AccountKind {
@@ -91,7 +89,7 @@ impl Contract {
     }
 
     pub async fn create_account_from_random_seed(account_id: AccountId) -> anyhow::Result<Account> {
-        let worker = workspaces::sandbox()
+        let worker = near_workspaces::sandbox()
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
         let sk = SecretKey::from_random(KeyType::ED25519);
@@ -100,7 +98,7 @@ impl Contract {
     }
 
     pub async fn find_root_account() -> anyhow::Result<Account> {
-        let worker = workspaces::sandbox()
+        let worker = near_workspaces::sandbox()
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
         Ok(worker.root_account()?)
@@ -108,14 +106,14 @@ impl Contract {
 
     pub async fn create_root_account(
         root_acc_name: &str,
-        balance: u128,
+        balance: NearToken,
     ) -> anyhow::Result<Account> {
-        use workspaces::AccessKey;
+        use near_workspaces::AccessKey;
 
-        let worker = workspaces::sandbox()
+        let worker = near_workspaces::sandbox()
             .await
             .map_err(|err| anyhow::anyhow!("Failed init sandbox: {:?}", err))?;
-        let testnet = workspaces::testnet()
+        let testnet = near_workspaces::testnet()
             .await
             .map_err(|err| anyhow::anyhow!("Failed init testnet: {:?}", err))?;
         let registrar: AccountId = "registrar".parse()?;
@@ -142,7 +140,7 @@ impl Contract {
     pub async fn create_sub_account(
         root_account: &Account,
         name: &str,
-        balance: u128,
+        balance: NearToken,
     ) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)

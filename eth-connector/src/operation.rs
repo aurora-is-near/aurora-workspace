@@ -8,6 +8,7 @@ use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
 use near_sdk::{json_types::U128, PromiseOrValue};
+use near_workspaces::types::{Gas, NearToken};
 
 impl_call_return![
     (CallNew, Call::New),

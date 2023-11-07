@@ -2,9 +2,10 @@ use aurora_engine_types::parameters::connector::FungibleTokenMetadata;
 use aurora_engine_types::types::address::Address;
 use aurora_engine_types::U256;
 use aurora_workspace_utils::Contract;
-use workspaces::{Account, AccountId};
+use near_workspaces::types::NearToken;
+use near_workspaces::{Account, AccountId};
 
-pub use aurora_workspace_utils::{parse_near, ContractId};
+pub use aurora_workspace_utils::ContractId;
 pub use contract::EngineContract;
 
 pub mod contract;
@@ -16,21 +17,21 @@ pub mod types {
     pub use aurora_engine_types::parameters::engine::{SubmitResult, TransactionStatus};
     pub use aurora_engine_types::types::Address;
     pub use aurora_workspace_utils::Contract;
-    pub use workspaces::result::ExecutionOutcome;
-    pub use workspaces::types::KeyType;
-    pub use workspaces::types::SecretKey;
-    pub use workspaces::{Account, Worker};
+    pub use near_workspaces::result::ExecutionOutcome;
+    pub use near_workspaces::types::KeyType;
+    pub use near_workspaces::types::SecretKey;
+    pub use near_workspaces::{Account, Worker};
 
     pub mod network {
-        pub use workspaces::network::Sandbox;
+        pub use near_workspaces::network::Sandbox;
     }
 }
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
 const OWNER_ACCOUNT_ID: &str = "aurora.root";
 const PROVER_ACCOUNT_ID: &str = "prover.root";
-const ROOT_BALANCE: u128 = parse_near!("400 N");
-const CONTRACT_BALANCE: u128 = parse_near!("200 N");
+const ROOT_BALANCE: NearToken = NearToken::from_near(400);
+const CONTRACT_BALANCE: NearToken = NearToken::from_near(200);
 
 #[derive(Debug)]
 pub struct EngineContractBuilder {
@@ -40,8 +41,8 @@ pub struct EngineContractBuilder {
     prover_id: AccountId,
     custodian_address: Address,
     upgrade_delay_blocks: u64,
-    root_balance: u128,
-    contract_balance: u128,
+    root_balance: NearToken,
+    contract_balance: NearToken,
     ft_metadata: FungibleTokenMetadata,
 }
 
@@ -95,12 +96,12 @@ impl EngineContractBuilder {
         self
     }
 
-    pub fn with_root_balance(mut self, balance: u128) -> Self {
+    pub fn with_root_balance(mut self, balance: NearToken) -> Self {
         self.root_balance = balance;
         self
     }
 
-    pub fn with_contract_balance(mut self, balance: u128) -> Self {
+    pub fn with_contract_balance(mut self, balance: NearToken) -> Self {
         self.contract_balance = balance;
         self
     }
@@ -136,9 +137,7 @@ impl EngineContractBuilder {
     async fn create_accounts(&self, account_id: &AccountId) -> anyhow::Result<(Account, Account)> {
         let account_id_str = account_id.as_str();
         let (sub, root) = match account_id_str.rsplit_once('.') {
-            Some((sub, root)) if root == "near" => {
-                (Some(sub), Contract::find_root_account().await?)
-            }
+            Some((sub, "near")) => (Some(sub), Contract::find_root_account().await?),
             Some((sub, root)) => (
                 Some(sub),
                 Contract::create_root_account(root, self.root_balance).await?,
