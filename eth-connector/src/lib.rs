@@ -33,7 +33,7 @@ pub async fn deploy<P: AsRef<Path> + Copy>(
     })?;
     assert_eq!(
         eth_connector.view_account().await?.balance,
-        CONTRACT_BALANCE
+        NearToken::from_yoctonear(CONTRACT_BALANCE)
     );
     let contract = Contract::deploy(&eth_connector, contract_data).await?;
 

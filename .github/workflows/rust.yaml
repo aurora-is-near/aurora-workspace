@@ -26,24 +26,9 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Restore cache
         run: |
-          cache-util restore cargo_git cargo_registry sandbox:${{ env.NEAR_SANDBOX_BIN_PATH }}
-      - name: Install sandbox
-        run: |
-          if [[ ! -f ${{ env.NEAR_SANDBOX_BIN_PATH }} ]]; then
-            rm -rf nearcore
-            git clone --depth 1 --branch 1.35.0 https://github.com/near/nearcore
-            cd nearcore
-            make sandbox-release
-            cp target/release/near-sandbox $HOME/bin/
-            cache-util save sandbox:${{ env.NEAR_SANDBOX_BIN_PATH }}          
-            cd ../
-            rm -rf nearcore
-          fi
+          cache-util restore cargo_git cargo_registry
       - name: Run tests
         run: make test
       - name: Save cache
         run: |
           cache-util save cargo_git cargo_registry
-
-env:
-  NEAR_SANDBOX_BIN_PATH: /usr/local/bin/near-sandbox

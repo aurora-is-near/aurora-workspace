@@ -1,8 +1,8 @@
-use borsh::BorshSerialize;
+use aurora_engine_types::borsh::BorshSerialize;
 use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::rpc::query::{Query, ViewFunction};
 use near_workspaces::rpc::BoxFuture;
-use near_workspaces::types::NearToken;
+use near_workspaces::types::{Gas, NearToken};
 use std::future::IntoFuture;
 
 pub struct ViewTransaction<'a> {
@@ -63,7 +63,7 @@ impl CallTransaction {
         self
     }
 
-    pub fn gas(mut self, gas: near_gas::NearGas) -> Self {
+    pub fn gas(mut self, gas: Gas) -> Self {
         self.inner = self.inner.gas(gas);
         self
     }

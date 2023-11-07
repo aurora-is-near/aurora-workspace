@@ -40,7 +40,7 @@ macro_rules! impl_call_return  {
             pub(crate) fn call(contract: &Contract) -> Self {
                 Self(contract.near_call(&$fn_name))
             }
-            pub fn gas(mut self, gas: u64) -> Self {
+            pub fn gas(mut self, gas: Gas) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
@@ -48,7 +48,7 @@ macro_rules! impl_call_return  {
                 self.0 = self.0.max_gas();
                 self
             }
-            pub fn deposit(mut self, deposit: u128) -> Self {
+            pub fn deposit(mut self, deposit: NearToken) -> Self {
                 self.0 = self.0.deposit(deposit);
                 self
             }
@@ -75,7 +75,7 @@ macro_rules! impl_call_return  {
             pub(crate) fn call(contract: &Contract) -> Self {
                 Self(contract.near_call(&$fn_name))
             }
-            pub fn gas(mut self, gas: u64) -> Self {
+            pub fn gas(mut self, gas: Gas) -> Self {
                 self.0 = self.0.gas(gas);
                 self
             }
@@ -83,7 +83,7 @@ macro_rules! impl_call_return  {
                 self.0 = self.0.max_gas();
                 self
             }
-            pub fn deposit(mut self, deposit: u128) -> Self {
+            pub fn deposit(mut self, deposit: NearToken) -> Self {
                 self.0 = self.0.deposit(deposit);
                 self
             }

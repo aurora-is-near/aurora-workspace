@@ -1,6 +1,6 @@
+use aurora_engine_types::borsh::BorshDeserialize;
 use aurora_engine_types::types::Address;
 use aurora_engine_types::{H256, U256};
-use borsh::BorshDeserialize;
 use near_sdk::{json_types::U128, PromiseOrValue};
 use near_workspaces::result::{ExecutionFinalResult, ExecutionOutcome};
 use near_workspaces::types::Gas;
