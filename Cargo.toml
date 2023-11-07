@@ -21,7 +21,7 @@ version = "0.4.0"
 
 [workspace.dependencies]
 anyhow = "1"
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "3.3.1", default-features = false, features = ["impl-serde"] }
 near-contract-standards = "4.1"
 near-sdk = "4.1"
 serde = { version = "1", features = ["derive"] }

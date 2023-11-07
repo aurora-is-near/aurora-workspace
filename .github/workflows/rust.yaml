@@ -17,7 +17,7 @@ jobs:
           rustup show
           rustup default ${{ env.RUST_VERSION }}
       - name: Clone the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run all checks
         run: make check
   test:
@@ -29,7 +29,7 @@ jobs:
           rustup show
           rustup default ${{ env.RUST_VERSION }}
       - name: Clone the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Restore cache
         run: |
           cache-util restore cargo_git cargo_registry
