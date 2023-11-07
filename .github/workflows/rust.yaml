@@ -12,18 +12,24 @@ jobs:
     name: Checks
     runs-on: [self-hosted, heavy]
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - name: Install rust
+        run: |
+          rustup show
+          rustup default ${{ env.RUST_VERSION }}
+      - name: Clone the repository
+        uses: actions/checkout@v3
       - name: Run all checks
         run: make check
   test:
     name: Tests
     runs-on: [self-hosted, heavy]
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Add toolchain target
-        run: rustup target add wasm32-unknown-unknown
+      - name: Install rust
+        run: |
+          rustup show
+          rustup default ${{ env.RUST_VERSION }}
+      - name: Clone the repository
+        uses: actions/checkout@v3
       - name: Restore cache
         run: |
           cache-util restore cargo_git cargo_registry
@@ -32,3 +38,8 @@ jobs:
       - name: Save cache
         run: |
           cache-util save cargo_git cargo_registry
+
+env:
+  RUST_VERSION: 1.73.0
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0

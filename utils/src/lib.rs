@@ -3,8 +3,6 @@ use near_workspaces::network::NetworkClient;
 use near_workspaces::types::{KeyType, NearToken, SecretKey};
 use near_workspaces::{Account, AccountId, Worker};
 
-pub use near_units::parse_near;
-
 pub mod macros;
 pub mod results;
 pub mod transactions;
@@ -108,7 +106,7 @@ impl Contract {
 
     pub async fn create_root_account(
         root_acc_name: &str,
-        balance: u128,
+        balance: NearToken,
     ) -> anyhow::Result<Account> {
         use near_workspaces::AccessKey;
 
@@ -131,7 +129,7 @@ impl Contract {
             .batch(&root)
             .create_account()
             .add_key(sk.public_key(), AccessKey::full_access())
-            .transfer(NearToken::from_yoctonear(balance))
+            .transfer(balance)
             .transact()
             .await?
             .into_result()?;
@@ -142,11 +140,11 @@ impl Contract {
     pub async fn create_sub_account(
         root_account: &Account,
         name: &str,
-        balance: u128,
+        balance: NearToken,
     ) -> anyhow::Result<Account> {
         Ok(root_account
             .create_subaccount(name)
-            .initial_balance(NearToken::from_yoctonear(balance))
+            .initial_balance(balance)
             .transact()
             .await?
             .into_result()?)

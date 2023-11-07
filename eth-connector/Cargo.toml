@@ -12,7 +12,6 @@ anyhow.workspace = true
 aurora-engine-types.workspace = true
 near-contract-standards.workspace = true
 near-sdk.workspace = true
-near-units.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 near-workspaces.workspace = true
