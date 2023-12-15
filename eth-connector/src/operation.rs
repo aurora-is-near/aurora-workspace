@@ -16,7 +16,8 @@ impl_call_return![
     (CallSetEngineAccount, Call::SetEngineAccount),
     (CallRemoveEngineAccount, Call::RemoveEngineAccount),
     (CallDeposit, Call::Deposit),
-    (CallSetPausedFlags, Call::SetPausedFlags),
+    (CallPaPauseFeature, Call::PaPauseFeature),
+    (CallPaUnpauseFeature, Call::PaUnpauseFeature),
     (CallSetAccessRight, Call::SetAccessRight),
     (CallMigrate, Call::Migrate),
 ];
@@ -67,7 +68,8 @@ pub(crate) enum Call {
     EngineStorageDeposit,
     EngineStorageUnregister,
     EngineStorageWithdraw,
-    SetPausedFlags,
+    PaPauseFeature,
+    PaUnpauseFeature,
     SetAccessRight,
     Migrate,
 }
@@ -92,8 +94,9 @@ impl AsRef<str> for Call {
             EngineStorageDeposit => "engine_storage_deposit",
             EngineStorageUnregister => "engine_storage_unregister",
             EngineStorageWithdraw => "engine_storage_withdraw",
-            SetPausedFlags => "set_paused_flags",
-            SetAccessRight => "set_access_right",
+            PaPauseFeature => "pa_pause_feature",
+            PaUnpauseFeature => "pa_unpause_feature",
+            AclGrantRole => "acl_grant_role",
             Migrate => "migrate",
         }
     }

@@ -2,7 +2,7 @@ use crate::operation::{
     CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
     CallEngineStorageUnregister, CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer,
     CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
-    CallSetEngineAccount, CallSetPausedFlags, CallStorageDeposit, CallStorageUnregister,
+    CallSetEngineAccount, CallPaPauseFeature, CallPaUnpauseFeature, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
     ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetBridgeProver,
     ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner, ViewIsUsedProof,
@@ -176,8 +176,12 @@ impl EthConnectorContract {
             .args_json(json!({ "sender_id":  sender_id.as_ref(), "force": force }))
     }
 
-    pub fn set_paused_flags(&self, paused: PausedMask) -> CallSetPausedFlags {
-        CallSetPausedFlags::call(&self.contract).args_borsh(paused)
+    pub fn pa_pause_feature(&self, key: String) -> CallPaPauseFeature {
+        CallPaPauseFeature::call(&self.contract).args_json(json!({"key": key}))
+    }
+
+    pub fn pa_unpause_feature(&self, key: String) -> CallPaUnpauseFeature {
+        CallPaUnpauseFeature::call(&self.contract).args_json(json!({"key": key}))
     }
 
     pub fn set_access_right(&self, account: &impl AsRef<str>) -> CallSetAccessRight {

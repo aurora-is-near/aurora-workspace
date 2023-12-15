@@ -259,10 +259,10 @@ async fn test_storage_balance_bounds() {
 }
 
 #[tokio::test]
-async fn test_set_paused_flags() {
+async fn test_pa_pause_feature() {
     let contract = deploy_and_init().await.unwrap();
     contract
-        .set_paused_flags(UNPAUSE_ALL)
+        .pa_pause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
