@@ -1,7 +1,7 @@
 use crate::operation::{
     CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
     CallEngineStorageUnregister, CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer,
-    CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallSetAccessRight,
+    CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallAclGrantRole, CallAclRevokeRole,
     CallSetEngineAccount, CallPaPauseFeature, CallPaUnpauseFeature, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
     ViewFtMetadata, ViewFtTotalSupply, ViewGetAccountWithAccessRight, ViewGetBridgeProver,
@@ -184,8 +184,12 @@ impl EthConnectorContract {
         CallPaUnpauseFeature::call(&self.contract).args_json(json!({"key": key}))
     }
 
-    pub fn set_access_right(&self, account: &impl AsRef<str>) -> CallSetAccessRight {
-        CallSetAccessRight::call(&self.contract).args_json((account.as_ref(),))
+    pub fn acl_grant_role(&self, role: String, account_id: String) -> CallAclGrantRole {
+        CallAclGrantRole::call(&self.contract).args_json(json!({"role": role, "account_id": account_id}))
+    }
+
+    pub fn acl_revoke_role(&self, role: String, account_id: String) -> CallAclRevokeRole {
+        CallAclRevokeRole::call(&self.contract).args_json(json!({"role": role, "account_id": account_id}))
     }
 
     pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
