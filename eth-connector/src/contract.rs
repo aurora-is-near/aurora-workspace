@@ -82,7 +82,7 @@ impl EthConnectorContract {
         }))
     }
 
-    pub fn engine_ft_traprnsfer(
+    pub fn engine_ft_transfer(
         &self,
         sender_id: &impl AsRef<str>,
         receiver_id: &impl AsRef<str>,
