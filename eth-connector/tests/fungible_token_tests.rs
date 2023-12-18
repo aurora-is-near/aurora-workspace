@@ -261,13 +261,57 @@ async fn test_storage_balance_bounds() {
 #[tokio::test]
 async fn test_pa_pause_feature() {
     let contract = deploy_and_init().await.unwrap();
-    println!("{:?}", contract);
     contract
         .pa_pause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn test_pa_unpause_feature() {
+    let contract = deploy_and_init().await.unwrap();
+    contract
+        .pa_unpause_feature("withdraw".to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
+
+
+#[tokio::test]
+async fn test_acl_grant_role() {
+    let contract = deploy_and_init().await.unwrap();
+    contract
+        .acl_grant_role("PauseManager".to_string(), OWNER_ID.to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_acl_revoke_role() {
+    let contract = deploy_and_init().await.unwrap();
+    contract
+        .acl_revoke_role("PauseManager".to_string(), OWNER_ID.to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_acl_get_grantees() {
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract
+        .acl_get_grantees("PauseManager".to_string(), 0, 1)
+        .await
+        .unwrap();
+
+    assert_eq!(res.result.len(), 1);
 }
 
 #[tokio::test]
