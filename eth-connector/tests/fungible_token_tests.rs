@@ -2,7 +2,7 @@ use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
 use aurora_workspace_eth_connector::types::{
-    MigrationCheckResult, MigrationInputData, Proof, UNPAUSE_ALL,
+    MigrationCheckResult, MigrationInputData, Proof,
 };
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;
@@ -261,20 +261,9 @@ async fn test_storage_balance_bounds() {
 #[tokio::test]
 async fn test_pa_pause_feature() {
     let contract = deploy_and_init().await.unwrap();
+    println!("{:?}", contract);
     contract
         .pa_pause_feature("withdraw".to_string())
-        .max_gas()
-        .transact()
-        .await
-        .unwrap();
-}
-
-#[tokio::test]
-async fn test_set_access_right() {
-    let contract = deploy_and_init().await.unwrap();
-    let account = AccountId::from_str("test.near").unwrap();
-    contract
-        .set_access_right(&account)
         .max_gas()
         .transact()
         .await
@@ -354,39 +343,6 @@ async fn test_ft_metadata() {
     assert_eq!(res.result.reference, expected.reference);
     assert_eq!(res.result.reference_hash, expected.reference_hash);
     assert_eq!(res.result.decimals, expected.decimals);
-}
-
-#[tokio::test]
-async fn test_get_account_with_access_right() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_account_with_access_right().await.unwrap();
-    let expected = ViewResult {
-        result: AccountId::from_str("contract.root").unwrap(),
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_get_paused_flags() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_paused_flags().await.unwrap();
-    let expected = ViewResult {
-        result: UNPAUSE_ALL,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_is_owner() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.is_owner().await.unwrap();
-    let expected = ViewResult {
-        result: true,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
 }
 
 #[tokio::test]

@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
 near-contract-standards = "4.1"
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
 near-sdk = "4.1"
 
 [profile.release]

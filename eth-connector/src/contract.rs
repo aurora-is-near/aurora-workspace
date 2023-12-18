@@ -5,10 +5,10 @@ use crate::operation::{
     CallSetEngineAccount, CallPaPauseFeature, CallPaUnpauseFeature, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
     ViewFtMetadata, ViewFtTotalSupply, ViewAclGetGrantees, ViewGetBridgeProver,
-    ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsOwner, ViewIsUsedProof,
+    ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsUsedProof,
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
-use crate::types::{MigrationInputData, PausedMask, Proof};
+use crate::types::{MigrationInputData, Proof};
 use aurora_engine_types::types::Address;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
@@ -82,7 +82,7 @@ impl EthConnectorContract {
         }))
     }
 
-    pub fn engine_ft_transfer(
+    pub fn engine_ft_traprnsfer(
         &self,
         sender_id: &impl AsRef<str>,
         receiver_id: &impl AsRef<str>,
@@ -241,10 +241,6 @@ impl EthConnectorContract {
 
     pub fn acl_get_grantees(&self, role: String, skip: u64, limit: u64) -> ViewAclGetGrantees {
         ViewAclGetGrantees::view(&self.contract).args_json(json!({"role": role, "skip": skip, "limit": limit}))
-    }
-
-    pub fn is_owner(&self) -> ViewIsOwner {
-        ViewIsOwner::view(&self.contract)
     }
 
     pub fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
