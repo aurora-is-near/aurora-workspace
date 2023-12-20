@@ -1,11 +1,12 @@
 use crate::operation::{
-    CallDeposit, CallEngineFtTransfer, CallEngineFtTransferCall, CallEngineStorageDeposit,
-    CallEngineStorageUnregister, CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer,
-    CallFtTransferCall, CallMigrate, CallNew, CallRemoveEngineAccount, CallAclGrantRole, CallAclRevokeRole,
-    CallSetEngineAccount, CallPaPauseFeature, CallPaUnpauseFeature, CallStorageDeposit, CallStorageUnregister,
-    CallStorageWithdraw, CallWithdraw, ViewCheckMigrationCorrectness, ViewFtBalanceOf,
-    ViewFtMetadata, ViewFtTotalSupply, ViewAclGetGrantees, ViewGetBridgeProver,
-    ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsUsedProof,
+    CallAclGrantRole, CallAclRevokeRole, CallDeposit, CallEngineFtTransfer,
+    CallEngineFtTransferCall, CallEngineStorageDeposit, CallEngineStorageUnregister,
+    CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate,
+    CallNew, CallPaPauseFeature, CallPaUnpauseFeature, CallRemoveEngineAccount,
+    CallSetAuroraEngineAccountId, CallSetEngineAccount, CallStorageDeposit, CallStorageUnregister,
+    CallStorageWithdraw, CallWithdraw, ViewAclGetGrantees, ViewCheckMigrationCorrectness,
+    ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewGetAuroraEngineAccountId,
+    ViewGetBridgeProver, ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsUsedProof,
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
 use crate::types::{MigrationInputData, Proof};
@@ -177,19 +178,21 @@ impl EthConnectorContract {
     }
 
     pub fn pa_pause_feature(&self, key: String) -> CallPaPauseFeature {
-        CallPaPauseFeature::call(&self.contract).args_json(json!({"key": key}))
+        CallPaPauseFeature::call(&self.contract).args_json(json!({ "key": key }))
     }
 
     pub fn pa_unpause_feature(&self, key: String) -> CallPaUnpauseFeature {
-        CallPaUnpauseFeature::call(&self.contract).args_json(json!({"key": key}))
+        CallPaUnpauseFeature::call(&self.contract).args_json(json!({ "key": key }))
     }
 
     pub fn acl_grant_role(&self, role: String, account_id: String) -> CallAclGrantRole {
-        CallAclGrantRole::call(&self.contract).args_json(json!({"role": role, "account_id": account_id}))
+        CallAclGrantRole::call(&self.contract)
+            .args_json(json!({"role": role, "account_id": account_id}))
     }
 
     pub fn acl_revoke_role(&self, role: String, account_id: String) -> CallAclRevokeRole {
-        CallAclRevokeRole::call(&self.contract).args_json(json!({"role": role, "account_id": account_id}))
+        CallAclRevokeRole::call(&self.contract)
+            .args_json(json!({"role": role, "account_id": account_id}))
     }
 
     pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
@@ -216,6 +219,11 @@ impl EthConnectorContract {
     pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
         CallMigrate::call(&self.contract).args_borsh(data)
     }
+
+    pub fn set_aurora_engine_account_id(&self, account_id: String) -> CallSetAuroraEngineAccountId {
+        CallSetAuroraEngineAccountId::call(&self.contract)
+            .args_json(json!({ "new_aurora_engine_account_id": account_id }))
+    }
 }
 
 /// View functions
@@ -240,7 +248,8 @@ impl EthConnectorContract {
     }
 
     pub fn acl_get_grantees(&self, role: String, skip: u64, limit: u64) -> ViewAclGetGrantees {
-        ViewAclGetGrantees::view(&self.contract).args_json(json!({"role": role, "skip": skip, "limit": limit}))
+        ViewAclGetGrantees::view(&self.contract)
+            .args_json(json!({"role": role, "skip": skip, "limit": limit}))
     }
 
     pub fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
@@ -271,5 +280,9 @@ impl EthConnectorContract {
 
     pub fn ft_balance_of(&self, account_id: &impl AsRef<str>) -> ViewFtBalanceOf {
         ViewFtBalanceOf::view(&self.contract).args_json(json!((account_id.as_ref(),)))
+    }
+
+    pub fn get_aurora_engine_account_id(&self) -> ViewGetAuroraEngineAccountId {
+        ViewGetAuroraEngineAccountId::view(&self.contract).args_json(json!({}))
     }
 }

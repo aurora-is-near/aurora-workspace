@@ -21,6 +21,7 @@ impl_call_return![
     (CallAclRevokeRole, Call::AclRevokeRole),
     (CallAclGrantRole, Call::AclGrantRole),
     (CallMigrate, Call::Migrate),
+    (CallSetAuroraEngineAccountId, Call::SetAuroraEngineAccountId)
 ];
 
 impl_call_return![
@@ -49,6 +50,7 @@ impl_view_return![
     (ViewIsOwner => bool, View::IsOwner, json),
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
     (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
+    (ViewGetAuroraEngineAccountId => AccountId, View::GetAuroraEngineAccountId, json)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -74,6 +76,7 @@ pub(crate) enum Call {
     AclRevokeRole,
     AclGrantRole,
     Migrate,
+    SetAuroraEngineAccountId,
 }
 
 impl AsRef<str> for Call {
@@ -101,6 +104,7 @@ impl AsRef<str> for Call {
             AclGrantRole => "acl_grant_role",
             AclRevokeRole => "acl_revoke_role",
             Migrate => "migrate",
+            SetAuroraEngineAccountId => "set_aurora_engine_account_id",
         }
     }
 }
@@ -119,6 +123,7 @@ pub enum View {
     CheckMigrationCorrectness,
     IsUsedProof,
     GetBridgeProver,
+    GetAuroraEngineAccountId,
 }
 
 impl AsRef<str> for View {
@@ -137,6 +142,7 @@ impl AsRef<str> for View {
             CheckMigrationCorrectness => "check_migration_correctness",
             IsUsedProof => "is_used_proof",
             GetBridgeProver => "get_bridge_prover",
+            GetAuroraEngineAccountId => "get_aurora_engine_account_id",
         }
     }
 }

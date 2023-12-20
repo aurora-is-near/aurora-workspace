@@ -81,6 +81,10 @@ impl EthConnectorContract {
     pub fn get_bridge_prover(&self) -> AccountId {
         AccountId::from_str("bridge_prover.root").unwrap()
     }
+
+    pub fn set_aurora_engine_account_id(&mut self, new_aurora_engine_account_id: AccountId) {}
+
+    pub fn get_aurora_engine_account_id(&self) -> AccountId { env::current_account_id() }
 }
 
 #[near_bindgen]

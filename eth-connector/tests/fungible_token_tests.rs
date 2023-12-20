@@ -1,9 +1,7 @@
 use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
-use aurora_workspace_eth_connector::types::{
-    MigrationCheckResult, MigrationInputData, Proof,
-};
+use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData, Proof};
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
@@ -280,7 +278,6 @@ async fn test_pa_unpause_feature() {
         .unwrap();
 }
 
-
 #[tokio::test]
 async fn test_acl_grant_role() {
     let contract = deploy_and_init().await.unwrap();
@@ -312,6 +309,23 @@ async fn test_acl_get_grantees() {
         .unwrap();
 
     assert_eq!(res.result.len(), 1);
+}
+
+#[tokio::test]
+async fn test_set_aurora_engine_account_id() {
+    let contract = deploy_and_init().await.unwrap();
+    contract
+        .set_aurora_engine_account_id("test.near".to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn test_get_aurora_engine_account_id() {
+    let contract = deploy_and_init().await.unwrap();
+    contract.get_aurora_engine_account_id().await.unwrap();
 }
 
 #[tokio::test]
