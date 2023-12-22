@@ -13,7 +13,7 @@
 //         .as_account()
 //         .ft_transfer("some_account.test", 10, Some("some message".to_string()))
 //         .max_gas()
-//         .deposit(1)
+//         .deposit(NearToken::from_yocto(1))
 //         .transact()
 //         .await
 //         .unwrap();
@@ -51,7 +51,7 @@
 //             "some message".to_string(),
 //         )
 //         .max_gas()
-//         .deposit(1)
+//         .deposit(NearToken::from_yocto(1))
 //         .transact()
 //         .await
 //         .unwrap()

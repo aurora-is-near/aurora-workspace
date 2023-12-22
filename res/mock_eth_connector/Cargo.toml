@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", branch = "develop", default-features = false, features = ["impl-serde", "borsh-compat"] }
+aurora-engine-types = { git = "https://github.com/aurora-is-near/aurora-engine.git", tag = "3.5.0", default-features = false, features = ["impl-serde", "borsh-compat"] }
 near-contract-standards = "4.1"
 near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
 near-sdk = "4.1"
@@ -19,3 +19,6 @@ lto = true
 debug = false
 panic = "abort"
 overflow-checks = true
+
+[patch.crates-io]
+parity-secp256k1 = { git = 'https://github.com/paritytech/rust-secp256k1', rev = "d05fd8e" }

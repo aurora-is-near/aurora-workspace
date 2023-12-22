@@ -26,6 +26,7 @@ impl MockEngineContract {
         let input = match input {
             NewCallArgs::V1(_) => panic!("Wrong version of the init args"),
             NewCallArgs::V2(args) => args,
+            _ => todo!(),
         };
 
         Self {
