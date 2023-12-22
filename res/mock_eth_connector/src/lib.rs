@@ -15,16 +15,14 @@ use near_contract_standards::fungible_token::resolver::FungibleTokenResolver;
 use near_contract_standards::storage_management::{
     StorageBalance, StorageBalanceBounds, StorageManagement,
 };
-use near_plugins::{
-    access_control, AccessControlRole, AccessControllable, Pausable,
-    Upgradable,
-};
+use near_plugins::{access_control, AccessControlRole, AccessControllable, Pausable, Upgradable};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
+use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    assert_one_yocto, env, near_bindgen, AccountId, Balance, PanicOnDefault, Promise, PromiseOrValue,
+    assert_one_yocto, env, near_bindgen, AccountId, Balance, PanicOnDefault, Promise,
+    PromiseOrValue,
 };
-use near_sdk::serde::{Serialize, Deserialize};
 use std::str::FromStr;
 
 mod connector;
@@ -39,7 +37,7 @@ pub enum Role {
     UpgradableCodeDeployer,
     Owner,
     Engine,
-    DAO
+    DAO,
 }
 
 #[near_bindgen]
@@ -47,11 +45,11 @@ pub enum Role {
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager, Role::DAO, Role::Owner))]
 #[upgradable(access_control_roles(
-code_stagers(Role::UpgradableCodeStager, Role::DAO),
-code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
-duration_initializers(Role::DAO),
-duration_update_stagers(Role::DAO),
-duration_update_appliers(Role::DAO),
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
 ))]
 pub struct EthConnectorContract;
 
@@ -65,7 +63,7 @@ impl EthConnectorContract {
         account_with_access_right: AccountId,
         owner_id: AccountId,
     ) -> Self {
-        let mut this = Self{};
+        let mut this = Self {};
 
         this.acl_init_super_admin(env::predecessor_account_id());
         this.acl_grant_role("PauseManager".to_string(), env::predecessor_account_id());
@@ -84,7 +82,9 @@ impl EthConnectorContract {
 
     pub fn set_aurora_engine_account_id(&mut self, new_aurora_engine_account_id: AccountId) {}
 
-    pub fn get_aurora_engine_account_id(&self) -> AccountId { env::current_account_id() }
+    pub fn get_aurora_engine_account_id(&self) -> AccountId {
+        env::current_account_id()
+    }
 }
 
 #[near_bindgen]
