@@ -46,6 +46,7 @@ impl EthConnectorContract {
         metadata: FungibleTokenMetadata,
         account_with_access_right: &impl AsRef<str>,
         owner_id: &impl AsRef<str>,
+        min_proof_acceptance_height: u64,
     ) -> CallNew {
         CallNew::call(&self.contract).args_json(json!({
             "prover_account": prover_account.as_ref(),
@@ -53,6 +54,7 @@ impl EthConnectorContract {
             "owner_id": owner_id.as_ref(),
             "eth_custodian_address": eth_custodian_address,
             "metadata": metadata,
+            "min_proof_acceptance_height": min_proof_acceptance_height,
         }))
     }
 
