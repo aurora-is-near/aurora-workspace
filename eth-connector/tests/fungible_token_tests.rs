@@ -33,6 +33,7 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
     };
     let owner_id = AccountId::from_str(OWNER_ID).unwrap();
     let account_with_access_right = AccountId::from_str(account.id().as_str()).unwrap();
+    let min_proof_acceptance_height = 0;
 
     eth_contract
         .init(
@@ -41,6 +42,7 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
             metadata,
             &account_with_access_right,
             &owner_id,
+            min_proof_acceptance_height,
         )
         .transact()
         .await?;
