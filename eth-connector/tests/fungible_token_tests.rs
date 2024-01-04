@@ -52,13 +52,14 @@ async fn test_ft_transfer() {
     let amount: U128 = 10.into();
     let memo = Some(String::from("some message"));
 
-    contract
+    let result = contract
         .ft_transfer(&some_acc, amount, memo)
         .max_gas()
         .deposit(NearToken::from_yoctonear(1))
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
@@ -113,24 +114,26 @@ async fn test_ft_balance_of() {
 async fn test_set_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
-    contract
+    let result = contract
         .set_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
 async fn test_remove_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
-    contract
+    let result = contract
         .remove_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
@@ -260,45 +263,49 @@ async fn test_storage_balance_bounds() {
 #[tokio::test]
 async fn test_pa_pause_feature() {
     let contract = deploy_and_init().await.unwrap();
-    contract
+    let result = contract
         .pa_pause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
 async fn test_pa_unpause_feature() {
     let contract = deploy_and_init().await.unwrap();
-    contract
+    let result = contract
         .pa_unpause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
 async fn test_acl_grant_role() {
     let contract = deploy_and_init().await.unwrap();
-    contract
+    let result = contract
         .acl_grant_role("PauseManager".to_string(), OWNER_ID.to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
 async fn test_acl_revoke_role() {
     let contract = deploy_and_init().await.unwrap();
-    contract
+    let result = contract
         .acl_revoke_role("PauseManager".to_string(), OWNER_ID.to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
@@ -315,12 +322,13 @@ async fn test_acl_get_grantees() {
 #[tokio::test]
 async fn test_set_aurora_engine_account_id() {
     let contract = deploy_and_init().await.unwrap();
-    contract
+    let result = contract
         .set_aurora_engine_account_id("test.near".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
