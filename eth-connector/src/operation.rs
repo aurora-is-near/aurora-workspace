@@ -17,9 +17,12 @@ impl_call_return![
     (CallSetEngineAccount, Call::SetEngineAccount),
     (CallRemoveEngineAccount, Call::RemoveEngineAccount),
     (CallDeposit, Call::Deposit),
-    (CallSetPausedFlags, Call::SetPausedFlags),
-    (CallSetAccessRight, Call::SetAccessRight),
+    (CallPaPauseFeature, Call::PaPauseFeature),
+    (CallPaUnpauseFeature, Call::PaUnpauseFeature),
+    (CallAclRevokeRole, Call::AclRevokeRole),
+    (CallAclGrantRole, Call::AclGrantRole),
     (CallMigrate, Call::Migrate),
+    (CallSetAuroraEngineAccountId, Call::SetAuroraEngineAccountId)
 ];
 
 impl_call_return![
@@ -44,10 +47,11 @@ impl_view_return![
     (ViewCheckMigrationCorrectness => MigrationCheckResult, View::CheckMigrationCorrectness, borsh),
     (ViewFtMetadata => FungibleTokenMetadata, View::FtMetadata, json),
     (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
-    (ViewGetAccountWithAccessRight => AccountId, View::GetAccountWithAccessRight, json),
+    (ViewAclGetGrantees => Vec<AccountId>, View::AclGetGrantees, json),
     (ViewIsOwner => bool, View::IsOwner, json),
     (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
     (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
+    (ViewGetAuroraEngineAccountId => AccountId, View::GetAuroraEngineAccountId, json)
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -68,9 +72,12 @@ pub(crate) enum Call {
     EngineStorageDeposit,
     EngineStorageUnregister,
     EngineStorageWithdraw,
-    SetPausedFlags,
-    SetAccessRight,
+    PaPauseFeature,
+    PaUnpauseFeature,
+    AclRevokeRole,
+    AclGrantRole,
     Migrate,
+    SetAuroraEngineAccountId,
 }
 
 impl AsRef<str> for Call {
@@ -93,9 +100,12 @@ impl AsRef<str> for Call {
             EngineStorageDeposit => "engine_storage_deposit",
             EngineStorageUnregister => "engine_storage_unregister",
             EngineStorageWithdraw => "engine_storage_withdraw",
-            SetPausedFlags => "set_paused_flags",
-            SetAccessRight => "set_access_right",
+            PaPauseFeature => "pa_pause_feature",
+            PaUnpauseFeature => "pa_unpause_feature",
+            AclGrantRole => "acl_grant_role",
+            AclRevokeRole => "acl_revoke_role",
             Migrate => "migrate",
+            SetAuroraEngineAccountId => "set_aurora_engine_account_id",
         }
     }
 }
@@ -109,11 +119,12 @@ pub enum View {
     StorageBalanceBounds,
     IsEngineAccountExist,
     GetPausedFlags,
-    GetAccountWithAccessRight,
+    AclGetGrantees,
     IsOwner,
     CheckMigrationCorrectness,
     IsUsedProof,
     GetBridgeProver,
+    GetAuroraEngineAccountId,
 }
 
 impl AsRef<str> for View {
@@ -127,11 +138,12 @@ impl AsRef<str> for View {
             StorageBalanceBounds => "storage_balance_bounds",
             IsEngineAccountExist => "is_engine_account_exist",
             GetPausedFlags => "get_paused_flags",
-            GetAccountWithAccessRight => "get_account_with_access_right",
+            AclGetGrantees => "acl_get_grantees",
             IsOwner => "is_owner",
             CheckMigrationCorrectness => "check_migration_correctness",
             IsUsedProof => "is_used_proof",
             GetBridgeProver => "get_bridge_prover",
+            GetAuroraEngineAccountId => "get_aurora_engine_account_id",
         }
     }
 }

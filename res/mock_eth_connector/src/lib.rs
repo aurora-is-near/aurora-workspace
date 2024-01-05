@@ -1,5 +1,4 @@
 #![allow(unused_variables)]
-use crate::admin_controlled::{AdminControlled, PausedMask, UNPAUSE_ALL};
 use crate::connector::{
     ConnectorDeposit, ConnectorFundsFinish, ConnectorWithdraw, EngineFungibleToken,
     EngineStorageManagement, FinishDepositCallArgs, KnownEngineAccountsManagement, WithdrawResult,
@@ -16,20 +15,42 @@ use near_contract_standards::fungible_token::resolver::FungibleTokenResolver;
 use near_contract_standards::storage_management::{
     StorageBalance, StorageBalanceBounds, StorageManagement,
 };
+use near_plugins::{access_control, AccessControlRole, AccessControllable, Pausable, Upgradable};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
+use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    assert_one_yocto, near_bindgen, AccountId, Balance, PanicOnDefault, Promise, PromiseOrValue,
+    assert_one_yocto, env, near_bindgen, AccountId, Balance, PanicOnDefault, Promise,
+    PromiseOrValue,
 };
 use std::str::FromStr;
 
-mod admin_controlled;
 mod connector;
 mod migration;
 mod proof;
 
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    Owner,
+    Engine,
+    DAO,
+}
+
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager, Role::DAO, Role::Owner))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
+))]
 pub struct EthConnectorContract;
 
 #[near_bindgen]
@@ -42,7 +63,12 @@ impl EthConnectorContract {
         account_with_access_right: AccountId,
         owner_id: AccountId,
     ) -> Self {
-        Self
+        let mut this = Self {};
+
+        this.acl_init_super_admin(env::predecessor_account_id());
+        this.acl_grant_role("PauseManager".to_string(), env::predecessor_account_id());
+
+        this
     }
 
     #[result_serializer(borsh)]
@@ -52,6 +78,12 @@ impl EthConnectorContract {
 
     pub fn get_bridge_prover(&self) -> AccountId {
         AccountId::from_str("bridge_prover.root").unwrap()
+    }
+
+    pub fn set_aurora_engine_account_id(&mut self, new_aurora_engine_account_id: AccountId) {}
+
+    pub fn get_aurora_engine_account_id(&self) -> AccountId {
+        env::current_account_id()
     }
 }
 
@@ -176,26 +208,6 @@ impl FungibleTokenMetadataProvider for EthConnectorContract {
             reference_hash: None,
             decimals: 18,
         }
-    }
-}
-
-#[near_bindgen]
-impl AdminControlled for EthConnectorContract {
-    #[result_serializer(borsh)]
-    fn get_paused_flags(&self) -> PausedMask {
-        UNPAUSE_ALL
-    }
-
-    fn set_paused_flags(&mut self, #[serializer(borsh)] paused: PausedMask) {}
-
-    fn set_access_right(&mut self, account: &AccountId) {}
-
-    fn get_account_with_access_right(&self) -> AccountId {
-        AccountId::from_str("contract.root").unwrap()
-    }
-
-    fn is_owner(&self) -> bool {
-        true
     }
 }
 

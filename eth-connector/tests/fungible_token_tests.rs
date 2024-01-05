@@ -1,9 +1,7 @@
 use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
-use aurora_workspace_eth_connector::types::{
-    MigrationCheckResult, MigrationInputData, Proof, UNPAUSE_ALL,
-};
+use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData, Proof};
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
@@ -56,13 +54,14 @@ async fn test_ft_transfer() {
     let amount: U128 = 10.into();
     let memo = Some(String::from("some message"));
 
-    contract
+    let result = contract
         .ft_transfer(&some_acc, amount, memo)
         .max_gas()
         .deposit(NearToken::from_yoctonear(1))
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
@@ -117,24 +116,26 @@ async fn test_ft_balance_of() {
 async fn test_set_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
-    contract
+    let result = contract
         .set_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
 async fn test_remove_engine_account() {
     let contract = deploy_and_init().await.unwrap();
     let engine_account = AccountId::from_str("test.near").unwrap();
-    contract
+    let result = contract
         .remove_engine_account(&engine_account)
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
@@ -262,26 +263,80 @@ async fn test_storage_balance_bounds() {
 }
 
 #[tokio::test]
-async fn test_set_paused_flags() {
+async fn test_pa_pause_feature() {
     let contract = deploy_and_init().await.unwrap();
-    contract
-        .set_paused_flags(UNPAUSE_ALL)
+    let result = contract
+        .pa_pause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
 }
 
 #[tokio::test]
-async fn test_set_access_right() {
+async fn test_pa_unpause_feature() {
     let contract = deploy_and_init().await.unwrap();
-    let account = AccountId::from_str("test.near").unwrap();
-    contract
-        .set_access_right(&account)
+    let result = contract
+        .pa_unpause_feature("withdraw".to_string())
         .max_gas()
         .transact()
         .await
         .unwrap();
+    assert!(result.is_success());
+}
+
+#[tokio::test]
+async fn test_acl_grant_role() {
+    let contract = deploy_and_init().await.unwrap();
+    let result = contract
+        .acl_grant_role("PauseManager".to_string(), OWNER_ID.to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+    assert!(result.is_success());
+}
+
+#[tokio::test]
+async fn test_acl_revoke_role() {
+    let contract = deploy_and_init().await.unwrap();
+    let result = contract
+        .acl_revoke_role("PauseManager".to_string(), OWNER_ID.to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+    assert!(result.is_success());
+}
+
+#[tokio::test]
+async fn test_acl_get_grantees() {
+    let contract = deploy_and_init().await.unwrap();
+    let res = contract
+        .acl_get_grantees("PauseManager".to_string(), 0, 1)
+        .await
+        .unwrap();
+
+    assert_eq!(res.result.len(), 1);
+}
+
+#[tokio::test]
+async fn test_set_aurora_engine_account_id() {
+    let contract = deploy_and_init().await.unwrap();
+    let result = contract
+        .set_aurora_engine_account_id("test.near".to_string())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
+    assert!(result.is_success());
+}
+
+#[tokio::test]
+async fn test_get_aurora_engine_account_id() {
+    let contract = deploy_and_init().await.unwrap();
+    contract.get_aurora_engine_account_id().await.unwrap();
 }
 
 #[tokio::test]
@@ -357,39 +412,6 @@ async fn test_ft_metadata() {
     assert_eq!(res.result.reference, expected.reference);
     assert_eq!(res.result.reference_hash, expected.reference_hash);
     assert_eq!(res.result.decimals, expected.decimals);
-}
-
-#[tokio::test]
-async fn test_get_account_with_access_right() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_account_with_access_right().await.unwrap();
-    let expected = ViewResult {
-        result: AccountId::from_str("contract.root").unwrap(),
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_get_paused_flags() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_paused_flags().await.unwrap();
-    let expected = ViewResult {
-        result: UNPAUSE_ALL,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_is_owner() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.is_owner().await.unwrap();
-    let expected = ViewResult {
-        result: true,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
 }
 
 #[tokio::test]
