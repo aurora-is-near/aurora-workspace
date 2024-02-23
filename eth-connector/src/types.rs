@@ -10,7 +10,6 @@ pub struct MigrationInputData {
     pub accounts: HashMap<AccountId, Balance>,
     pub total_supply: Option<Balance>,
     pub account_storage_usage: Option<StorageUsage>,
-    pub used_proofs: Vec<String>,
 }
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, Eq, PartialEq)]
@@ -21,7 +20,6 @@ pub enum MigrationCheckResult {
     TotalSupply(Balance),
     StorageUsage(StorageUsage),
     StatisticsCounter(u64),
-    Proof(Vec<String>),
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
