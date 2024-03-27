@@ -218,8 +218,8 @@ impl EthConnectorContract {
         CallDeposit::call(&self.contract).args_borsh(raw_proof)
     }
 
-    pub fn migrate(&self, data: MigrationInputData) -> CallMigrate {
-        CallMigrate::call(&self.contract).args_borsh(data)
+    pub fn migrate(&self, accounts: Vec<String>) -> CallMigrate {
+        CallMigrate::call(&self.contract).args_borsh(accounts)
     }
 
     pub fn set_aurora_engine_account_id(&self, account_id: String) -> CallSetAuroraEngineAccountId {
