@@ -20,7 +20,7 @@ pub enum MigrationCheckResult {
 
 #[ext_contract(ext_deposit)]
 pub trait Migration {
-    fn migrate(&mut self, #[serializer(borsh)] data: MigrationInputData);
+    fn migrate(&mut self, #[serializer(borsh)] accounts: Vec<AccountId>);
 
     #[result_serializer(borsh)]
     fn check_migration_correctness(
