@@ -311,7 +311,7 @@ impl StorageManagement for EthConnectorContract {
 impl Migration for EthConnectorContract {
     /// Migrate contract data
     #[private]
-    fn migrate(&mut self, #[serializer(borsh)] data: MigrationInputData) {}
+    fn migrate(&mut self, #[serializer(borsh)] accounts: Vec<AccountId>) {}
 
     #[result_serializer(borsh)]
     fn check_migration_correctness(

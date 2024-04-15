@@ -388,8 +388,13 @@ async fn test_deposit() {
 #[tokio::test]
 async fn test_migrate() {
     let contract = deploy_and_init().await.unwrap();
-    let data = MigrationInputData::default();
-    contract.migrate(data).max_gas().transact().await.unwrap();
+    let accounts = vec![];
+    contract
+        .migrate(accounts)
+        .max_gas()
+        .transact()
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
