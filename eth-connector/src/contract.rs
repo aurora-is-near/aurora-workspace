@@ -1,8 +1,8 @@
 use crate::operation::{
-    CallAclGrantRole, CallAclRevokeRole, CallDeposit, CallEngineFtTransfer,
-    CallEngineFtTransferCall, CallEngineStorageDeposit, CallEngineStorageUnregister,
-    CallEngineStorageWithdraw, CallEngineWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate,
-    CallNew, CallPaPauseFeature, CallPaUnpauseFeature, CallRemoveEngineAccount,
+    CallAclGrantRole, CallAclRevokeRole, CallEngineFtTransfer, CallEngineFtTransferCall,
+    CallEngineStorageDeposit, CallEngineStorageUnregister, CallEngineStorageWithdraw,
+    CallEngineWithdraw, CallFtTransfer, CallFtTransferCall, CallMigrate, CallMint, CallNew,
+    CallPaPauseFeature, CallPaUnpauseFeature, CallRemoveEngineAccount,
     CallSetAuroraEngineAccountId, CallSetEngineAccount, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewAclGetGrantees, ViewCheckMigrationCorrectness,
     ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewGetAuroraEngineAccountId,
@@ -14,7 +14,7 @@ use aurora_engine_types::types::Address;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
-use near_sdk::Balance;
+use near_sdk::{AccountId, Balance};
 use serde_json::json;
 
 #[derive(Debug, Clone)]
@@ -42,20 +42,16 @@ impl ContractId for EthConnectorContract {
 impl EthConnectorContract {
     pub fn init(
         &self,
-        prover_account: &impl AsRef<str>,
-        eth_custodian_address: String,
         metadata: FungibleTokenMetadata,
-        account_with_access_right: &impl AsRef<str>,
+        aurora_engine_account_id: &impl AsRef<str>,
         owner_id: &impl AsRef<str>,
-        min_proof_acceptance_height: u64,
+        controller: &impl AsRef<str>,
     ) -> CallNew {
         CallNew::call(&self.contract).args_json(json!({
-            "prover_account": prover_account.as_ref(),
-            "account_with_access_right": account_with_access_right.as_ref(),
-            "owner_id": owner_id.as_ref(),
-            "eth_custodian_address": eth_custodian_address,
             "metadata": metadata,
-            "min_proof_acceptance_height": min_proof_acceptance_height,
+            "aurora_engine_account_id": aurora_engine_account_id.as_ref(),
+            "owner_id": owner_id.as_ref(),
+            "controller": controller.as_ref(),
         }))
     }
 
@@ -198,7 +194,8 @@ impl EthConnectorContract {
     }
 
     pub fn withdraw(&self, recipient_address: Address, amount: Balance) -> CallWithdraw {
-        CallWithdraw::call(&self.contract).args_borsh((recipient_address, amount))
+        CallWithdraw::call(&self.contract)
+            .args_json(json!({"recipient_address": recipient_address, "amount": amount}))
     }
 
     pub fn engine_withdraw(
@@ -214,8 +211,9 @@ impl EthConnectorContract {
         ))
     }
 
-    pub fn deposit(&self, raw_proof: Proof) -> CallDeposit {
-        CallDeposit::call(&self.contract).args_borsh(raw_proof)
+    pub fn mint(&self, account_id: String, amount: u128) -> CallMint {
+        CallMint::call(&self.contract)
+            .args_json(json!({ "account_id": account_id, "amount": U128::from(amount) }))
     }
 
     pub fn migrate(&self, accounts: Vec<String>) -> CallMigrate {

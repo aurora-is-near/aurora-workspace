@@ -7,7 +7,7 @@ use near_contract_standards::storage_management::StorageBalanceBounds;
 use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
-use near_sdk::{json_types::U128, PromiseOrValue};
+use near_sdk::{json_types::U128, Promise, PromiseOrValue};
 use near_workspaces::types::{Gas, NearToken};
 
 impl_call_return![
@@ -16,7 +16,8 @@ impl_call_return![
     (CallEngineFtTransfer, Call::EngineFtTransfer),
     (CallSetEngineAccount, Call::SetEngineAccount),
     (CallRemoveEngineAccount, Call::RemoveEngineAccount),
-    (CallDeposit, Call::Deposit),
+    (CallMint, Call::Mint),
+    (CallWithdraw, Call::Withdraw),
     (CallPaPauseFeature, Call::PaPauseFeature),
     (CallPaUnpauseFeature, Call::PaUnpauseFeature),
     (CallAclRevokeRole, Call::AclRevokeRole),
@@ -34,7 +35,6 @@ impl_call_return![
     (CallEngineStorageDeposit => StorageBalance, Call::EngineStorageDeposit, json),
     (CallEngineStorageUnregister => bool, Call::EngineStorageUnregister, json),
     (CallEngineStorageWithdraw => StorageBalance, Call::EngineStorageWithdraw, json),
-    (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
     (CallEngineWithdraw => WithdrawResult, Call::EngineWithdraw, borsh),
 ];
 
@@ -59,7 +59,7 @@ pub(crate) enum Call {
     New,
     Withdraw,
     EngineWithdraw,
-    Deposit,
+    Mint,
     FtTransfer,
     FtTransferCall,
     EngineFtTransfer,
@@ -87,7 +87,7 @@ impl AsRef<str> for Call {
             New => "new",
             Withdraw => "withdraw",
             EngineWithdraw => "engine_withdraw",
-            Deposit => "deposit",
+            Mint => "mint",
             FtTransfer => "ft_transfer",
             FtTransferCall => "ft_transfer_call",
             SetEngineAccount => "set_engine_account",
