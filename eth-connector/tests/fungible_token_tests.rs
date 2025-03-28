@@ -164,8 +164,8 @@ async fn test_storage_deposit() {
         .await
         .unwrap()
         .into_value();
-    assert_eq!(res.total, U128::from(100));
-    assert_eq!(res.available, U128::from(200));
+    assert_eq!(res.total, NearToken::from_yoctonear(100));
+    assert_eq!(res.available, NearToken::from_yoctonear(200));
 }
 
 #[tokio::test]
@@ -179,8 +179,8 @@ async fn test_storage_withdraw() {
         .await
         .unwrap()
         .into_value();
-    assert_eq!(res.total, U128::from(100));
-    assert_eq!(res.available, U128::from(200));
+    assert_eq!(res.total, NearToken::from_yoctonear(100));
+    assert_eq!(res.available, NearToken::from_yoctonear(200));
 }
 
 #[tokio::test]
@@ -209,8 +209,8 @@ async fn test_engine_storage_deposit() {
         .await
         .unwrap()
         .into_value();
-    assert_eq!(res.total, U128::from(100));
-    assert_eq!(res.available, U128::from(200));
+    assert_eq!(res.total, NearToken::from_yoctonear(100));
+    assert_eq!(res.available, NearToken::from_yoctonear(200));
 }
 
 #[tokio::test]
@@ -225,8 +225,8 @@ async fn test_engine_storage_withdraw() {
         .await
         .unwrap()
         .into_value();
-    assert_eq!(res.total, U128::from(100));
-    assert_eq!(res.available, U128::from(200));
+    assert_eq!(res.total, NearToken::from_yoctonear(100));
+    assert_eq!(res.available, NearToken::from_yoctonear(200));
 }
 
 #[tokio::test]
@@ -250,16 +250,16 @@ async fn test_storage_balance_of() {
     let account_id = AccountId::from_str("test.near").unwrap();
     let res = contract.storage_balance_of(&account_id).await.unwrap();
     let result = res.result;
-    assert_eq!(result.total, U128::from(10));
-    assert_eq!(result.available, U128::from(20));
+    assert_eq!(result.total, NearToken::from_yoctonear(10));
+    assert_eq!(result.available, NearToken::from_yoctonear(20));
 }
 
 #[tokio::test]
 async fn test_storage_balance_bounds() {
     let contract = deploy_and_init().await.unwrap();
     let res = contract.storage_balance_bounds().await.unwrap();
-    assert_eq!(res.result.min, U128::from(100));
-    assert_eq!(res.result.max, Some(U128::from(200)));
+    assert_eq!(res.result.min, NearToken::from_yoctonear(100));
+    assert_eq!(res.result.max, Some(NearToken::from_yoctonear(200)));
 }
 
 #[tokio::test]
