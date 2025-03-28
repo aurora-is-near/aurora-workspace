@@ -9,16 +9,20 @@ use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, F
 use near_sdk::json_types::U128;
 use near_sdk::PromiseOrValue;
 use near_workspaces::types::NearToken;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::LazyLock;
 
 pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub const OWNER_ID: &str = "aurora.test.near";
 pub const PROVER_ID: &str = "prover.test.near";
 
+pub static CONTRACT_PATH: LazyLock<PathBuf> =
+    LazyLock::new(|| compile_project("../res/mock_eth_connector"));
+
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
-    let wasm_path = compile_project("../res/mock_eth_connector").await;
     let (eth_contract, account) =
-        aurora_workspace_eth_connector::deploy(wasm_path.as_path()).await?;
+        aurora_workspace_eth_connector::deploy(CONTRACT_PATH.as_path()).await?;
     let prover_account = AccountId::from_str(PROVER_ID).unwrap();
     let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {

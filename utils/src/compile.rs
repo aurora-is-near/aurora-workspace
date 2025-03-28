@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-pub async fn compile_project(project_path: &str) -> PathBuf {
+pub fn compile_project(project_path: &str) -> PathBuf {
     let path = std::path::Path::new(project_path).join("Cargo.toml");
     let artifact = cargo_near_build::build(cargo_near_build::BuildOpts {
         manifest_path: Some(
