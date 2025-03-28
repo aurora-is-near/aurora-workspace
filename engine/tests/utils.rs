@@ -4,8 +4,8 @@ use ethereum_types::U256;
 use near_workspaces::types::{KeyType, SecretKey};
 
 const AURORA_LOCAL_CHAIN_ID: u64 = 1313161556;
-const AURORA_ACCOUNT_ID: &str = "aurora.near";
-const OWNER_ACCOUNT_ID: &str = "owner.near";
+const AURORA_ACCOUNT_ID: &str = "aurora";
+const OWNER_ACCOUNT_ID: &str = "owner";
 const WASM_BIN_FILE_PATH: &str = "../bin/mock_engine.wasm";
 
 pub async fn deploy_and_init_contract() -> anyhow::Result<EngineContract> {
