@@ -40,6 +40,6 @@ jobs:
           cache-util save cargo_git cargo_registry
 
 env:
-  RUST_VERSION: 1.81.0
+  RUST_VERSION: 1.83.0
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
