@@ -28,6 +28,7 @@ jobs:
         run: |
           rustup show
           rustup default ${{ env.RUST_VERSION }}
+          rustup target add wasm32-unknown-unknown
       - name: Clone the repository
         uses: actions/checkout@v4
       - name: Restore cache

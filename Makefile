@@ -41,6 +41,12 @@ check-fmt:
 fmt:
 	@cargo fmt --all
 
+build-mock-engine:
+	@cd ${ENGINE_MOCK_DIR} && ${MOCK_CARGO_BUILD}
+
+build-mock-eth-connector:
+	@cd ${ETH_CONNECTOR_MOCK_DIR} && ${MOCK_CARGO_BUILD}
+
 test-engine:
 	@cargo test --package aurora-workspace-engine -- --test-threads 10 --nocapture
 
