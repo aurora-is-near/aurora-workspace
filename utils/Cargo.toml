@@ -12,3 +12,4 @@ near-sdk.workspace = true
 serde.workspace = true
 tokio = "1"
 near-workspaces.workspace = true
+cargo-near-build.workspace = true

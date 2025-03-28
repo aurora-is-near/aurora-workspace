@@ -2,6 +2,7 @@ use aurora_engine_types::account_id::AccountId;
 use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
 use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData, Proof};
+use aurora_workspace_utils::compile::compile_project;
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
@@ -13,11 +14,11 @@ use std::str::FromStr;
 pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub const OWNER_ID: &str = "aurora.test.near";
 pub const PROVER_ID: &str = "prover.test.near";
-const WASM_BIN_FILE_PATH: &str = "../bin/mock_eth_connector.wasm";
 
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
+    let wasm_path = compile_project("../res/mock_eth_connector").await;
     let (eth_contract, account) =
-        aurora_workspace_eth_connector::deploy(WASM_BIN_FILE_PATH).await?;
+        aurora_workspace_eth_connector::deploy(wasm_path.as_path()).await?;
     let prover_account = AccountId::from_str(PROVER_ID).unwrap();
     let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {
