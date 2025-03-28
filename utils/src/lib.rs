@@ -3,10 +3,10 @@ use near_workspaces::network::NetworkClient;
 use near_workspaces::types::{KeyType, NearToken, SecretKey};
 use near_workspaces::{Account, AccountId, Worker};
 
+pub mod compile;
 pub mod macros;
 pub mod results;
 pub mod transactions;
-pub mod compile;
 
 pub trait ContractId {
     fn as_contract(&self) -> &Contract;
