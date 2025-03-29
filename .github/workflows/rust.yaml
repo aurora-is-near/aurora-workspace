@@ -28,6 +28,7 @@ jobs:
         run: |
           rustup show
           rustup default ${{ env.RUST_VERSION }}
+          rustup target add wasm32-unknown-unknown
       - name: Clone the repository
         uses: actions/checkout@v4
       - name: Restore cache
@@ -40,6 +41,6 @@ jobs:
           cache-util save cargo_git cargo_registry
 
 env:
-  RUST_VERSION: 1.74.1
+  RUST_VERSION: 1.83.0
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0

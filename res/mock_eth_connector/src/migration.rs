@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{ext_contract, AccountId, Balance, StorageUsage};
 use std::collections::HashMap;

@@ -14,8 +14,9 @@ use aurora_engine_types::types::Address;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
-use near_sdk::Balance;
 use serde_json::json;
+
+type Balance = u128;
 
 #[derive(Debug, Clone)]
 pub struct EthConnectorContract {

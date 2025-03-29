@@ -3,6 +3,7 @@ use near_workspaces::network::NetworkClient;
 use near_workspaces::types::{KeyType, NearToken, SecretKey};
 use near_workspaces::{Account, AccountId, Worker};
 
+pub mod compile;
 pub mod macros;
 pub mod results;
 pub mod transactions;
@@ -73,7 +74,7 @@ impl Contract {
         self.account.call(function)
     }
 
-    pub fn near_view<'a, F: AsRef<str>>(&'a self, function_name: &'a F) -> ViewTransaction {
+    pub fn near_view<F: AsRef<str>>(&self, function_name: &F) -> ViewTransaction {
         self.account.view(function_name)
     }
 

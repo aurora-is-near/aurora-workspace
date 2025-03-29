@@ -1,9 +1,11 @@
-use aurora_engine_types::borsh::{self, BorshDeserialize, BorshSerialize};
+use aurora_engine_types::borsh::{BorshDeserialize, BorshSerialize};
 use aurora_engine_types::types::Address;
-use near_sdk::{Balance, StorageUsage};
+use near_sdk::StorageUsage;
 use near_workspaces::AccountId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+type Balance = u128;
 
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct MigrationInputData {
