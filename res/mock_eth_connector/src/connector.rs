@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::Proof;
 use aurora_engine_types::types::Address;
 use near_contract_standards::storage_management::StorageBalance;

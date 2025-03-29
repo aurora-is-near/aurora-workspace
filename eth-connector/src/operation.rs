@@ -54,6 +54,7 @@ impl_view_return![
     (ViewGetAuroraEngineAccountId => AccountId, View::GetAuroraEngineAccountId, json)
 ];
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Call {
     New,

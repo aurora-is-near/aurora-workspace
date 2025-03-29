@@ -160,8 +160,5 @@ impl EngineContractBuilder {
 
 fn into_chain_id(value: u64) -> [u8; 32] {
     let chain_id = U256::from(value);
-    let mut result = [0; 32];
-    chain_id.to_big_endian(&mut result);
-
-    result
+    chain_id.to_big_endian()
 }
