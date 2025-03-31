@@ -1,35 +1,8 @@
-#![allow(dead_code)]
-use crate::Proof;
 use aurora_engine_types::types::Address;
 use near_contract_standards::storage_management::StorageBalance;
-use near_sdk::{
-    borsh::{self, BorshDeserialize, BorshSerialize},
-    ext_contract,
-    json_types::U128,
-    AccountId, Balance, Promise, PromiseOrValue,
-};
+use near_sdk::{ext_contract, json_types::U128, AccountId, PromiseOrValue};
 
-pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
-
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
-pub struct FinishDepositCallArgs {
-    pub new_owner_id: AccountId,
-    pub amount: Balance,
-    pub proof_key: String,
-    pub msg: Option<Vec<u8>>,
-}
-
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
-pub struct WithdrawResult {
-    pub amount: Balance,
-    pub recipient_id: Address,
-    pub eth_custodian_address: Address,
-}
-
-#[ext_contract(ext_deposit)]
-pub trait ConnectorDeposit {
-    fn deposit(&mut self, #[serializer(borsh)] raw_proof: Proof) -> Promise;
-}
+type Balance = u128;
 
 #[ext_contract(ext_withdraw)]
 pub trait ConnectorWithdraw {
@@ -38,7 +11,7 @@ pub trait ConnectorWithdraw {
         &mut self,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) -> WithdrawResult;
+    );
 
     #[result_serializer(borsh)]
     fn engine_withdraw(
@@ -46,18 +19,7 @@ pub trait ConnectorWithdraw {
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) -> WithdrawResult;
-}
-
-#[ext_contract(ext_funds_finish)]
-pub trait ConnectorFundsFinish {
-    fn finish_deposit(
-        &mut self,
-        #[serializer(borsh)] deposit_call: FinishDepositCallArgs,
-        #[callback_unwrap]
-        #[serializer(borsh)]
-        verify_log_result: bool,
-    ) -> PromiseOrValue<Option<U128>>;
+    );
 }
 
 /// Engine compatible methods for NEP-141

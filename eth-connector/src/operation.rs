@@ -16,7 +16,8 @@ impl_call_return![
     (CallEngineFtTransfer, Call::EngineFtTransfer),
     (CallSetEngineAccount, Call::SetEngineAccount),
     (CallRemoveEngineAccount, Call::RemoveEngineAccount),
-    (CallDeposit, Call::Deposit),
+    (CallMint, Call::Mint),
+    (CallWithdraw, Call::Withdraw),
     (CallPaPauseFeature, Call::PaPauseFeature),
     (CallPaUnpauseFeature, Call::PaUnpauseFeature),
     (CallAclRevokeRole, Call::AclRevokeRole),
@@ -34,7 +35,6 @@ impl_call_return![
     (CallEngineStorageDeposit => StorageBalance, Call::EngineStorageDeposit, json),
     (CallEngineStorageUnregister => bool, Call::EngineStorageUnregister, json),
     (CallEngineStorageWithdraw => StorageBalance, Call::EngineStorageWithdraw, json),
-    (CallWithdraw => WithdrawResult, Call::Withdraw, borsh),
     (CallEngineWithdraw => WithdrawResult, Call::EngineWithdraw, borsh),
 ];
 
@@ -49,8 +49,6 @@ impl_view_return![
     (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
     (ViewAclGetGrantees => Vec<AccountId>, View::AclGetGrantees, json),
     (ViewIsOwner => bool, View::IsOwner, json),
-    (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
-    (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
     (ViewGetAuroraEngineAccountId => AccountId, View::GetAuroraEngineAccountId, json)
 ];
 
@@ -60,7 +58,7 @@ pub(crate) enum Call {
     New,
     Withdraw,
     EngineWithdraw,
-    Deposit,
+    Mint,
     FtTransfer,
     FtTransferCall,
     EngineFtTransfer,
@@ -88,7 +86,7 @@ impl AsRef<str> for Call {
             New => "new",
             Withdraw => "withdraw",
             EngineWithdraw => "engine_withdraw",
-            Deposit => "deposit",
+            Mint => "mint",
             FtTransfer => "ft_transfer",
             FtTransferCall => "ft_transfer_call",
             SetEngineAccount => "set_engine_account",
@@ -123,8 +121,6 @@ pub enum View {
     AclGetGrantees,
     IsOwner,
     CheckMigrationCorrectness,
-    IsUsedProof,
-    GetBridgeProver,
     GetAuroraEngineAccountId,
 }
 
@@ -142,8 +138,6 @@ impl AsRef<str> for View {
             AclGetGrantees => "acl_get_grantees",
             IsOwner => "is_owner",
             CheckMigrationCorrectness => "check_migration_correctness",
-            IsUsedProof => "is_used_proof",
-            GetBridgeProver => "get_bridge_prover",
             GetAuroraEngineAccountId => "get_aurora_engine_account_id",
         }
     }
