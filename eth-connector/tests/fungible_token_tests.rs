@@ -1,6 +1,6 @@
 use aurora_engine_types::account_id::AccountId;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
-use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData, Proof};
+use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData};
 use aurora_workspace_utils::compile::compile_project;
 use aurora_workspace_utils::results::ViewResult;
 use aurora_workspace_utils::ContractId;

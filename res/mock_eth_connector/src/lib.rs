@@ -22,6 +22,7 @@ use near_sdk::{
 
 type Balance = u128;
 
+#[allow(dead_code)]
 mod connector;
 mod migration;
 
