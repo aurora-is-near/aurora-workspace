@@ -1,7 +1,6 @@
 #![allow(unused_variables)]
 use crate::connector::{
-    ConnectorWithdraw, EngineFungibleToken,
-    EngineStorageManagement, KnownEngineAccountsManagement
+    ConnectorWithdraw, EngineFungibleToken, EngineStorageManagement, KnownEngineAccountsManagement,
 };
 use crate::migration::{Migration, MigrationCheckResult, MigrationInputData};
 use aurora_engine_types::types::Address;
@@ -18,8 +17,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    assert_one_yocto, env, near_bindgen, AccountId, PanicOnDefault,
-    PromiseOrValue, near, NearToken
+    assert_one_yocto, env, near, near_bindgen, AccountId, NearToken, PanicOnDefault, PromiseOrValue,
 };
 
 type Balance = u128;
@@ -207,7 +205,8 @@ impl ConnectorWithdraw for EthConnectorContract {
         &mut self,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) {}
+    ) {
+    }
 
     #[payable]
     #[result_serializer(borsh)]
@@ -216,7 +215,8 @@ impl ConnectorWithdraw for EthConnectorContract {
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) {}
+    ) {
+    }
 }
 
 #[near_bindgen]

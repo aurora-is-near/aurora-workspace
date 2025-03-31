@@ -1,10 +1,6 @@
 use aurora_engine_types::types::Address;
 use near_contract_standards::storage_management::StorageBalance;
-use near_sdk::{
-    ext_contract,
-    json_types::U128,
-    AccountId, PromiseOrValue,
-};
+use near_sdk::{ext_contract, json_types::U128, AccountId, PromiseOrValue};
 
 type Balance = u128;
 
