@@ -6,15 +6,14 @@ use crate::operation::{
     CallSetAuroraEngineAccountId, CallSetEngineAccount, CallStorageDeposit, CallStorageUnregister,
     CallStorageWithdraw, CallWithdraw, ViewAclGetGrantees, ViewCheckMigrationCorrectness,
     ViewFtBalanceOf, ViewFtMetadata, ViewFtTotalSupply, ViewGetAuroraEngineAccountId,
-    ViewGetBridgeProver, ViewGetPausedFlags, ViewIsEngineAccountExist, ViewIsUsedProof,
+    ViewGetPausedFlags, ViewIsEngineAccountExist,
     ViewStorageBalanceBounds, ViewStorageBalanceOf,
 };
-use crate::types::{MigrationInputData, Proof};
+use crate::types::MigrationInputData;
 use aurora_engine_types::types::Address;
 use aurora_workspace_utils::{Contract, ContractId};
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::json_types::U128;
-use near_sdk::AccountId;
 use serde_json::json;
 
 type Balance = u128;
@@ -230,10 +229,6 @@ impl EthConnectorContract {
 
 /// View functions
 impl EthConnectorContract {
-    pub fn get_bridge_prover(&self) -> ViewGetBridgeProver {
-        ViewGetBridgeProver::view(&self.contract)
-    }
-
     pub fn check_migration_correctness(
         &self,
         data: MigrationInputData,
@@ -252,10 +247,6 @@ impl EthConnectorContract {
     pub fn acl_get_grantees(&self, role: String, skip: u64, limit: u64) -> ViewAclGetGrantees {
         ViewAclGetGrantees::view(&self.contract)
             .args_json(json!({"role": role, "skip": skip, "limit": limit}))
-    }
-
-    pub fn is_used_proof(&self, proof: Proof) -> ViewIsUsedProof {
-        ViewIsUsedProof::view(&self.contract).args_borsh(proof)
     }
 
     pub fn storage_balance_of(&self, account_id: &impl AsRef<str>) -> ViewStorageBalanceOf {

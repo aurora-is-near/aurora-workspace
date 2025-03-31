@@ -1,11 +1,9 @@
 #![allow(unused_variables)]
 use crate::connector::{
-    ConnectorDeposit, ConnectorFundsFinish, ConnectorWithdraw, EngineFungibleToken,
-    EngineStorageManagement, FinishDepositCallArgs, KnownEngineAccountsManagement, WithdrawResult,
-    CUSTODIAN_ADDRESS,
+    ConnectorWithdraw, EngineFungibleToken,
+    EngineStorageManagement, KnownEngineAccountsManagement
 };
 use crate::migration::{Migration, MigrationCheckResult, MigrationInputData};
-use crate::proof::Proof;
 use aurora_engine_types::types::Address;
 use near_contract_standards::fungible_token::core::FungibleTokenCore;
 use near_contract_standards::fungible_token::metadata::{
@@ -20,14 +18,14 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    assert_one_yocto, env, near_bindgen, AccountId, Balance, PanicOnDefault, Promise,
-    PromiseOrValue,
+    assert_one_yocto, env, near_bindgen, AccountId, PanicOnDefault,
+    PromiseOrValue, near, NearToken
 };
-use std::str::FromStr;
+
+type Balance = u128;
 
 mod connector;
 mod migration;
-mod proof;
 
 #[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -57,11 +55,10 @@ pub struct EthConnectorContract;
 impl EthConnectorContract {
     #[init]
     pub fn new(
-        prover_account: AccountId,
-        eth_custodian_address: String,
-        metadata: FungibleTokenMetadata,
-        account_with_access_right: AccountId,
-        owner_id: AccountId,
+        metadata: &FungibleTokenMetadata,
+        aurora_engine_account_id: AccountId,
+        owner_id: &AccountId,
+        controller: AccountId,
     ) -> Self {
         let mut this = Self {};
 
@@ -69,15 +66,6 @@ impl EthConnectorContract {
         this.acl_grant_role("PauseManager".to_string(), env::predecessor_account_id());
 
         this
-    }
-
-    #[result_serializer(borsh)]
-    pub fn is_used_proof(&self, #[serializer(borsh)] proof: Proof) -> bool {
-        true
-    }
-
-    pub fn get_bridge_prover(&self) -> AccountId {
-        AccountId::from_str("bridge_prover.root").unwrap()
     }
 
     pub fn set_aurora_engine_account_id(&mut self, new_aurora_engine_account_id: AccountId) {}
@@ -160,8 +148,8 @@ impl EngineStorageManagement for EthConnectorContract {
         registration_only: Option<bool>,
     ) -> StorageBalance {
         StorageBalance {
-            total: U128::from(100),
-            available: U128::from(200),
+            total: NearToken::from_yoctonear(100),
+            available: NearToken::from_yoctonear(200),
         }
     }
 
@@ -172,8 +160,8 @@ impl EngineStorageManagement for EthConnectorContract {
         amount: Option<U128>,
     ) -> StorageBalance {
         StorageBalance {
-            total: U128::from(100),
-            available: U128::from(200),
+            total: NearToken::from_yoctonear(100),
+            available: NearToken::from_yoctonear(200),
         }
     }
 
@@ -219,13 +207,7 @@ impl ConnectorWithdraw for EthConnectorContract {
         &mut self,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) -> WithdrawResult {
-        WithdrawResult {
-            recipient_id: recipient_address,
-            amount,
-            eth_custodian_address: Address::decode(CUSTODIAN_ADDRESS).unwrap(),
-        }
-    }
+    ) {}
 
     #[payable]
     #[result_serializer(borsh)]
@@ -234,35 +216,7 @@ impl ConnectorWithdraw for EthConnectorContract {
         #[serializer(borsh)] sender_id: AccountId,
         #[serializer(borsh)] recipient_address: Address,
         #[serializer(borsh)] amount: Balance,
-    ) -> WithdrawResult {
-        let _ = sender_id;
-        WithdrawResult {
-            recipient_id: recipient_address,
-            amount,
-            eth_custodian_address: Address::decode(CUSTODIAN_ADDRESS).unwrap(),
-        }
-    }
-}
-
-#[near_bindgen]
-impl ConnectorDeposit for EthConnectorContract {
-    fn deposit(&mut self, #[serializer(borsh)] raw_proof: Proof) -> Promise {
-        Promise::new(AccountId::from_str("contract.root").unwrap())
-    }
-}
-
-#[near_bindgen]
-impl ConnectorFundsFinish for EthConnectorContract {
-    #[private]
-    fn finish_deposit(
-        &mut self,
-        #[serializer(borsh)] deposit_call: FinishDepositCallArgs,
-        #[callback_unwrap]
-        #[serializer(borsh)]
-        verify_log_result: bool,
-    ) -> PromiseOrValue<Option<U128>> {
-        PromiseOrValue::Value(Some(U128::from(100)))
-    }
+    ) {}
 }
 
 #[near_bindgen]
@@ -274,16 +228,16 @@ impl StorageManagement for EthConnectorContract {
         registration_only: Option<bool>,
     ) -> StorageBalance {
         StorageBalance {
-            total: U128::from(100),
-            available: U128::from(200),
+            total: NearToken::from_yoctonear(100),
+            available: NearToken::from_yoctonear(200),
         }
     }
 
     #[payable]
-    fn storage_withdraw(&mut self, amount: Option<U128>) -> StorageBalance {
+    fn storage_withdraw(&mut self, amount: Option<NearToken>) -> StorageBalance {
         StorageBalance {
-            total: U128::from(100),
-            available: U128::from(200),
+            total: NearToken::from_yoctonear(100),
+            available: NearToken::from_yoctonear(200),
         }
     }
 
@@ -294,15 +248,15 @@ impl StorageManagement for EthConnectorContract {
 
     fn storage_balance_bounds(&self) -> StorageBalanceBounds {
         StorageBalanceBounds {
-            min: U128::from(100),
-            max: Some(U128::from(200)),
+            min: NearToken::from_yoctonear(100),
+            max: Some(NearToken::from_yoctonear(200)),
         }
     }
 
     fn storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
         Some(StorageBalance {
-            total: U128::from(10),
-            available: U128::from(20),
+            total: NearToken::from_yoctonear(10),
+            available: NearToken::from_yoctonear(20),
         })
     }
 }

@@ -1,5 +1,4 @@
 use aurora_engine_types::account_id::AccountId;
-use aurora_engine_types::types::Address;
 use aurora_workspace_eth_connector::contract::EthConnectorContract;
 use aurora_workspace_eth_connector::types::{MigrationCheckResult, MigrationInputData, Proof};
 use aurora_workspace_utils::compile::compile_project;
@@ -13,9 +12,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
 
-pub const CUSTODIAN_ADDRESS: &str = "096DE9C2B8A5B8c22cEe3289B101f6960d68E51E";
 pub const OWNER_ID: &str = "aurora.test.near";
-pub const PROVER_ID: &str = "prover.test.near";
 
 pub static CONTRACT_PATH: LazyLock<PathBuf> =
     LazyLock::new(|| compile_project("../res/mock_eth_connector"));
@@ -23,8 +20,6 @@ pub static CONTRACT_PATH: LazyLock<PathBuf> =
 async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
     let (eth_contract, account) =
         aurora_workspace_eth_connector::deploy(CONTRACT_PATH.as_path()).await?;
-    let prover_account = AccountId::from_str(PROVER_ID).unwrap();
-    let eth_custodian_address = CUSTODIAN_ADDRESS.to_string();
     let metadata = FungibleTokenMetadata {
         spec: String::from("1.0.0"),
         symbol: String::default(),
@@ -36,16 +31,13 @@ async fn deploy_and_init() -> anyhow::Result<EthConnectorContract> {
     };
     let owner_id = AccountId::from_str(OWNER_ID).unwrap();
     let account_with_access_right = AccountId::from_str(account.id().as_str()).unwrap();
-    let min_proof_acceptance_height = 0;
 
     eth_contract
         .init(
-            &prover_account,
-            eth_custodian_address,
             metadata,
             &account_with_access_right,
             &owner_id,
-            min_proof_acceptance_height,
+            &account_with_access_right,
         )
         .transact()
         .await?;
@@ -345,52 +337,6 @@ async fn test_get_aurora_engine_account_id() {
 }
 
 #[tokio::test]
-async fn test_withdraw() {
-    let contract = deploy_and_init().await.unwrap();
-    let recipient_address = Address::zero();
-    let res = contract
-        .withdraw(recipient_address, 10)
-        .max_gas()
-        .transact()
-        .await
-        .unwrap()
-        .into_value();
-    assert_eq!(res.recipient_id, recipient_address);
-    assert_eq!(res.amount, 10);
-    assert_eq!(
-        res.eth_custodian_address,
-        Address::decode(CUSTODIAN_ADDRESS).unwrap()
-    );
-}
-
-#[tokio::test]
-async fn test_engine_withdraw() {
-    let contract = deploy_and_init().await.unwrap();
-    let sender_id = AccountId::from_str("test.near").unwrap();
-    let recipient_address = Address::zero();
-    let res = contract
-        .engine_withdraw(&sender_id, recipient_address, 10)
-        .max_gas()
-        .transact()
-        .await
-        .unwrap()
-        .into_value();
-    assert_eq!(res.recipient_id, recipient_address);
-    assert_eq!(res.amount, 10);
-    assert_eq!(
-        res.eth_custodian_address,
-        Address::decode(CUSTODIAN_ADDRESS).unwrap()
-    );
-}
-
-#[tokio::test]
-async fn test_deposit() {
-    let contract = deploy_and_init().await.unwrap();
-    let proof = Proof::default();
-    contract.deposit(proof).max_gas().transact().await.unwrap();
-}
-
-#[tokio::test]
 async fn test_migrate() {
     let contract = deploy_and_init().await.unwrap();
     let accounts = vec![];
@@ -430,27 +376,4 @@ async fn test_check_migration_correctness() {
     let data = MigrationInputData::default();
     let res = contract.check_migration_correctness(data).await.unwrap();
     assert_eq!(res.result, MigrationCheckResult::Success);
-}
-
-#[tokio::test]
-async fn test_is_used_proof() {
-    let contract = deploy_and_init().await.unwrap();
-    let proof = Proof::default();
-    let res = contract.is_used_proof(proof).await.unwrap();
-    let expected = ViewResult {
-        result: true,
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
-}
-
-#[tokio::test]
-async fn test_get_bridge_prover() {
-    let contract = deploy_and_init().await.unwrap();
-    let res = contract.get_bridge_prover().await.unwrap();
-    let expected = ViewResult {
-        result: AccountId::from_str("bridge_prover.root").unwrap(),
-        logs: vec![],
-    };
-    assert_eq!(res, expected);
 }

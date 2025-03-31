@@ -7,7 +7,7 @@ use near_contract_standards::storage_management::StorageBalanceBounds;
 use near_contract_standards::{
     fungible_token::metadata::FungibleTokenMetadata, storage_management::StorageBalance,
 };
-use near_sdk::{json_types::U128, Promise, PromiseOrValue};
+use near_sdk::{json_types::U128, PromiseOrValue};
 use near_workspaces::types::{Gas, NearToken};
 
 impl_call_return![
@@ -49,8 +49,6 @@ impl_view_return![
     (ViewGetPausedFlags => PausedMask, View::GetPausedFlags, borsh),
     (ViewAclGetGrantees => Vec<AccountId>, View::AclGetGrantees, json),
     (ViewIsOwner => bool, View::IsOwner, json),
-    (ViewIsUsedProof => bool, View::IsUsedProof, borsh),
-    (ViewGetBridgeProver => AccountId, View::GetBridgeProver, json),
     (ViewGetAuroraEngineAccountId => AccountId, View::GetAuroraEngineAccountId, json)
 ];
 
@@ -123,8 +121,6 @@ pub enum View {
     AclGetGrantees,
     IsOwner,
     CheckMigrationCorrectness,
-    IsUsedProof,
-    GetBridgeProver,
     GetAuroraEngineAccountId,
 }
 
@@ -142,8 +138,6 @@ impl AsRef<str> for View {
             AclGetGrantees => "acl_get_grantees",
             IsOwner => "is_owner",
             CheckMigrationCorrectness => "check_migration_correctness",
-            IsUsedProof => "is_used_proof",
-            GetBridgeProver => "get_bridge_prover",
             GetAuroraEngineAccountId => "get_aurora_engine_account_id",
         }
     }
